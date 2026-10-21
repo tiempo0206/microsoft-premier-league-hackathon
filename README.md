@@ -4,7 +4,9 @@ Private team workspace for the Microsoft Premier League **Inside the Game** hack
 
 ## Project status
 
-Repository initialized. The team will define the idea, MVP scope, and technology stack together.
+Planning stage; no application code has been implemented yet. The proposed starting point is **MatchLens**, an evidence-backed, personalized companion for a synthetic football match. Scope and technology choices remain proposals until the team adopts them.
+
+Start with the [development plan](docs/development-plan.md) and the [proposed data/API contracts](docs/contracts.md).
 
 ## Join the workspace
 
@@ -22,6 +24,8 @@ The owner's local working folder is `/Users/tianbo/Desktop/Microsoft+Premier Lea
 
 ## Team resources
 
+- [Development plan and first-week backlog](docs/development-plan.md)
+- [Proposed data and API contracts](docs/contracts.md)
 - [Hackathon links and submission reminders](docs/hackathon.md)
 - [Contribution workflow](CONTRIBUTING.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
