@@ -1,0 +1,128 @@
+[
+  {
+    "name": "比赛官方规则",
+    "url": "https://github.com/microsoft/insidethegamehackathon/blob/main/OFFICIAL%20RULES.md",
+    "purpose": "截止、数据、提交与评审",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "微软兼容端点客户端",
+    "url": "https://github.com/MicrosoftDocs/azure-ai-docs/blob/main/agent-framework/hosting/self-hosting/openai-endpoints.md",
+    "purpose": "Chat Completions base_url",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Agent Framework",
+    "url": "https://github.com/microsoft/agent-framework",
+    "purpose": "工作流与MIT许可",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "千问首次调用",
+    "url": "https://help.aliyun.com/zh/model-studio/first-api-call-to-qwen",
+    "purpose": "账号、WorkspaceId与当前接入地址",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "百炼服务说明",
+    "url": "https://help.aliyun.com/zh/model-studio/what-is-model-studio/",
+    "purpose": "地域、API与套餐区别",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "DeepSeek JSON模式",
+    "url": "https://api-docs.deepseek.com/guides/json_mode/",
+    "purpose": "JSON对象、当前示例模型与空响应限制",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "DeepSeek首次调用",
+    "url": "https://api-docs.deepseek.com/guides/search_fetch",
+    "purpose": "当前模型与base_url",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "FastAPI",
+    "url": "https://github.com/fastapi/fastapi",
+    "purpose": "成熟API组件",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "SSE Starlette",
+    "url": "https://github.com/sysid/sse-starlette",
+    "purpose": "成熟SSE组件",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "MSW",
+    "url": "https://github.com/mswjs/msw",
+    "purpose": "可选Mock工具",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "开放足球数据",
+    "url": "https://github.com/hudl/open-data",
+    "purpose": "数据与代码许可分离",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Azure容器部署",
+    "url": "https://learn.microsoft.com/en-us/azure/container-apps/quickstart-portal",
+    "purpose": "订阅前置与普通容器应用",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "阿里云轻量服务器",
+    "url": "https://help.aliyun.com/zh/simple-application-server/user-guide/create-a-server/",
+    "purpose": "部署地域、网络与Web备案前置",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Codespaces额度",
+    "url": "https://docs.github.com/en/codespaces/troubleshooting/troubleshooting-included-usage",
+    "purpose": "额度与闲置停止",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Codespaces公开端口",
+    "url": "https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace",
+    "purpose": "公网联调限制",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "清华PyPI镜像",
+    "url": "https://mirrors.tuna.tsinghua.edu.cn/help/pypi/",
+    "purpose": "国内安装及镜像回退",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "npmmirror",
+    "url": "https://npmmirror.com/",
+    "purpose": "前端项目级依赖镜像",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "pnpm项目配置",
+    "url": "https://pnpm.io/settings",
+    "purpose": "registry与其他设置的位置",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Render Docker",
+    "url": "https://render.com/docs/docker",
+    "purpose": "国际平台构建与运行",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Render FastAPI",
+    "url": "https://render.com/docs/deploy-fastapi",
+    "purpose": "常驻Python服务",
+    "checked": "2026-10-21"
+  },
+  {
+    "name": "Render免费限制",
+    "url": "https://render.com/docs/free",
+    "purpose": "空闲休眠与评审保活",
+    "checked": "2026-10-21"
+  }
+]

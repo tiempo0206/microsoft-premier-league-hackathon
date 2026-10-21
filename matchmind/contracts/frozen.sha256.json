@@ -1,0 +1,17 @@
+{
+  "contracts/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "contracts/contract.schema.json": "95ef215eec6de4e0dd37f92e60760175fd34e147863132e0abab0ad3a6f7b343",
+  "contracts/examples/analysis_request.json": "39bb497cd7002692b5bcf9246aeb25651bbfc3a5bbb923a8fd256e11804e9880",
+  "contracts/examples/analysis_result.json": "cc17a2dfc0726b38d44cdb245d87818542e01a3be206fa0c309991918d52c694",
+  "contracts/examples/control_replay.json": "98050384a5f581f8970d3bda1db21f2bb7c608e286d3a3ec6e8292ef00939e45",
+  "contracts/examples/create_replay.json": "fd1bec7a6e8e9adf0cc568ab028ada67272b2cbdea79176ec2604c281718401f",
+  "contracts/examples/replay_snapshot.json": "1028f1a81f01e92cb6cf9f8c7363bafb50ff7c283b15bae1e4dbb9e2c183d5d7",
+  "contracts/examples/stream_message.json": "ec775465c1619592dc2b05828ac9873a04703a50a843a3baf5758033abe53c94",
+  "contracts/openapi.json": "f644e8f1f3d2db5c53f1a8930247c283d69575d4862d357dd2962b0f204fe389",
+  "contracts/types.ts": "e20276b1c9dfc93a67f838452a7a46f7edfa5c0e274edc652ee4e37476ff8424",
+  "contracts/validation.py": "7df437234e7f9ab9c9924e6ed5d53f4eaaf328e5aaf263bd486f88018fdda3a6",
+  "contracts/VERSION": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624",
+  "data/fixtures/demo.events.jsonl": "5d21524296dc75a6bdec11aa24842453c1504b6717ed3dbb55c374eed49c3dc0",
+  "data/fixtures/demo.match.json": "3af5d5322b71a48ceaad5ae68926ab7bf21c1a2f6d8e794fa6909435ba2bf5a1",
+  "data/fixtures/PROVENANCE.json": "ecb953bf465084f2161ed464a057ec7e6d0000063b0b198e73d88c6b5d58eb19"
+}
