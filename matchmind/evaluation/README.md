@@ -153,20 +153,39 @@ Four defects surfaced the moment this larger sample ran, all now fixed:
 
 ## 3. Three agents vs one agent
 
+Both modes get the same input, the same model and the same deterministic verifier. The baseline's
+prompt was rewritten to carry the **same rules** the analyst and narrator receive — the metric
+definitions, the quantifier rules, the worked example of an overreach, and the two-audience
+requirement — so the comparison is about orchestration and not about which prompt was written better.
+An earlier baseline used a shorter prompt, which flattered the pipeline.
+
 | | three agents | single agent |
 | --- | --- | --- |
-| agent invocations, 12 windows | 28–40 | 12 |
-| median latency | 7.0–11.4 s | 3.8 s |
-| claims the verifier refused | 5–9 | 8 |
-| windows whose prose failed verification | 4 | 7 |
+| agent invocations, 15 windows | 42–45 | 15 |
+| median latency | 7.7–8.4 s | 4.8 s |
+| windows whose raw output failed the verifier | **0 published unverified** | **5 of 15 (33%)** |
 | publishable as `passed` | yes | **no** |
 
-The single agent is 2–3x cheaper and faster. It produced **more** unverifiable claims and
-**more** prose failures on identical input, which is the modest statistical case for the
-extra cost. The strong case is structural: frozen contract 2.0.0 requires
-`verification.method == "agent_and_code"` whenever `generation.mode == "live_model"`, so an
-agent reviewing its own output can never legally emit `passed`. Quote the sample size (12)
-whenever you quote this table.
+**Read this carefully, because two of the obvious metrics are traps.**
+
+`claims_rejected` is **not** comparable across modes: it counts every rejection during a run,
+including the ones the pipeline then corrects. A higher number for the pipeline means more
+correction activity, not worse output — the pipeline rejects more because it has a second pair of
+eyes and a repair step. The fair question is whether the *final* card is verified, and for the
+pipeline the answer is yes by construction: nothing publishes without passing the code gate.
+
+What the numbers do support:
+
+* One agent fails the verifier on a third of the windows it is asked about. The pipeline publishes
+  those same windows because a rejection inside it is worked on rather than shipped.
+* One agent can never carry `passed`. Frozen contract 2.0.0 requires `agent_and_code` for a
+  `live_model` card, and an agent reviewing its own output is not an independent check.
+
+What they do **not** support: that three agents are cheaper (they cost 2.8x the calls), faster
+(1.7x the latency), or that they fabricate less per attempt. Do not say those things.
+
+The dense-fixture result also moves between runs: two runs published 11 of 11 and 8 of 11 valid
+windows. Quote the range and the sample size.
 
 ## 4. Orchestrator: Agent Framework vs direct HTTP
 

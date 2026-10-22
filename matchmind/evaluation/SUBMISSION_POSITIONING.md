@@ -36,16 +36,19 @@ novelty.
 | --- | --- |
 | Three roles with disjoint inputs, not three renamed prompts | `ai/service.py: _run_round`; `tests/ai/test_service.py::test_roles_get_different_system_prompts_and_inputs` |
 | A fourth role with a different input granularity | `ai/recap.py` reads the whole prefix while a moment card reads one window |
-| MCP server, 7 tools, same deterministic code | `ai/mcp_server.py`; `python -m ai.mcp_server` |
+| MCP server, 8 tools, same deterministic code | `ai/mcp_server.py`; `python -m ai.mcp_server` |
 | A2A agent card with skills mapped 1:1 to the MCP tools | `ai/a2a.py`; `/.well-known/agent-card.json`; a test keeps the sets equal |
 | An A2A JSON-RPC endpoint, honestly scoped | `ai/a2a_transport.py`; `POST /a2a` implements `message/send` with a structured data part only, and refuses free text rather than guessing a tool. The card advertises exactly that subset |
 | Microsoft Agent Framework is the default orchestrator | `MATCHMIND_ORCHESTRATOR=framework`; trace records which orchestrator actually ran |
 | The contract itself forbids a self-reviewed pass | `check_result` requires `agent_and_code` for any `live_model` card — a structural argument, not a sample |
 | Failures are visible, not hidden | every degradation is labelled `rule_fallback` with an `error.code`; the auditor's refusals land in `verification.rejected_claims` |
+| The semantic auditor is calibrated, not trusted | `evaluation/auditor_calibration.py`: false-alarm rate 33.3% → 0.0% after removing a flag the model could contradict |
+| The code verifier is measured | `evaluation/factcheck_bench.py`: 21/21 corruptions caught, 0/4 false alarms |
 
-**We cannot claim** an A2A JSON-RPC transport (the card exists; the transport does not), a
-component-ablation result (our ablation is underpowered and says so), or that multi-agent is
-statistically better (12 windows; quote the number or say nothing).
+**We cannot claim** a full A2A implementation (the transport is one method), a component-ablation
+result that separates most variants (only the repair round is separated from noise), or that
+multi-agent is statistically better (the dense sample has 15 windows; quote the number or say
+nothing).
 
 ### Real-World Impact & Applicability (20%)
 
