@@ -32,6 +32,7 @@ from ai.config import from_env                       # noqa: E402
 from ai.overlay import overlay_payload, validate_payload   # noqa: E402
 from ai.recap import build_recap as recap_payload      # noqa: E402
 from ai.service import analyze                       # noqa: E402
+from ai.threat import rank_threat                     # noqa: E402
 from ai.tools import Toolbox                         # noqa: E402
 from ai.verify import consistency_issues, high_press_chains   # noqa: E402
 from backend.data import Catalog                     # noqa: E402
@@ -198,8 +199,26 @@ def build_recap(match_id: str, start_sec: int, end_sec: int, team_id: str = "HOM
     return payload
 
 
+def get_threat_ranking(match_id: str, start_sec: int, end_sec: int,
+                       limit: int = 5) -> dict:
+    """Rank completed passes by how much closer to scoring they moved the ball.
+
+    A count cannot answer "why did that pass matter". This re-estimates a socceraction-style
+    expected-threat grid on the clip itself and ranks moves by the value they added. It is a
+    within-clip ranking device, not a probability of scoring, and it **refuses** when the sample
+    is too thin — a five-minute clip is under four observations per cell even at a 6x4 grid, so
+    on the shipped fixture this returns available=false with the reason. That refusal is the
+    honest behaviour, not a failure.
+    """
+    fixture = _fixture(match_id)
+    _check_window(fixture, start_sec, end_sec)
+    if not isinstance(limit, int) or not 1 <= limit <= 20:
+        raise ValueError("limit must be an integer between 1 and 20")
+    return rank_threat(window_events(fixture, start_sec, end_sec), limit=limit)
+
+
 for _fn in (list_matches, get_metrics, get_event_window, get_candidate_moments,
-            explain_window, build_overlay, build_recap):
+            explain_window, build_overlay, build_recap, get_threat_ranking):
     server.add_tool(_fn)
 
 

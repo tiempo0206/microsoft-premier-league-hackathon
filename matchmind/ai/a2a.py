@@ -63,6 +63,12 @@ SKILLS = [
            "window contains.",
            ["recap", "summary", "deterministic"],
            ["Recap the match so far between 1500 and 1800 seconds."]),
+    _skill("get_threat_ranking",
+           "Rank completed passes by how much closer to scoring they moved the ball, using an "
+           "expected-threat grid re-estimated on the clip. Refuses when the sample is too thin, "
+           "because a number from 70 moves would be noise.",
+           ["threat", "ranking", "heuristic"],
+           ["Which pass moved the ball into the most dangerous zone?"]),
 ]
 
 
