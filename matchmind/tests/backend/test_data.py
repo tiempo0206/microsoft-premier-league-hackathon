@@ -75,6 +75,30 @@ class DataTests(unittest.TestCase):
         self.assertIn("E023", self.fixture.warnings[0])
         self.assertEqual(self.fixture.events[22]["player_id"], "H02")
 
+    def test_foul_is_an_actor_event_not_a_possession_transfer_or_a_shot(self):
+        foul = copy.deepcopy(self.fixture.events[0])
+        foul.update(event_id="FOUL-01", timestamp_sec=1505, type="foul", team_id="HOME",
+                    player_id="H02", outcome="none", end_position=None)
+        # The foul happened during AWAY's recorded possession P00. The committing
+        # player's team must not steal that possession in either validation or stats.
+        fixture = self.load_rows(sorted([*self.fixture.events, foul],
+                                        key=lambda e: (e["timestamp_sec"], e["event_id"])))
+        for at in (1505, 1506, 1650, 1800):
+            actual, before = state_at(fixture, at), state_at(self.fixture, at)
+            for metric in ("score", "shots", "passes", "completed_passes", "possession_seconds"):
+                self.assertEqual(actual[metric], before[metric], (at, metric))
+        self.assertEqual(window_metrics(fixture, 1500, 1650),
+                         window_metrics(self.fixture, 1500, 1650))
+
+    def test_foul_requires_neutral_outcome_and_no_pass_endpoint(self):
+        for update in ({"outcome": "goal"}, {"outcome": "successful"},
+                       {"end_position": {"x": 40, "y": 40}}):
+            foul = copy.deepcopy(self.fixture.events[0])
+            foul.update(type="foul", outcome="none", end_position=None)
+            foul.update(update)
+            with self.subTest(update=update), self.assertRaises(ValueError):
+                self.load_rows([foul])
+
 
 if __name__ == "__main__":
     unittest.main()

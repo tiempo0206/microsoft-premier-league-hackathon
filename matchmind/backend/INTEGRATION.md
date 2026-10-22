@@ -1,5 +1,13 @@
 # Backend status and frontend handoff
 
+**2026-10-23 update:** see [INTEGRATOR_HANDOFF_CN.md](INTEGRATOR_HANDOFF_CN.md) for
+the current assembly commands and ownership boundaries. C now has PR #8 and a
+composition root (`ai.app:app`); the statements below describe the earlier B-only
+baseline, not absence of remote C work. B supplies three optional dense datasets,
+an offline adapter gate and a release-image template. Enhanced C fallback output
+at `02228b8` has a reproducible evidence-union blocker; see
+[C_INTEGRATION_FINDINGS.md](C_INTEGRATION_FINDINGS.md). Original defaults remain.
+
 Checked 2026-10-22 by fetching Git refs and reading PR metadata. This document is maintained by B; it does not implement A's page or C's model logic.
 
 ## Verified team state

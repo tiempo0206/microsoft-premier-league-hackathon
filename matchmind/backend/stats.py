@@ -45,6 +45,8 @@ def possession_segments(fixture: Fixture, start: int, end: int) -> list:
         second = event["timestamp_sec"]
         if second > end:
             break
+        if event["type"] == "foul":
+            continue  # Actor attribution does not announce a new possession owner.
         if second > cursor:
             segments.append({"start_sec": cursor, "end_sec": second,
                              "team_id": owner, "source_event_id": source})

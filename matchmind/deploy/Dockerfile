@@ -9,6 +9,7 @@ COPY backend/*.py ./backend/
 COPY contracts/*.py contracts/*.json contracts/VERSION ./contracts/
 COPY data/fixtures ./data/fixtures
 COPY data/extra/validated-demo ./data/extra/validated-demo
+COPY data/extra/showcase ./data/extra/showcase
 COPY data/generator/*.py ./data/generator/
 COPY deploy/__init__.py deploy/preflight.py ./deploy/
 USER app

@@ -84,7 +84,8 @@ def audit_dataset(directory: Path, catalog=None):
     if provenance is not None:
         try:
             require(isinstance(provenance, dict))
-            require(provenance["kind"] == "derived_original_synthetic" and provenance["license"] == "CC0-1.0")
+            require(provenance["kind"] in ("derived_original_synthetic", "original_scripted_synthetic")
+                    and provenance["license"] == "CC0-1.0")
             require(len(summaries) == 1 and provenance["dataset_version"] == summaries[0]["dataset_version"])
             require(provenance["event_count"] == summaries[0]["events"])
             hashes = provenance["artifact_sha256"]
@@ -96,13 +97,21 @@ def audit_dataset(directory: Path, catalog=None):
             raw_rows = [row for row in (directory / "demo.events.jsonl").read_text(encoding="utf-8").splitlines() if row.strip()]
             if len(raw_rows) != provenance["event_count"]:
                 fail("DUPLICATE_EVENT", "The static fixture must contain each event exactly once.")
-            sources = provenance["source_sha256"]
-            require(isinstance(sources, dict))
-            require(provenance["source_directory"] == "data/fixtures")
-            require(set(sources) == {"demo.match.json", "demo.events.jsonl", "PROVENANCE.json"})
-            for name, expected_hash in sources.items():
-                if hashlib.sha256((ROOT / "data/fixtures" / name).read_bytes()).hexdigest() != expected_hash:
-                    fail("SOURCE_HASH_MISMATCH", name)
+            if provenance["kind"] == "derived_original_synthetic":
+                sources = provenance["source_sha256"]
+                require(isinstance(sources, dict))
+                require(provenance["source_directory"] == "data/fixtures")
+                require(set(sources) == {"demo.match.json", "demo.events.jsonl", "PROVENANCE.json"})
+                for name, expected_hash in sources.items():
+                    if hashlib.sha256((ROOT / "data/fixtures" / name).read_bytes()).hexdigest() != expected_hash:
+                        fail("SOURCE_HASH_MISMATCH", name)
+            else:
+                from data.generator.showcase import VERSION, SCENARIOS
+                require(provenance["dataset_version"] == VERSION
+                        and provenance["generator"] == "data/generator/showcase.py"
+                        and provenance["scenario"] in SCENARIOS)
+                require(type(provenance["seed"]) is int and 0 <= provenance["seed"] <= 2**32 - 1
+                        and provenance["seed"] == next(iter(catalog.fixtures.values())).match["seed"])
         except (KeyError, TypeError, ValueError, OSError):
             fail("INVALID_PROVENANCE", "PROVENANCE.json")
     return {"status": "failed" if issues else "passed", "matches": summaries, "issues": issues}

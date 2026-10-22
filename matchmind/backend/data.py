@@ -33,7 +33,8 @@ class Fixture:
         rows, ids, players, possessions = [], {}, {}, {}
         previous = None
         allowed = {"pass": {"successful", "failed"}, "recovery": {"successful"},
-                   "shot": {"on_target", "off_target", "goal"}, "goal": {"goal"}}
+                   "shot": {"on_target", "off_target", "goal"}, "goal": {"goal"},
+                   "foul": {"none"}}
         for line, raw in enumerate(event_path.read_text(encoding="utf-8").splitlines(), 1):
             if not raw.strip():
                 continue
@@ -56,10 +57,14 @@ class Fixture:
                     raise ValueError("event/outcome is outside this MVP's supported semantics")
                 if event["type"] == "pass" and event["end_position"] is None:
                     raise ValueError("pass needs end_position")
+                if event["type"] == "foul" and event["end_position"] is not None:
+                    raise ValueError("foul has no pass endpoint")
                 for point in (event["position"], event["end_position"]):
                     if point and not all(math.isfinite(point[k]) for k in ("x", "y")):
                         raise ValueError("non-finite coordinate")
                 for mapping, key in ((players, "player_id"), (possessions, "possession_id")):
+                    if event["type"] == "foul" and key == "possession_id":
+                        continue  # The actor can foul during the other team's possession.
                     if key_value := mapping.get(event[key]):
                         if key_value != event["team_id"]:
                             raise ValueError(f"{key} changes team")

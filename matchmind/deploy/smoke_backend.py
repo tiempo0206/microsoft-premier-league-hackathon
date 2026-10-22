@@ -3,6 +3,7 @@ import argparse
 import json
 import time
 import uuid
+from pathlib import Path
 from urllib.error import HTTPError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
@@ -13,7 +14,7 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def probe(base):
+def probe(base, dataset="baseline"):
     parsed = urlsplit(base)
     require(parsed.scheme in ("http", "https") and parsed.hostname,
             "Use an HTTP(S) service origin.")
@@ -21,6 +22,13 @@ def probe(base):
             and not parsed.fragment and parsed.path in ("", "/"),
             "Use an origin without credentials, query or path.")
     base = base.rstrip("/")
+    require(dataset in ("baseline", "press", "delayed", "quiet"), "Unknown smoke dataset profile.")
+    directory = (Path(__file__).resolve().parents[1] / "data/extra" /
+                 ("validated-demo" if dataset == "baseline" else "showcase/" + dataset))
+    expected = json.loads((directory / "expected.json").read_text(encoding="utf-8"))
+    expected_state = next(state for state in expected["states"] if state["at_sec"] == 1650)
+    match_id = expected["match_id"]
+    version = "fixture-2.0.1" if dataset == "baseline" else "b-showcase-1.0"
 
     def call(path, body=None, key=None, run=None, status=200):
         headers = {"Content-Type": "application/json"}
@@ -39,13 +47,12 @@ def probe(base):
     health = call("/api/v1/health")
     require(health["contract_version"] == "2.0.0", "Contract version differs.")
     matches = call("/api/v1/matches")
-    require(any(m["match_id"] == "MM-DEMO-01" and m["generator_version"] == "fixture-2.0.1"
+    require(any(m["match_id"] == match_id and m["generator_version"] == version
                 for m in matches), "Validated demo revision missing.")
-    state = call("/api/v1/matches/MM-DEMO-01/stats?at_sec=1650")
-    require(state["score"] == {"HOME": 0, "AWAY": 0}, "Score differs at 1650.")
-    require(state["shots"] == {"HOME": 2, "AWAY": 0}, "Shots differ at 1650.")
+    state = call(f"/api/v1/matches/{match_id}/stats?at_sec=1650")
+    require(state == expected_state, "State differs from the independent baseline at 1650.")
     key = str(uuid.uuid4())
-    body = {"match_id": "MM-DEMO-01", "speed": 1}
+    body = {"match_id": match_id, "speed": 1}
     initial = call("/api/v1/replays", body, key, status=201)
     replay = initial["replay"]
     repeated = call("/api/v1/replays", body, key, status=201)
@@ -66,7 +73,7 @@ def probe(base):
             "Reset generation/state differs.")
     error = call(path + "/control", {"action": "play"}, run=1, status=409)
     require(error["error"]["code"] == "STATE_CONFLICT", "Old run was accepted.")
-    invalid = call("/api/v1/replays", {"match_id": "MM-DEMO-01", "speed": 999}, status=400)
+    invalid = call("/api/v1/replays", {"match_id": match_id, "speed": 999}, status=400)
     require(invalid["error"]["code"] == "INVALID_REQUEST", "Invalid input was accepted.")
     # Reconnect with an old transport ID must receive a fresh named snapshot.
     request = Request(base + path + "/stream", headers={
@@ -82,7 +89,7 @@ def probe(base):
         message = json.loads("\n".join(data))
         require(name == "snapshot" and message["kind"] == "snapshot"
                 and message["run_id"] == 2, "Fresh snapshot recovery failed.")
-    return {"result": "passed", "contract_version": "2.0.0",
+    return {"result": "passed", "contract_version": "2.0.0", "dataset": dataset,
             "checks": ["health", "data", "stats", "retry", "play_pause", "reset",
                        "old_run", "invalid_input", "SSE_snapshot_reconnect"],
             "model_ready": health["model_ready"], "model_job_requested": False,
@@ -92,9 +99,10 @@ def probe(base):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("origin", help="For example https://your-service.onrender.com")
+    parser.add_argument("--dataset", choices=("baseline", "press", "delayed", "quiet"), default="baseline")
     args = parser.parse_args()
     try:
-        print(json.dumps(probe(args.origin), ensure_ascii=False))
+        print(json.dumps(probe(args.origin, dataset=args.dataset), ensure_ascii=False))
     except Exception as error:
         # Do not echo server bodies, authentication headers or full input URLs.
         print(json.dumps({"result": "failed", "error_type": type(error).__name__,

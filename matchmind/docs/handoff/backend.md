@@ -1,5 +1,9 @@
 # Role B handoff — data processing and backend deployment
 
+**Latest (2026-10-23):** use `backend/INTEGRATOR_HANDOFF_CN.md` for the current
+assembly instructions and `backend/C_INTEGRATION_FINDINGS.md` for the measured C
+blocker. The 2026-10-23 addendum at the end supersedes earlier status statements.
+
 - Developer: B / `wunianze666-netizen`, assisted by Codex.
 - Task: [Issue #6](https://github.com/tiempo0206/microsoft-premier-league-hackathon/issues/6).
 - Local branch: `codex/backend-ab-mvp`.
@@ -103,3 +107,17 @@ Current hardware/software is sufficient for offline B development and regression
 - Actual Linux container startup/preflight, HTTP data/stats, idempotent replay/control, pause/reset, invalid-input/old-run handling, named SSE reconnect, non-root UID 10001 and memory-backed restart behavior passed. Python is 3.12.15. No AI directory, frontend, .env or generated QA dataset is packaged.
 - The Linux container's 512-normal/72-invalid backtest passed with exactly the same dataset hash as Windows: `bb1c39bfd07980695f6d214c0029970d69a7da688cf137c224bf6c3747603473`. Detailed local evidence is ignored under `.artifacts/docker-validation/`; the verification container is stopped and retained.
 - B has not deployed a public service or integrated A/C deliverables. Render registration/private-repo authorization, cloud build/SSE and final joint acceptance remain outstanding. Existing `384b58f` is the common starter; main adoption/TEAM_ROLES recording is a shared integration responsibility, not missing code to recreate.
+# 2026-10-23 final B preparation handoff
+
+Latest executable instructions: `backend/INTEGRATOR_HANDOFF_CN.md`.
+Same branch `codex/backend-ab-mvp`; contract 2.0.0; no A/C/frozen-source edits.
+
+- Fixed foul ingestion and actor-versus-possession attribution without changing existing statistics.
+- Added three optional original synthetic datasets (128/127/137 events), independent expectations, roster and SHA manifests; baseline defaults stay unchanged.
+- Added 12 valid bilingual AnalysisRequest examples plus three separate corruptions, generated with zero model calls.
+- Added release preflight/entry, Docker context allowlist, runtime example and a Linux dependency snapshot; final integration stays with the team's integrator.
+- Isolated packaging check with A1 build and C `02228b8` proved Linux dependency resolution, startup, homepage serving and HTTP/SSE wiring. It did not merge A/C, test the browser or call a real model.
+- The denser cases exposed C fallback evidence truncation: 4/12 normal outputs invalid; all three corruptions refused. Reproduction and acceptance are in `backend/C_INTEGRATION_FINDINGS.md`. Enhanced integrated startup is gated; original data remains the default.
+- Render repository authorization remains an owner action. Model account/secret delivery stays with C; B requires no new token, GPU or data account.
+
+Earlier sections above are retained for historical detail.

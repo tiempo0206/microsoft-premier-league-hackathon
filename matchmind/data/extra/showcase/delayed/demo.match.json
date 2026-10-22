@@ -1,0 +1,13 @@
+{
+  "away": "Mountain United",
+  "clip_end_sec": 1800,
+  "clip_start_sec": 1500,
+  "generator_version": "b-showcase-1.0",
+  "home": "Harbor FC",
+  "home_attack_direction": "right",
+  "initial_possession_team": "AWAY",
+  "match_id": "MM-SHOW-DELAYED",
+  "period": 1,
+  "seed": 20261023,
+  "synthetic": true
+}

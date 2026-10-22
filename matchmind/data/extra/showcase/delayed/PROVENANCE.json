@@ -1,0 +1,26 @@
+{
+  "artifact_sha256": {
+    "demo.events.jsonl": "887a6b568df01fd1c5d5c29b6e920677723d30c1f4e4158eccebb1741a661abe",
+    "demo.match.json": "088e977d96602bb74547f154964a6951a4553f7a17404037c27fbbc8ba99c0bd",
+    "expected.json": "08aa3cece203ca3c364971af475db89d53d70d43b0ec1d982ef0f3218fe56e3f",
+    "roster.json": "7ca6e92a6029d55831293c3579e916bb6036b1f18870796afe07c08410ca60c2"
+  },
+  "authoring_method": "Seeded possession scripts, connected pass coordinates, authored trigger/control cases.",
+  "clock_unit": "match_seconds",
+  "coordinates": "0..100; x right, y down; no tracking",
+  "dataset_version": "b-showcase-1.0",
+  "design_reference": "Role C dense-fixture proposal: increase event density and retain provenance; independent B implementation.",
+  "event_count": 127,
+  "generator": "data/generator/showcase.py",
+  "kind": "original_scripted_synthetic",
+  "license": "CC0-1.0",
+  "limitations": [
+    "Scripted event data, not calibrated against real matches.",
+    "Pass outcomes are authored controls, not representative pass-accuracy data.",
+    "No off-ball tracking, learned xG, player speed or causal tactical labels.",
+    "Eleven roster members and event participation do not imply simultaneous tracking."
+  ],
+  "scenario": "delayed",
+  "scope": "Original fictional 25:00-30:00 excerpt; no league data or footage.",
+  "seed": 20261023
+}

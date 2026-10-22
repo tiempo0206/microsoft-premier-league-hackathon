@@ -22,6 +22,10 @@ data/extra/validated-demo/**
 !data/extra/validated-demo/*.json
 !data/extra/validated-demo/*.jsonl
 !data/extra/validated-demo/README.md
+!data/extra/showcase/
+!data/extra/showcase/*/
+!data/extra/showcase/*/*.json
+!data/extra/showcase/*/*.jsonl
 !data/generator/
 data/generator/**
 !data/generator/*.py

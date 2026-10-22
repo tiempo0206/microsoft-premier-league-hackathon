@@ -5,6 +5,7 @@ from pathlib import Path
 
 from backend.audit import ROOT, audit_dataset
 from backend.settings import Settings, port_from_env
+from backend.data import read_json
 from data.generator.prepare_demo import contents
 
 
@@ -15,7 +16,12 @@ def build_report(settings=None, data_dir=None):
         directory = ROOT / directory
     data = audit_dataset(directory)
     try:
-        expected = contents()
+        provenance = read_json(directory / "PROVENANCE.json")
+        if provenance.get("kind") == "original_scripted_synthetic":
+            from data.generator.showcase import contents as showcase_contents
+            expected = showcase_contents(provenance["scenario"], provenance["seed"])
+        else:
+            expected = contents()
         mismatches = [name for name, value in expected.items()
                       if not (directory / name).is_file() or (directory / name).read_bytes() != value]
     except Exception:

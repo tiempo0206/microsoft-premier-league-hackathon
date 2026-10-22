@@ -17,6 +17,9 @@ from backend.settings import Settings
 from backend.backtest import run_backtest
 from deploy.preflight import build_report
 from deploy.smoke_backend import probe
+from backend.data import read_json
+from backend.showcase import export_packet
+from data.generator.showcase import OUTPUT as SHOWCASE_OUTPUT, SCENARIOS
 
 
 def run_checks(output):
@@ -63,7 +66,11 @@ def runtime_probe(output, data_directory="data/extra/validated-demo"):
                     if time.monotonic() >= deadline:
                         raise ValueError("Owned API startup deadline expired") from None
                     time.sleep(0.1)
-            result = probe(base)
+            manifest = read_json(Path(data_directory) / "PROVENANCE.json")
+            if manifest["kind"] == "original_scripted_synthetic":
+                result = probe(base, dataset=manifest["scenario"])
+            else:
+                result = probe(base)
             if process.poll() is not None:
                 raise ValueError("Owned API process exited during smoke verification")
             return result
@@ -120,6 +127,12 @@ def verify_backend(output):
         if readiness["status"] != "passed":
             raise ValueError("Offline readiness failed")
         result["completed_stages"].append(stage)
+        stage = "showcase_data"
+        for scenario in SCENARIOS:
+            if build_report(data_dir=SHOWCASE_OUTPUT / scenario)["status"] != "passed":
+                raise ValueError("Showcase readiness failed")
+        result["showcase_packet"] = export_packet(output / "showcase")
+        result["completed_stages"].append(stage)
         stage = "analysis_export"
         report = build_analysis_report(directory)
         result["analysis_files"] = export_analysis(report, output)
@@ -137,6 +150,13 @@ def verify_backend(output):
         result["completed_stages"].append(stage)
         stage = "HTTP_SSE"
         result["runtime"] = runtime_probe(output, directory)
+        result["completed_stages"].append(stage)
+        stage = "showcase_HTTP_SSE"
+        result["showcase_runtime"] = {}
+        for scenario in SCENARIOS:
+            scenario_output = output / "showcase" / scenario
+            scenario_output.mkdir(exist_ok=True)
+            result["showcase_runtime"][scenario] = runtime_probe(scenario_output, SHOWCASE_OUTPUT / scenario)
         result["completed_stages"].append(stage)
         result["status"] = "passed"
     except Exception as error:
