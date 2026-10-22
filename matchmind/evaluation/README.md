@@ -65,31 +65,49 @@ figure shows the checks work, not how accurate a model is.
 
 ---
 
-## 2. Product evaluation over 12 windows
+## 2. Product evaluation — and why the sample size was the problem
 
-Case design is constrained by the data: the fixture contains **exactly one window that fires
-the frozen high-press detector**, so "four positive cases" is not physically available and
-labelling non-triggering windows as positives would inflate the pass rate.
+The old case set was hand-written against one 300-second fixture, which caps the whole evaluation at
+the one non-overlapping window that fixture can fire. `--auto-cases` removes the cap: cases are
+derived by scanning every window of any fixture, and positives must not overlap so three overlapping
+windows cannot masquerade as three samples.
 
-| group | n | what it tests |
-| --- | --- | --- |
-| `positive` | 2 | the triggering window, English and Chinese |
-| `non_trigger` | 4 | valid windows the detector does not fire on |
-| `negative` | 2 | the team asked about never recovered high at all |
-| `tampered` | 4 | metrics inflated, or an event moved outside the window |
+| fixture | span | cases | positives | non-trigger | negatives | tampered |
+| --- | --- | --- | --- | --- | --- | --- |
+| `data/extra/validated-demo` | 300 s | 7 | **1** | 1 | 1 | 4 |
+| `dense-half` (generated into `.artifacts/`) | 2 700 s | 15 | **5** | 4 | 2 | 4 |
 
-Result, identical for both orchestrators:
+Result on the dense half:
 
-| group | passed | fallback | rejected | model calls |
+| group | passed | fallback | rejected | agent calls |
 | --- | --- | --- | --- | --- |
-| positive | 1 | 1 | 0 | 8 |
-| non_trigger | 3 | 1 | 0 | 19 |
-| negative | 2 | 0 | 0 | 10 |
-| tampered | 0 | 0 | 4 | **0** |
+| positive | **5 / 5** | 0 | 0 | 19 |
+| non_trigger | 3 / 4 | 1 | 0 | 16 |
+| negative | 2 / 2 | 0 | 0 | 8 |
+| tampered | 0 | 0 | **4 / 4** | **0** |
 
-**6 published cards, 2 honest fallbacks, 4 correct refusals, 0 contract violations.** Every
-tampered window is refused with **zero** model calls: the arithmetic gate runs before the
-model, so the cheapest and most certain check costs nothing.
+**10 published cards, 1 honest fallback, 4 correct refusals, 0 contract violations**, median 8.4 s
+across the runs that reached the pipeline. On the shipped fixture the single positive window passes
+in some runs and falls back in others — that variance *is* the narrow-sample problem, and it is why
+the dense fixture exists rather than evidence that the pipeline is broken.
+
+Reproduce:
+
+```
+python -m evaluation.dense_fixture_proposal --minutes 45 --out .artifacts/dense-half
+python -m evaluation.benchmark --auto-cases --data-dir .artifacts/dense-half
+```
+
+Three defects surfaced the moment this larger sample ran, all now fixed:
+
+1. Metric definitions were absent from the facts block, so the auditor correctly rejected "followed
+   by a shot within 15 seconds" as unsupported. The definitions now travel with the facts.
+2. Adding them introduced numbers (66.67, 15) that were not in the allowed set, so the narrator was
+   rejected for repeating a fact it had just been given. Allowed numbers are now derived from the
+   definitions, and an invariant test asserts the property.
+3. A narrator formatting failure consumed the auditor correction budget, so a later semantic
+   objection had none left and the window fell back with nothing wrong with its facts. The two
+   budgets are now separate, and prose that fails the code check twice gets no third attempt.
 
 ## 3. Three agents vs one agent
 
