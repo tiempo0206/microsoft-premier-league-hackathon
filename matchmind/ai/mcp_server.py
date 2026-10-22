@@ -109,13 +109,11 @@ def get_metrics(match_id: str, start_sec: int, end_sec: int, team_id: str = "HOM
     fixture = _fixture(match_id)
     _check_window(fixture, start_sec, end_sec)
     metrics = window_metrics(fixture, start_sec, end_sec, team_id)
+    from ai.verify import METRIC_DEFINITIONS
     return {"match_id": match_id, "window": {"start_sec": start_sec, "end_sec": end_sec},
             "team_id": team_id, "metrics": metrics,
-            "definitions": {
-                "high_recoveries": "recoveries by this team with attack-normalised x >= 66.67",
-                "linked_shots": "high recoveries followed by a shot from the same possession within 15s",
-                "possession_seconds": "recorded ownership intervals, not tracking ground truth",
-            },
+            "definitions": {key: METRIC_DEFINITIONS[key] for key in sorted(metrics)
+                            if key in METRIC_DEFINITIONS},
             "consistency_issues": consistency_issues(
                 {"match_id": match_id, "team_id": team_id, "type": "high_press",
                  "events": window_events(fixture, start_sec, end_sec), "metrics": metrics,

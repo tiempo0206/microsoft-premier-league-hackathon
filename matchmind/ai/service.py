@@ -26,7 +26,7 @@ from .prompts import (ANALYST_SYSTEM, AUDITOR_SYSTEM, CORRECTION_TEMPLATE,
 from .provider import ChatCompletionsProvider, ProviderError, ProviderTimeout
 from .tools import TOOL_SCHEMAS, Toolbox
 from .verify import (allowed_numbers, check_claims, check_narratives,
-                     consistency_issues, insight_evidence)
+                     consistency_issues, input_safety_issues, insight_evidence)
 
 TITLES = {"en": "Pressure creates chances", "zh": "前场压迫制造机会"}
 # Two repair modes, both capped at one round total.
@@ -105,6 +105,46 @@ def _reason_for(error):
     return "provider"
 
 
+NARRATOR_RETRY_SYSTEM_SUFFIX = """
+
+Your previous attempt was rejected by a deterministic code check, not by the auditor. Fix
+exactly the listed problems and return the same JSON shape. Do not add facts."""
+
+# A narrator retry is only worth starting with this much budget left. Below it, the honest
+# fallback is cheaper and more certain than an answer that may arrive after the deadline.
+NARRATOR_RETRY_FLOOR_SEC = 3.0
+
+
+def clock_room(deadline, floor=NARRATOR_RETRY_FLOOR_SEC):
+    return time.monotonic() + floor < deadline
+
+
+async def _narrate(request, provider, facts, claims, deadline, traces, label,
+                   prior_issues=None, max_tokens=500):
+    """One narrator call plus its code check.
+
+    Kept separate so the caller can retry a FORMATTING failure without spending the single
+    auditor correction. Conflating the two was measured to be costly: a narrator that emits an
+    unverifiable number used up the correction budget, and the auditor's later semantic objection
+    then had none left, so the window fell back even though nothing was wrong with the facts.
+    """
+    started = time.monotonic()
+    traces.append(_trace(request, "narrator", "started", started, label))
+    user = facts + "\n\nAPPROVED_CLAIMS:\n" + claims_block(claims)
+    system = NARRATOR_SYSTEM
+    if prior_issues:
+        user += ("\n\nYOUR PREVIOUS ATTEMPT WAS REJECTED BY THE CODE CHECK:\n"
+                 + "\n".join("- " + str(issue) for issue in prior_issues))
+        system = NARRATOR_SYSTEM + NARRATOR_RETRY_SYSTEM_SUFFIX
+    raw = await provider.complete_json(system=system, user=user, deadline=deadline,
+                                       max_tokens=max_tokens)
+    _capture(provider, "narrator", raw)
+    narratives, issues = check_narratives(raw, request, claims)
+    traces.append(_trace(request, "narrator", "completed" if narratives else "rejected",
+                         started, "%s issues=%d" % (label, len(issues))))
+    return narratives, issues
+
+
 async def _run_round(request, provider, config, deadline, traces, *, correction_issues=None):
     """One analyst -> narrator -> auditor pass.
 
@@ -131,16 +171,13 @@ async def _run_round(request, provider, config, deadline, traces, *, correction_
     if not claims or claim_issues:
         return _round(claims, None, claim_issues, rejected_ids)
 
-    started = time.monotonic()
-    traces.append(_trace(request, "narrator", "started", started, "prompt " + PROMPT_VERSION))
-    raw_narratives = await provider.complete_json(
-        system=NARRATOR_SYSTEM,
-        user=facts + "\n\nAPPROVED_CLAIMS:\n" + claims_block(claims),
-        deadline=deadline, max_tokens=500)
-    _capture(provider, "narrator", raw_narratives)
-    narratives, narrative_issues = check_narratives(raw_narratives, request, claims)
-    traces.append(_trace(request, "narrator", "completed" if narratives else "rejected",
-                         started, "issues=%d" % len(narrative_issues)))
+    narratives, narrative_issues = await _narrate(
+        request, provider, facts, claims, deadline, traces, "prompt " + PROMPT_VERSION)
+    if narratives is None and clock_room(deadline):
+        # A formatting failure is not an auditor correction, so it does not spend that budget.
+        narratives, narrative_issues = await _narrate(
+            request, provider, facts, claims, deadline, traces, "code-check retry",
+            prior_issues=narrative_issues)
     if narratives is None:
         return _round(claims, None, narrative_issues, rejected_ids)
 
@@ -276,6 +313,14 @@ async def analyze(request, *, config=None, provider=None):
                          "Request metrics contradict the supplied events: "
                          + "; ".join(inconsistent) + ". Refusing to explain.")
 
+    # Content gate: identifiers must look like identifiers. A fixture whose player_id reads
+    # like an instruction is refused before it reaches a prompt.
+    unsafe = input_safety_issues(request)
+    if unsafe:
+        return _rejected(request, "INVALID_REQUEST",
+                         "Request contains fields that cannot safely be sent to a model: "
+                         + "; ".join(unsafe))
+
     # Default path: offline. No env read, no key, no socket.
     if config is None and provider is None:
         return rule_result(request, reason="no_model")
@@ -307,14 +352,17 @@ async def analyze(request, *, config=None, provider=None):
 
     if state["issues"]:
         # Exactly one repair attempt, chosen by what actually failed.
-        # Code gate refused claims -> the prose is not the problem, the facts are, so a
-        # full re-analysis is the only honest repair. Auditor objected -> the claims that
-        # survived code verification are sound, so drop the refused ones and rewrite the
-        # prose for a tenth of the latency.
+        # Code gate refused claims -> the prose is not the problem, the facts are, so a full
+        # re-analysis is the only honest repair. Auditor objected to valid prose -> the claims
+        # that survived code verification are sound, so drop the refused ones and rewrite for a
+        # tenth of the latency. Prose that failed the code check TWICE gets no third attempt:
+        # the narrator retry already covered that failure mode.
         code_failed = not state["claims"] or bool(state["rejected"])
-        if code_failed and clock() + REPAIR_ANALYSIS_FLOOR_SEC < deadline:
+        prose_failed = state["narratives"] is None
+        if code_failed and clock_room(deadline, REPAIR_ANALYSIS_FLOOR_SEC):
             repair = "analysis"
-        elif not code_failed and clock() + REPAIR_NARRATION_FLOOR_SEC < deadline:
+        elif (not code_failed and not prose_failed
+              and clock_room(deadline, REPAIR_NARRATION_FLOOR_SEC)):
             repair = "narration"
 
     if repair == "narration":
@@ -361,5 +409,27 @@ async def analyze(request, *, config=None, provider=None):
     if rejected_ids:
         # Be explicit on the card that a model claim was refused and removed.
         result["insight"]["verification"]["rejected_claims"] = rejected_ids
+    if getattr(provider, "cache_hits", 0):
+        # Say it plainly: this card's wording was produced by a live model on an earlier
+        # request with identical content, and no new inference happened for it.
+        traces.append({"task_id": request["task_id"], "agent": "validator",
+                       "status": "completed", "duration_ms": 0,
+                       "note": "%d of this card's model responses came from the response cache; "
+                               "no new inference was run for them"
+                               % provider.cache_hits})
+    usage_note = _usage_note(provider)
+    if usage_note:
+        traces.append({"task_id": request["task_id"], "agent": "validator",
+                       "status": "completed", "duration_ms": 0, "note": usage_note})
     result["traces"] = traces
     return result
+
+
+def _usage_note(provider):
+    """Token and cost summary, always labelled as an estimate."""
+    ledger = getattr(provider, "usage", None)
+    if ledger is None:
+        return ""
+    from .usage import describe
+    line = describe(ledger)
+    return ("token usage: " + line) if line else ""

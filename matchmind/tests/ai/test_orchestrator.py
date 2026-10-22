@@ -24,18 +24,19 @@ class SelectionTests(unittest.TestCase):
     def test_an_injected_transport_forces_the_direct_path(self):
         """The caller said where traffic must go; Agent Framework would bypass it."""
         provider = ChatCompletionsProvider(
-            cfg(), transport=httpx.MockTransport(lambda r: httpx.Response(200, json={})))
+            cfg(), transport=httpx.MockTransport(lambda r: httpx.Response(200, json={})),
+            use_cache=False)
         run_round, _, label = _select_orchestrator(cfg(orchestrator="framework"), provider)
         self.assertIn("injected transport", label)
         self.assertEqual(run_round.__module__, "ai.service")
 
     def test_a_provider_without_a_transport_honours_the_framework_setting(self):
-        provider = ChatCompletionsProvider(cfg())
+        provider = ChatCompletionsProvider(cfg(), transport=None, use_cache=False)
         _, _, label = _select_orchestrator(cfg(orchestrator="framework"), provider)
         self.assertEqual(label, "agent_framework")
 
     def test_direct_is_still_selectable(self):
-        provider = ChatCompletionsProvider(cfg())
+        provider = ChatCompletionsProvider(cfg(), transport=None, use_cache=False)
         run_round, _, label = _select_orchestrator(cfg(orchestrator="direct"), provider)
         self.assertEqual(label, "direct")
         self.assertEqual(run_round.__module__, "ai.service")

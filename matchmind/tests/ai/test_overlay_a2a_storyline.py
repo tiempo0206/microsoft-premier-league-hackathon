@@ -103,6 +103,64 @@ class OverlayTests(unittest.TestCase):
             overlay_payload(insight)
 
 
+class OverlayAccessibilityTests(unittest.TestCase):
+    """An overlay a screen reader cannot describe is an overlay half the audience cannot use.
+
+    This does not make the product accessible on its own — that needs a real audio UI and blind
+    testers, which we do not have. It does mean the payload is not silent.
+    """
+
+    def test_every_text_graphic_has_spoken_text(self):
+        payload = overlay_payload(fallback_insight())
+        for graphic in payload["graphics"]:
+            if graphic["kind"] in ("lower_third", "stat_line"):
+                self.assertTrue(graphic["speech"].strip(), graphic["id"])
+
+    def test_the_payload_carries_an_ordered_speech_script(self):
+        payload = overlay_payload(fallback_insight())
+        script = payload["speech_script"]
+        self.assertTrue(script)
+        times = [row["in_ms"] for row in script]
+        self.assertEqual(times, sorted(times))
+        for row in script:
+            self.assertTrue(row["text"].strip())
+
+    def test_the_spoken_title_uses_the_casual_narrative(self):
+        insight = fallback_insight()
+        payload = overlay_payload(insight)
+        title = [g for g in payload["graphics"] if g["kind"] == "lower_third"][0]
+        self.assertEqual(title["speech"], insight["narratives"]["casual"].strip())
+
+    def test_a_card_without_narratives_still_says_something(self):
+        insight = fallback_insight()
+        insight["narratives"] = {"casual": "", "analyst": ""}
+        payload = overlay_payload(insight)
+        title = [g for g in payload["graphics"] if g["kind"] == "lower_third"][0]
+        self.assertTrue(title["speech"].strip())
+        self.assertIn("high recoveries", title["speech"])
+
+    def test_a_stat_line_speaks_its_own_claim(self):
+        insight = fallback_insight()
+        payload = overlay_payload(insight)
+        stats = [g for g in payload["graphics"] if g["kind"] == "stat_line"]
+        self.assertTrue(stats)
+        for graphic in stats:
+            self.assertIn(str(graphic["metric_value"]), graphic["speech"]
+                          .replace("one", "1").replace("two", "2").replace("three", "3")
+                          .replace("no", "0"))
+
+    def test_validation_refuses_a_silent_graphic(self):
+        payload = overlay_payload(fallback_insight())
+        title = [g for g in payload["graphics"] if g["kind"] == "lower_third"][0]
+        title["speech"] = "   "
+        self.assertTrue(any("no spoken text" in p for p in validate_payload(payload)))
+
+    def test_validation_refuses_a_payload_with_no_script(self):
+        payload = overlay_payload(fallback_insight())
+        payload["speech_script"] = []
+        self.assertTrue(any("speech_script" in p for p in validate_payload(payload)))
+
+
 class AgentCardTests(unittest.TestCase):
     def test_card_is_structurally_valid(self):
         card = agent_card()

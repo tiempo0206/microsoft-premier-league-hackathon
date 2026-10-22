@@ -214,17 +214,47 @@ def validate(directory):
     return report
 
 
+def spread_presses(clip_start, clip_end, every_sec=420, first_at=60, burst_size=3,
+                   burst_gap=40):
+    """Place bursts of press spells so a long clip has many fireable windows.
+
+    The detector needs three high recoveries inside one 150-second window, so the spells have to
+    be CLUSTERED, not spread evenly. Spacing them every few minutes produces windows with one
+    recovery each, and the detector never fires — which is what a first attempt at this did, and
+    the case scan caught it by returning zero positives.
+
+    Within a burst the first `burst_size - 1` spells convert inside 15 seconds (the frozen
+    linked-shot metric) and the last converts late, so the wider sustained tier has something to
+    report. Every second burst also scores, which keeps the fixture's goal accounting non-trivial.
+    """
+    presses = []
+    burst_index = 0
+    burst_start = clip_start + first_at
+    while burst_start + burst_gap * burst_size + 60 < clip_end:
+        for offset in range(burst_size):
+            last = offset == burst_size - 1
+            presses.append({
+                "at": burst_start + offset * burst_gap,
+                "x": 74 + (offset * 3) % 6,
+                "convert_after": 40 if last else (5 + 3 * offset),
+                "scoring": last and burst_index % 2 == 0,
+            })
+        burst_index += 1
+        burst_start += every_sec
+    return presses
+
+
 def build_and_validate(directory, seed=11, minutes=None):
     """Generate, write and validate in one call. Returns the report dict.
 
     `minutes` extends the covered span. A 5-minute clip clears every qualification threshold;
     a 45-minute half additionally produces enough completed moves for the expected-threat grid
-    in `ai/threat.py` to converge, which is a demonstration rather than a claim.
+    in `ai/threat.py` to converge and enough fireable windows for a larger evaluation sample.
     """
     clip_start, clip_end = 1500, 1800
     if minutes:
         clip_end = clip_start + int(minutes * 60)
-    presses = PRESSES if not minutes else PRESSES
+    presses = PRESSES if not minutes else spread_presses(clip_start, clip_end)
     events = generate(seed, clip_start, clip_end, presses)
     path = write(directory, events, seed, clip_start, clip_end,
                  "dense-proposal-1.0.0" if not minutes else

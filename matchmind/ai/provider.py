@@ -29,14 +29,29 @@ class ProviderTimeout(ProviderError):
         super().__init__("TIMEOUT", detail, retryable=True)
 
 
+def _default_cache():
+    """The process-wide response cache, or None when it is switched off."""
+    from . import cache as cache_module
+    return cache_module.CACHE if cache_module.enabled() else None
+
+
 class ChatCompletionsProvider:
-    def __init__(self, config, *, transport=None, clock=time.monotonic):
+    def __init__(self, config, *, transport=None, clock=time.monotonic, cache=None,
+                 use_cache=True):
         self.config = config
         self.transport = transport
         self.clock = clock
         self.calls = 0
         self.last_usage = None
         self.last_served_model = None
+        # A cache only helps if it survives between requests, so the default is the
+        # process-wide one. `use_cache=False` bypasses it entirely, which is what tests that
+        # count HTTP calls need.
+        self.cache = cache if cache is not None else (_default_cache() if use_cache else None)
+        self.cache_hits = 0
+        # Token accounting for this provider instance, which is one analysis.
+        from .usage import UsageLedger
+        self.usage = UsageLedger()
 
     # -- request body -------------------------------------------------------
     def _body(self, messages, *, max_tokens, tools=None):
@@ -94,6 +109,7 @@ class ChatCompletionsProvider:
             raise ProviderError("BAD_ENVELOPE", "response was not a chat completion") from None
         self.last_usage = payload.get("usage")
         self.last_served_model = payload.get("model") or self.config.model
+        self.usage.add(self.last_usage, self.last_served_model)
         return message
 
     @staticmethod
@@ -119,16 +135,42 @@ class ChatCompletionsProvider:
         remaining = deadline - self.clock()
         if remaining <= 0:
             raise ProviderTimeout()
+        if self.cache is not None:
+            from .cache import key_for
+            key = key_for(model=self.config.model, thinking=self.config.thinking,
+                          system=system, user=user, max_tokens=max_tokens, tools=False)
+            cached = self.cache.get(key)
+            if cached is not None:
+                self.cache_hits += 1
+                self.usage.add(None, cached=True)
+                return dict(cached)
         body = self._body([{"role": "system", "content": system},
                            {"role": "user", "content": user}], max_tokens=max_tokens)
         message = await self._post(body, remaining)
-        return self._json_content(message)
+        value = self._json_content(message)
+        if self.cache is not None:
+            self.cache.put(key, dict(value))
+        return value
 
     async def complete_with_tools(self, *, system, user, deadline, toolbox,
                                   tool_schemas, max_tool_calls=3, max_tokens=900):
         """Bounded tool loop. Thinking is disabled on this path so that DeepSeek does
         not require reasoning_content to be echoed back, which is only mandatory when
-        tools are combined with thinking mode."""
+        tools are combined with thinking mode.
+
+        Cached as a whole: the toolbox is scoped to the same request, so the same prompt yields
+        the same tool results and therefore the same final JSON.
+        """
+        cached_key = None
+        if self.cache is not None:
+            from .cache import key_for
+            cached_key = key_for(model=self.config.model, thinking=self.config.thinking,
+                                 system=system, user=user, max_tokens=max_tokens, tools=True)
+            cached = self.cache.get(cached_key)
+            if cached is not None:
+                self.cache_hits += 1
+                self.usage.add(None, cached=True)
+                return dict(cached)
         messages = [{"role": "system", "content": system},
                     {"role": "user", "content": user}]
         remaining = deadline - self.clock()
@@ -141,7 +183,10 @@ class ChatCompletionsProvider:
             message = await self._post(body, deadline - self.clock())
             tool_calls = message.get("tool_calls") or []
             if not tool_calls:
-                return self._json_content(message)
+                value = self._json_content(message)
+                if self.cache is not None and cached_key is not None:
+                    self.cache.put(cached_key, dict(value))
+                return value
             if used >= max_tool_calls:
                 raise ProviderError("TOOL_BUDGET", "tool call budget exceeded")
             messages.append({"role": "assistant", "content": message.get("content") or "",

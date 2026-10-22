@@ -29,6 +29,43 @@ def _ms(window, offset_sec):
     return int(window["start_sec"] * 1000 + offset_sec * 1000)
 
 
+def _spoken_number(value):
+    """Small integers read better as words when spoken, and it avoids '3' being read as
+    'three' by one engine and 'third' by another."""
+    words = {0: "no", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+             7: "seven", 8: "eight", 9: "nine", 10: "ten", 15: "fifteen"}
+    return words.get(value, str(value))
+
+
+def _speech_for_title(insight):
+    """One spoken sentence for the card's headline.
+
+    Reads the casual narrative when there is one, because that is already written for a listener
+    who is not reading a table. Falls back to the title plus the metric chips, so a card is never
+    silent for an audio consumer.
+    """
+    casual = (insight.get("narratives") or {}).get("casual")
+    if isinstance(casual, str) and casual.strip():
+        return casual.strip()
+    title = (insight.get("display") or {}).get("title") or "Match intelligence"
+    chips = []
+    for claim in insight.get("claims") or []:
+        if claim.get("kind") != "metric":
+            continue
+        label = str(claim.get("metric_key") or "").replace("_", " ")
+        chips.append("%s %s" % (_spoken_number(claim.get("metric_value")), label))
+    return title if not chips else "%s: %s." % (title, ", ".join(chips))
+
+
+def _speech_for_stat(claim):
+    """Speak a stat line as one factual sentence, using the claim's own text."""
+    text = (claim.get("text") or "").strip()
+    if text:
+        return text
+    label = str(claim.get("metric_key") or "metric").replace("_", " ")
+    return "%s %s." % (_spoken_number(claim.get("metric_value")), label)
+
+
 def overlay_payload(insight, *, match_id=None, generated_at_ms=None):
     """Turn a verified Insight into timed overlay graphics.
 
@@ -59,12 +96,17 @@ def overlay_payload(insight, *, match_id=None, generated_at_ms=None):
     graphics = []
 
     display = insight.get("display") or {}
+    narratives = insight.get("narratives") or {}
     graphics.append({
         "id": insight.get("insight_id", "insight") + ":title",
         "kind": "lower_third",
         "in_ms": _ms(window, 0),
         "out_ms": _ms(window, 0) + LOWER_THIRD_MS,
         "lines": [display.get("title", "Match intelligence")],
+        # A spoken version, for a viewer who cannot read the overlay at all. A broadcast
+        # graphics department that cannot consume this can ignore it; leaving it out would mean
+        # an audio-first consumer has to write its own description of our numbers.
+        "speech": _speech_for_title(insight),
         "source": source,
         "evidence_event_ids": list(insight.get("evidence_event_ids") or [])[:4],
     })
@@ -82,6 +124,7 @@ def overlay_payload(insight, *, match_id=None, generated_at_ms=None):
             "metric_key": claim.get("metric_key"),
             "metric_value": claim.get("metric_value"),
             "text": claim.get("text"),
+            "speech": _speech_for_stat(claim),
             "source": source,
             "evidence_event_ids": list(claim.get("evidence_event_ids") or []),
         })
@@ -109,6 +152,11 @@ def overlay_payload(insight, *, match_id=None, generated_at_ms=None):
             "casual": (insight.get("narratives") or {}).get("casual"),
             "analyst": (insight.get("narratives") or {}).get("analyst"),
         },
+        # A ready-to-speak script, in the same order as the graphics. An audio-first consumer
+        # should not have to reconstruct our numbers into sentences.
+        "speech_script": [{"in_ms": g["in_ms"], "out_ms": g["out_ms"], "text": g["speech"]}
+                          for g in sorted(graphics, key=lambda g: (g["in_ms"], g["id"]))
+                          if g.get("speech")],
         "graphics": sorted(graphics, key=lambda g: (g["in_ms"], g["id"])),
     }
 
@@ -126,6 +174,8 @@ def validate_payload(payload, insight=None):
     graphics = payload.get("graphics") or []
     if not graphics:
         problems.append("no graphics")
+    if not payload.get("speech_script"):
+        problems.append("no speech_script; an audio-first consumer would have nothing to read")
     allowed_events = None
     if insight is not None:
         allowed_events = set(insight.get("evidence_event_ids") or [])
@@ -139,6 +189,10 @@ def validate_payload(payload, insight=None):
             problems.append(str(gid) + " carries no source label")
         if graphic.get("in_ms", 0) > graphic.get("out_ms", 0):
             problems.append(str(gid) + " ends before it starts")
+        # Text-bearing graphics must be speakable. Pins are positional and have nothing to say.
+        if graphic.get("kind") in ("lower_third", "stat_line"):
+            if not (graphic.get("speech") or "").strip():
+                problems.append(str(gid) + " has no spoken text")
         if allowed_events is not None:
             for event_id in graphic.get("evidence_event_ids") or []:
                 if event_id not in allowed_events:

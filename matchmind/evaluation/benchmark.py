@@ -37,6 +37,116 @@ from backend.inputs import analysis_input           # noqa: E402
 from contracts.validation import check_result       # noqa: E402
 
 FIXTURE = "MM-DEMO-01"
+# The harness was written against one fixture, which capped the whole evaluation at the two
+# windows that fixture can fire. `--data-dir` and `--auto-cases` remove that cap: any fixture
+# directory with Role B's layout works, and the case set is derived from the data instead of
+# hand-written. That is what makes the "only six windows, two positive" weakness fixable without
+# editing data/fixtures/.
+DATA_DIR = ROOT / "data" / "extra" / "validated-demo"
+
+
+def load_fixture(data_dir=None, match_id=None):
+    """Load the requested fixture, or the first one in the directory."""
+    catalog = Catalog(Path(data_dir) if data_dir else DATA_DIR)
+    if match_id:
+        if match_id not in catalog.fixtures:
+            raise SystemExit("unknown match_id %r; available: %s"
+                             % (match_id, ", ".join(sorted(catalog.fixtures))))
+        return catalog.fixtures[match_id]
+    return next(iter(catalog.fixtures.values()))
+
+
+def auto_cases(data_dir=None, match_id=None, *, window_sec=150, step=60,
+               positives=4, non_trigger=4, negative=2, tampered=4):
+    """Derive a balanced case set by scanning every window of a fixture.
+
+    Positives are windows where the frozen detector actually fires, so a dense fixture yields
+    many instead of the one the shipped fixture can produce. Windows are spread across the clip
+    rather than taken in order, so the sample covers different squad states rather than one
+    five-minute spell four times.
+    """
+    from backend.stats import window_metrics
+
+    fixture = load_fixture(data_dir, match_id)
+    match = fixture.match
+    fired, quiet, silent = [], [], []
+    for start in range(match["clip_start_sec"], match["clip_end_sec"] - window_sec + 1, step):
+        end = start + window_sec
+        for team in ("HOME", "AWAY"):
+            try:
+                metrics = window_metrics(fixture, start, end, team)
+            except ValueError:
+                continue
+            entry = {"start": start, "end": end, "team": team,
+                     "high_recoveries": metrics["high_recoveries"],
+                     "linked_shots": metrics["linked_shots"]}
+            fires = metrics["high_recoveries"] >= 3 and metrics["linked_shots"] >= 2
+            if fires:
+                fired.append(entry)
+            elif metrics["high_recoveries"] == 0:
+                silent.append(entry)
+            else:
+                quiet.append(entry)
+
+    def spread(rows, count, min_gap=0):
+        """Pick up to `count` rows, spread across the list.
+
+        `min_gap` keeps the picks apart in match time. Without it the shipped fixture yields
+        three "positives" that are 1500-1650, 1560-1710 and 1620-1770: the same spell of play
+        counted three times, which would inflate the sample without adding coverage.
+        """
+        picked = []
+        for row in rows:
+            if count and len(picked) >= count:
+                break
+            if any(abs(row["start"] - other["start"]) < min_gap for other in picked):
+                continue
+            picked.append(row)
+        return picked
+
+    cases = []
+
+    def add(cid, group, note, spec, tamper=None):
+        cases.append({"id": cid, "group": group, "note": note,
+                      "request": dict(spec, tamper=tamper or {})})
+
+    picked = spread(fired, positives, min_gap=window_sec)
+    for index, row in enumerate(picked, start=1):
+        add("AP%d" % index, "positive",
+            "%d-%d %s fires (%d recoveries, %d linked)"
+            % (row["start"], row["end"], row["team"], row["high_recoveries"],
+               row["linked_shots"]),
+            row)
+    # One positive in Chinese, on a different window than AP1 so the two are not the same
+    # request twice. Multi-language is a scored criterion, so it needs its own case.
+    zh_candidates = [row for row in fired
+                     if all(abs(row["start"] - p["start"]) >= window_sec for p in picked)]
+    if zh_candidates:
+        zh_row = zh_candidates[-1]
+        add("APzh", "positive",
+            "%d-%d %s fires, asked in Chinese" % (zh_row["start"], zh_row["end"],
+                                                  zh_row["team"]),
+            dict(zh_row, language="zh"))
+    for index, row in enumerate(spread(quiet, non_trigger, min_gap=window_sec), start=1):
+        add("AN%d" % index, "non_trigger",
+            "%d-%d %s does not fire (%d recoveries)"
+            % (row["start"], row["end"], row["team"], row["high_recoveries"]), row)
+    for index, row in enumerate(spread(silent, negative, min_gap=window_sec), start=1):
+        add("AZ%d" % index, "negative",
+            "%d-%d %s has no recoveries at all" % (row["start"], row["end"], row["team"]),
+            row)
+    if fired:
+        base = fired[0]
+        tampers = [
+            ("AT1", "high_recoveries inflated", {"metrics": {"high_recoveries": 9}}),
+            ("AT2", "home_shots inflated", {"metrics": {"home_shots": 9}}),
+            ("AT3", "linked_shots inflated", {"metrics": {"linked_shots": 7}}),
+            ("AT4", "an event moved outside the window",
+             {"event_index": 0, "timestamp_sec": base["start"] - 120}),
+        ]
+        for cid, note, tamper in tampers[:tampered]:
+            add(cid, "tampered", note, base, tamper)
+    return cases
 OUT = ROOT / ".artifacts" / "evaluation"
 
 
@@ -82,13 +192,13 @@ def build_cases():
     return cases
 
 
-def materialise(case):
+def materialise(case, data_dir=None, match_id=None):
     spec = case["request"]
-    fixture = Catalog(ROOT / "data/extra/validated-demo").fixtures[FIXTURE]
+    fixture = load_fixture(data_dir, match_id)
     request = analysis_input(fixture, replay_id="REPLAY-EVAL", run_id=1,
                              task_id="TASK-" + case["id"],
                              start_sec=spec["start"], end_sec=spec["end"],
-                             team_id=spec["team"], language=spec["language"])
+                             team_id=spec["team"], language=spec.get("language", "en"))
     tamper = spec.get("tamper") or {}
     for key, value in (tamper.get("metrics") or {}).items():
         request["metrics"][key] = value
@@ -154,7 +264,18 @@ async def main_async(args):
     if not config.configured:
         print(json.dumps({"error": "no model configured"}, indent=2))
         return 1
-    cases = build_cases()
+    data_dir = getattr(args, "data_dir", None)
+    match_id = getattr(args, "match_id", None)
+    if getattr(args, "auto_cases", False):
+        cases = auto_cases(data_dir, match_id,
+                           window_sec=getattr(args, "window", 150),
+                           step=getattr(args, "step", 60))
+        print("auto cases: %d (%s)"
+              % (len(cases), ", ".join("%s:%d" % (g, sum(1 for c in cases if c["group"] == g))
+                                       for g in sorted({c["group"] for c in cases}))),
+              flush=True)
+    else:
+        cases = build_cases()
     if args.cases != "all":
         cases = [c for c in cases if c["group"] == args.cases]
     modes = ["multi", "single"] if args.mode == "both" else [args.mode]
@@ -163,7 +284,7 @@ async def main_async(args):
     for case in cases:
         row = {"id": case["id"], "group": case["group"], "note": case["note"], "runs": {}}
         for mode in modes:
-            request = materialise(case)
+            request = materialise(case, data_dir, match_id)
             started = time.monotonic()
             try:
                 if mode == "multi":
@@ -181,6 +302,8 @@ async def main_async(args):
         results.append(row)
 
     report = summarise(results, config)
+    report["fixture"] = {"data_dir": str(data_dir or DATA_DIR), "match_id": match_id,
+                         "auto_cases": bool(getattr(args, "auto_cases", False))}
     OUT.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     (OUT / ("report-" + stamp + ".json")).write_text(
@@ -213,10 +336,14 @@ def summarise(results, config):
         for row in rows:
             statuses[row.get("status") or row.get("error") or "none"] = \
                 statuses.get(row.get("status") or row.get("error") or "none", 0) + 1
+        # Latency is only meaningful for runs that actually reached the pipeline. A window
+        # refused before any model call takes ~50ms and would drag the median down to nothing.
+        ran = [r for r in rows if (r.get("agent_calls") or 0) > 0]
         summary["by_mode"][label] = {
             "runs": len(rows),
+            "runs_that_reached_the_pipeline": len(ran),
             "statuses": statuses,
-            "elapsed_ms": _stat([r.get("elapsed_ms") for r in rows]),
+            "elapsed_ms": _stat([r.get("elapsed_ms") for r in (ran or rows)]),
             "model_calls": _stat([r.get("model_calls") for r in rows]),
             "agent_calls": _stat([r.get("agent_calls") for r in rows]),
             "total_model_calls": sum((r.get("agent_calls") if mode == "multi" else r.get("model_calls")) or 0
@@ -234,7 +361,7 @@ def summarise(results, config):
     for row in results:
         group = row["group"]
         groups.setdefault(group, {"multi_passed": 0, "multi_fallback": 0,
-                                  "multi_rejected": 0, "model_calls": 0, "n": 0})
+                                  "multi_rejected": 0, "agent_calls": 0, "n": 0})
         cell = groups[group]
         cell["n"] += 1
         multi = row["runs"].get("multi") or {}
@@ -245,10 +372,13 @@ def summarise(results, config):
             cell["multi_fallback"] += 1
         elif status == "rejected":
             cell["multi_rejected"] += 1
-        cell["model_calls"] += multi.get("model_calls") or 0
+        # agent_calls, not model_calls: the framework path never touches
+        # ChatCompletionsProvider, so model_calls reads 0 there and would report a whole
+        # group as free.
+        cell["agent_calls"] += multi.get("agent_calls") or 0
     summary["by_group"] = groups
     summary["tampered_called_the_model"] = sum(
-        (r["runs"].get("multi") or {}).get("model_calls") or 0
+        (r["runs"].get("multi") or {}).get("agent_calls") or 0
         for r in results if r["group"] == "tampered")
     return summary
 
@@ -257,13 +387,16 @@ def render_markdown(summary, results):
     lines = ["# Role C evaluation", "",
              "Model: `%s` via `%s`. Prompt version recorded per run."
              % (summary["config"]["model"], summary["config"]["provider"]),
+             "Fixture: `%s`%s."
+             % ((summary.get("fixture") or {}).get("data_dir", "?"),
+                ", auto-derived cases" if (summary.get("fixture") or {}).get("auto_cases") else ""),
              "", "## By group (three-agent pipeline)", "",
-             "| group | cases | passed | fallback | rejected | model calls |",
+             "| group | cases | passed | fallback | rejected | agent calls |",
              "| --- | --- | --- | --- | --- | --- |"]
     for group, cell in summary["by_group"].items():
         lines.append("| %s | %d | %d | %d | %d | %d |" % (
             group, cell["n"], cell["multi_passed"], cell["multi_fallback"],
-            cell["multi_rejected"], cell["model_calls"]))
+            cell["multi_rejected"], cell["agent_calls"]))
     lines += ["", "## By mode", "",
               "| mode | runs | statuses | median ms | total model calls | claims rejected | contract invalid |",
               "| --- | --- | --- | --- | --- | --- | --- |"]
@@ -291,6 +424,17 @@ def main(argv=None):
     parser.add_argument("--cases", default="all",
                         choices=["all", "positive", "non_trigger", "negative", "tampered"])
     parser.add_argument("--mode", default="both", choices=["both", "multi", "single"])
+    parser.add_argument("--data-dir", default=None,
+                        help="fixture directory; defaults to data/extra/validated-demo")
+    parser.add_argument("--match-id", default=None,
+                        help="which fixture in that directory; defaults to the first")
+    parser.add_argument("--auto-cases", action="store_true",
+                        help="derive the case set from the fixture by scanning its windows "
+                             "instead of using the hand-written set")
+    parser.add_argument("--window", type=int, default=150,
+                        help="window length for --auto-cases")
+    parser.add_argument("--step", type=int, default=60,
+                        help="window stride for --auto-cases")
     return asyncio.run(main_async(parser.parse_args(argv)))
 
 

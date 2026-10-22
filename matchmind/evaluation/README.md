@@ -6,13 +6,14 @@ disabled, prompt `c3-1.1.0`. Reproduce any of them; none require Azure or Foundr
 
 | harness | question it answers | cost |
 | --- | --- | --- |
-| `benchmark.py` | does the pipeline publish correct cards on 12 windows, and how does one agent compare with three? | billable |
+| `benchmark.py` | does the pipeline publish correct cards, and how does one agent compare with three? `--auto-cases` derives the sample from any fixture | billable |
 | `factcheck_bench.py` | how many known-bad explanations does the verifier catch, and how many good ones does it wrongly reject? | free |
 | `ablation.py` | what breaks when each specialist is switched off? (`--repeats 3` for an interpretable run) | billable |
 | `live_smoke.py` | one real end-to-end run with the raw output of every agent | billable |
 | `fixture_qualify.py` | is the synthetic data dense and complete enough to carry a demo? (`--recommend` finds a window that can explain an outcome) | free |
-| `dense_fixture_proposal.py` | are those thresholds actually reachable? (generates a qualifying fixture into `.artifacts/`) | free |
+| `dense_fixture_proposal.py` | are those thresholds actually reachable? (`--minutes 45` for a half that also supports expected threat) | free |
 | `scan_competitors.py` / `fetch_readmes.py` | what is the field shipping? see [`research/README.md`](research/README.md) | free |
+| `scan_football_oss.py` | which open football projects and datasets can we legally reuse? | free |
 
 Two documents sit alongside them for the submission:
 

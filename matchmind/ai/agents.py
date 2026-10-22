@@ -103,6 +103,26 @@ def _capture(provider, agent, payload):
     store.append({"agent": agent, "origin": "agent_framework", "payload": payload})
 
 
+NARRATOR_RETRY_FLOOR_SEC = 3.0
+
+
+async def _narrate_framework(request, provider, roles, facts, claims, deadline, traces,
+                             label, prior_issues=None):
+    """One narrator call through Agent Framework plus its code check."""
+    started = time.monotonic()
+    traces.append(_trace(request, "narrator", "started", started, label))
+    prompt = facts + "\n\nAPPROVED_CLAIMS:\n" + claims_block(claims)
+    if prior_issues:
+        prompt += ("\n\nYOUR PREVIOUS ATTEMPT WAS REJECTED BY THE CODE CHECK:\n"
+                   + "\n".join("- " + str(issue) for issue in prior_issues))
+    raw = _json(await roles.narrator().run(prompt)) or {}
+    _capture(provider, "narrator", raw)
+    narratives, issues = check_narratives(raw, request, claims)
+    traces.append(_trace(request, "narrator", "completed" if narratives else "rejected",
+                         started, "%s issues=%d" % (label, len(issues))))
+    return narratives, issues
+
+
 async def run_round(request, provider, config, deadline, traces, *, correction_issues=None):
     """Same contract as ai.service._run_round, executed by Agent Framework agents."""
     roles = getattr(provider, "framework_roles", None)
@@ -130,15 +150,15 @@ async def run_round(request, provider, config, deadline, traces, *, correction_i
         return {"claims": claims, "narratives": None, "issues": claim_issues,
                 "rejected": rejected_ids, "audit_issues": [], "auditor_rejected": []}
 
-    started = time.monotonic()
-    traces.append(_trace(request, "narrator", "started", started,
-                         "agent_framework; prompt " + PROMPT_VERSION))
-    raw_narratives = _json(await roles.narrator().run(
-        facts + "\n\nAPPROVED_CLAIMS:\n" + claims_block(claims))) or {}
-    _capture(provider, "narrator", raw_narratives)
-    narratives, narrative_issues = check_narratives(raw_narratives, request, claims)
-    traces.append(_trace(request, "narrator", "completed" if narratives else "rejected",
-                         started, "framework issues=%d" % len(narrative_issues)))
+    narratives, narrative_issues = await _narrate_framework(
+        request, provider, roles, facts, claims, deadline, traces,
+        "agent_framework; prompt " + PROMPT_VERSION)
+    if narratives is None and time.monotonic() + NARRATOR_RETRY_FLOOR_SEC < deadline:
+        # Same rule as the direct path: a code-check failure is not an auditor correction and
+        # must not spend that budget.
+        narratives, narrative_issues = await _narrate_framework(
+            request, provider, roles, facts, claims, deadline, traces,
+            "agent_framework; code-check retry", prior_issues=narrative_issues)
     if narratives is None:
         return {"claims": claims, "narratives": None, "issues": narrative_issues,
                 "rejected": rejected_ids, "audit_issues": [], "auditor_rejected": []}

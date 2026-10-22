@@ -92,7 +92,7 @@ GOOD_AUDIT = {"approved": True, "rejected_claims": [], "narrative_problems": [],
 
 def provider_for(bodies):
     transport = QueueTransport(bodies)
-    return ChatCompletionsProvider(config(), transport=transport.build()), transport
+    return ChatCompletionsProvider(config(), transport=transport.build(), use_cache=False), transport
 
 
 class OfflineDefaultTests(unittest.IsolatedAsyncioTestCase):
@@ -208,7 +208,7 @@ class BoundedFailureTests(unittest.IsolatedAsyncioTestCase):
         request = load_request()
         transport = httpx.MockTransport(lambda r: httpx.Response(
             200, json=envelope("this is not json at all")))
-        provider = ChatCompletionsProvider(config(), transport=transport)
+        provider = ChatCompletionsProvider(config(), transport=transport, use_cache=False)
         result = await analyze(request, config=config(), provider=provider)
         self.assertEqual(result["status"], "fallback")
         self.assertEqual(result["insight"]["generation"]["mode"], "rule_fallback")
@@ -217,14 +217,14 @@ class BoundedFailureTests(unittest.IsolatedAsyncioTestCase):
     async def test_empty_content_falls_back(self):
         request = load_request()
         transport = httpx.MockTransport(lambda r: httpx.Response(200, json=envelope("")))
-        provider = ChatCompletionsProvider(config(), transport=transport)
+        provider = ChatCompletionsProvider(config(), transport=transport, use_cache=False)
         result = await analyze(request, config=config(), provider=provider)
         self.assertEqual(result["status"], "fallback")
 
     async def test_http_401_is_sanitised_and_never_leaks_the_key(self):
         request = load_request()
         transport = httpx.MockTransport(lambda r: httpx.Response(401, json={"error": "nope"}))
-        provider = ChatCompletionsProvider(config(), transport=transport)
+        provider = ChatCompletionsProvider(config(), transport=transport, use_cache=False)
         result = await analyze(request, config=config(), provider=provider)
         self.assertEqual(result["status"], "fallback")
         blob = json.dumps(result)
@@ -234,7 +234,7 @@ class BoundedFailureTests(unittest.IsolatedAsyncioTestCase):
     async def test_timeout_returns_fallback_and_says_why(self):
         request = load_request()
         failing = FailingTransport(httpx.ReadTimeout("slow"))
-        provider = ChatCompletionsProvider(config(timeout=0.5), transport=failing.build())
+        provider = ChatCompletionsProvider(config(timeout=0.5), transport=failing.build(), use_cache=False)
         result = await analyze(request, config=config(timeout=0.5), provider=provider)
         self.assertEqual(result["status"], "fallback")
         self.assertEqual(result["error"]["code"], "TIMEOUT")
@@ -243,7 +243,7 @@ class BoundedFailureTests(unittest.IsolatedAsyncioTestCase):
     async def test_network_error_falls_back_without_raising(self):
         request = load_request()
         failing = FailingTransport(httpx.ConnectError("down"))
-        provider = ChatCompletionsProvider(config(), transport=failing.build())
+        provider = ChatCompletionsProvider(config(), transport=failing.build(), use_cache=False)
         result = await analyze(request, config=config(), provider=provider)
         self.assertEqual(result["status"], "fallback")
         self.assertEqual(result["error"]["code"], "MODEL_UNAVAILABLE")
@@ -300,6 +300,52 @@ class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["status"], "fallback")
         self.assertEqual(result["insight"]["verification"]["rejected_claims"], ["C2"])
         check_result(request, result)
+
+    async def test_a_code_rejection_of_prose_does_not_spend_the_auditor_correction(self):
+        """Two different failures, two different responses.
+
+        A narrator that emits an unverifiable number is a formatting failure; the auditor raising
+        a correction request is a semantic one. Sharing one budget meant a formatting failure could
+        strand a window that had nothing wrong with its facts, and that was measured as a leading
+        cause of unnecessary fallbacks.
+        """
+        request = load_request()
+        bad_prose = {"casual": "They had 12 shots.", "analyst": "Two shots."}
+        rejected_audit = {"approved": False, "rejected_claims": ["C2"],
+                          "narrative_problems": ["generalises"], "issues": ["C2 overreaches"]}
+        provider, transport = provider_for([
+            GOOD_CLAIMS,          # analyst, passes the code gate
+            bad_prose,            # narrator, fails the code gate -> formatting retry
+            GOOD_NARRATIVES,      # narrator retry, passes
+            rejected_audit,       # auditor raises a correction request
+            GOOD_NARRATIVES,      # narration repair for the auditor's request
+        ])
+        result = await analyze(request, config=config(), provider=provider)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(len(transport.requests), 5,
+                         "one formatting retry plus one auditor correction, not one shared")
+        notes = " ".join(t.get("note", "") for t in result["traces"])
+        self.assertIn("code-check retry", notes)
+        self.assertIn("repair pass", notes)
+        self.assertEqual(result["insight"]["verification"]["rejected_claims"], ["C2"])
+
+    async def test_a_formatting_retry_alone_can_save_a_window(self):
+        request = load_request()
+        provider, transport = provider_for([
+            GOOD_CLAIMS, bad_prose := {"casual": "They had 12 shots.",
+                                       "analyst": "Two shots."},
+            GOOD_NARRATIVES, GOOD_AUDIT])
+        result = await analyze(request, config=config(), provider=provider)
+        self.assertEqual(result["status"], "passed")
+        self.assertEqual(len(transport.requests), 4)
+
+    async def test_two_formatting_failures_still_fall_back(self):
+        request = load_request()
+        bad_prose = {"casual": "They had 12 shots.", "analyst": "Two shots."}
+        provider, transport = provider_for([GOOD_CLAIMS, bad_prose, bad_prose])
+        result = await analyze(request, config=config(), provider=provider)
+        self.assertEqual(result["status"], "fallback")
+        self.assertEqual(len(transport.requests), 3, "the retry is not repeated")
 
     async def test_auditor_rejection_uses_the_cheap_repair_not_a_full_reanalysis(self):
         """Regression: an auditor refusal was reported as a code-gate refusal, so the
@@ -601,7 +647,8 @@ class ToolLoopTests(unittest.IsolatedAsyncioTestCase):
                              "metric_key": "high_recoveries", "metric_value": 3,
                              "evidence_event_ids": ["MM-DEMO-01-E007"]}]})))
 
-        provider = ChatCompletionsProvider(config(), transport=httpx.MockTransport(handler))
+        provider = ChatCompletionsProvider(config(), transport=httpx.MockTransport(handler),
+                                          use_cache=False)
         box = Toolbox(request)
         from ai.tools import TOOL_SCHEMAS
         result = await provider.complete_with_tools(
