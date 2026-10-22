@@ -422,3 +422,47 @@ python -m ai.recap
 ### 13.4 上限在窗口数，不在重复次数
 
 6 个窗口、其中 2 个正例，是真正的约束。加重复只能收窄噪声，不能增加覆盖面。下一步该做的是**更多合格窗口**，也就是更稠密的 fixture —— 正是 `fixture_qualify.py` 在要求的。
+
+---
+
+## 十四、第六轮：A2A 传输与威胁排序
+
+### 14.1 A2A 传输（`ai/a2a_transport.py`）
+
+之前只有 agent card 没有端点，那是"描述"不是"服务"。现在 `POST /a2a` 实现了一个**明确声明的子集**：
+
+| 支持 | 不支持（并在卡片里写明） |
+| --- | --- |
+| `message/send`，JSON-RPC 2.0，一次 HTTP 一次调用 | 流式 |
+| 输入一个 `data` part：`{"skill": "<工具名>", "arguments": {...}}` | 任务生命周期（`tasks/get` / `tasks/cancel`） |
+| 输出 `data` + `text` 两个 part | 推送通知、文件 part |
+| 8 个 skill，白名单显式列出 | **自由文本意图解析** |
+
+**为什么不解析自由文本**：整个产品的论点是"每个结论都要可追溯"。让端点去猜"那句话想调哪个工具"，等于在每个回答前面塞一个不可追溯的步骤。所以自由文本请求会被**明确拒绝并说明原因**，而不是被猜。
+
+未支持的方法返回 `-32601` 并附上支持列表；参数或形状错误返回 `-32602` 并说明。**"威胁排序因为数据太少而拒绝"是成功返回，不是错误** —— 有专门测试守着这条，因为"带理由的拒绝"是这个产品在正常工作，不是故障。
+
+### 14.2 威胁排序（`ai/threat.py`）
+
+从 `socceraction` 借的思想，没有借依赖：用值迭代在**我们自己的事件**上重估一个 16×12 的"预期威胁"网格，让一次传球可以按它推进的价值排序，而不是被计数。
+
+```
+xT(zone) = P_shoot(zone) * P_goal(zone) + Σ_j P_move(zone,j) * xT(j)
+```
+
+两条诚实属性，都有测试：
+
+1. **分辨率跟着数据走**：依次尝试 16×12、12×8、8×6、6×4，并把每次尝试的报告留在输出里。
+2. **密度不够就拒绝**：连 6×4 都到不了每格 4 次观测，就不出数字。**这是一个结论而不是 bug：5 分钟的片段撑不起预期威胁网格**，需要整场。出厂 fixture 和稠密提案都会被拒；只有整场规模的样本能出网格，测试里构造了一个来证明代码路径是通的。
+
+发布的数值带 `label`（"不可与已发表的 xT 比较"）和 `caveat`（"网格由它排序的同一批事件估出来，只能当片内排序装置，不能当进球概率"）。还有一条测试断言数学方向正确：**禁区的价值必须高于本方半场**。
+
+### 14.3 现在的门禁状态
+
+```
+python -m pytest tests -q                        → 284 passed, 33 subtests passed
+python tools/check_frozen.py                     → Frozen contracts and fixtures unchanged
+python tools/check_scope.py --role C --base HEAD → Role scope OK
+python -m ai.a2a_transport                       → message/send demo + unsupported-method refusal
+python -m ai.threat                              → available=false, "a five-minute clip is too short"
+```

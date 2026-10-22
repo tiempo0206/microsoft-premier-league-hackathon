@@ -20,11 +20,14 @@ Three C-owned surfaces are added here rather than in `backend/`:
 All three are interception rather than route registration, because B's JSON-404 catch-all
 for `/api/{unmatched:path}` is registered before anything C can add.
 """
+import json
+
 from fastapi.responses import JSONResponse
 
 from backend.app import create_app
 
 from .a2a import agent_card
+from .a2a_transport import dispatch as a2a_dispatch
 from .config import from_env
 from .overlay import overlay_payload, validate_payload
 from .service import analyze
@@ -69,6 +72,18 @@ def build_app(config=None, *, public_url="http://127.0.0.1:8000", clock=None):
     @application.middleware("http")
     async def c_surfaces(request, call_next):
         path = request.url.path
+
+        if path == "/a2a" and request.method == "POST":
+            body = None
+            try:
+                raw = await request.body()
+                body = json.loads(raw.decode("utf-8")) if raw else None
+            except (ValueError, UnicodeDecodeError):
+                body = None
+            response = a2a_dispatch(body)
+            status = 200 if "result" in response else 400
+            return JSONResponse(response, status_code=status)
+
         if request.method != "GET":
             return await call_next(request)
 

@@ -49,7 +49,7 @@ demonstrates the capability; all are in `evaluation/research/readmes/`.
 | # | Gap | Who shows it | Why it costs us score |
 | --- | --- | --- | --- |
 | 1 | **MCP server** | GamePulse, pshah208/matchlens, Lasso, The Dugout, Regista, TheNeuralWars | Judging text names "MCP integration". Five of the seven strongest projects ship one. We shipped none until tonight. |
-| 2 | **A2A endpoint** (`/.well-known/agent-card.json`, `/a2a`) | pshah208/matchlens, Touchline, Lasso | Best Multi-Agent criterion literally names A2A. Still missing for us. |
+| 2 | **A2A endpoint** (`/.well-known/agent-card.json`, `/a2a`) | pshah208/matchlens, Touchline, Lasso | Best Multi-Agent criterion literally names A2A. **Partly closed:** the card exists and `POST /a2a` implements `message/send` with a structured data part. Streaming, task lifecycle and free-text intent are absent and declared absent. |
 | 3 | **Per-role ablation** | Touchline publishes a five-way ablation with quantified damage per role | The criterion is "an outcome a single agent could not achieve as effectively". Ablation answers it directly; our single-vs-multi comparison only gestures at it. |
 | 4 | **Overlay JSON for a broadcast renderer** | GamePulse (`/api/overlay`), Touchline, Regista, pshah208 | Official 4.1 asks for output "machine-readable enough to be rendered as synchronized graphical overlays". We produce a UI, not a broadcast contract. |
 | 5 | **Simulator validated against real football** | GamePulse: 8/8 totals within tolerance of 1,446 real matches, 14/16 spatial checks, 13 m player-position error vs real tracking | Technological Implementation explicitly scores "creativity and optimized synthetic data creation". Our fixture is 30 events; theirs is validated against a corpus. |
@@ -145,6 +145,7 @@ false-alarm test, not just a catch test.
 | Per-role ablation | Touchline's five-way ablation | `evaluation/ablation.py`, now run with 3 repeats so the spread is visible |
 | Broadcast overlay payload | GamePulse `/api/overlay`, Regista | `ai/overlay.py` + `/api/v1/replays/{id}/insights/{id}/overlay`, source mode on every graphic |
 | A2A agent card | pshah208, Touchline, Lasso | `ai/a2a.py` + `/.well-known/agent-card.json`, skills mapped 1:1 to MCP tools |
+| An A2A transport, scoped honestly | same | `ai/a2a_transport.py` + `POST /a2a`: `message/send` with a structured data part, refusing free text, with the card advertising exactly that subset |
 | Storyline memory + editorial rate cap | Touchline's StorylineKeeper and MomentScout ablations | `ai/storyline.py`, as a tested policy; activation needs one contract field |
 | Match recap as a distinct role | GamePulse's recap, official 4.1(iii) | `ai/recap.py`, 18 tests, the only role that can report the goal |
 | "Never silently swap mock for real" | Rematch | held by the labelled `rule_fallback`, asserted in the app, MCP, overlay and recap tests |

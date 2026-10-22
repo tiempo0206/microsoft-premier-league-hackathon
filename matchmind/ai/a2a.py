@@ -97,6 +97,8 @@ def agent_card(base_url="http://127.0.0.1:8000", *, version="2.0.0", model_ready
         "x-matchmind": {
             "contractVersion": "2.0.0",
             "agentCardPath": CARD_PATH,
+            "a2aEndpoint": "/a2a",
+            "a2aTransport": _transport_capabilities(),
             "modelReady": bool(model_ready),
             "explanationModes": ["live_model", "rule_fallback", "precomputed"],
             "verificationMethods": ["agent_and_code", "code_only"],
@@ -106,9 +108,21 @@ def agent_card(base_url="http://127.0.0.1:8000", *, version="2.0.0", model_ready
                 "A rule_fallback card used no model. Do not describe it as live analysis.",
                 "The verifier checks where a fact and a citation came from, not the meaning "
                 "of a sentence; an auditor agent covers the semantic case and is not a proof.",
+                "The A2A transport implements message/send with a structured data part only. "
+                "There is no streaming, no task lifecycle and no free-text intent parsing.",
             ],
         },
     }
+
+
+def _transport_capabilities():
+    """Read the transport's own statement rather than duplicating it here, so the card cannot
+    advertise a subset the endpoint does not implement."""
+    try:
+        from .a2a_transport import capabilities
+        return capabilities()
+    except Exception:                                   # noqa: BLE001 - card must still build
+        return {"supportedMethods": [], "importError": True}
 
 
 def validate_card(card):
