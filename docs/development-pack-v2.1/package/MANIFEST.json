@@ -1,0 +1,372 @@
+{
+  "release": "2.1",
+  "contract": "2.0.0",
+  "format": "Markdown documents plus unchanged executable starter",
+  "files": [
+    {
+      "path": "00_总方案.md",
+      "sha256": "cd5783690ea8ba0e26cc6fe14378648e223017ec54d99c7e1bc9923208402232",
+      "bytes": 2986
+    },
+    {
+      "path": "01_三人开发与AI指令.md",
+      "sha256": "58bc3c4f835d306719e71a1d5734dc88066f2c3247d361afbee0ca44537821cb",
+      "bytes": 13581
+    },
+    {
+      "path": "02_国内开发与国际部署.md",
+      "sha256": "f695f48a033ae30641ad2208f50260aa25c4514a9eedaf3a5908c602c5825a5f",
+      "bytes": 13293
+    },
+    {
+      "path": "README.md",
+      "sha256": "f02b7047c13a7eb0e3cfc270d99b63cb4879e4df48ba2f5195cd98599d1fcb4e",
+      "bytes": 902
+    },
+    {
+      "path": "starter-overlay/matchmind/.env.example",
+      "sha256": "6786f91544d60e57badf947f72b767cab3024585f28a0207635dc70896507401",
+      "bytes": 490
+    },
+    {
+      "path": "starter-overlay/matchmind/.gitattributes",
+      "sha256": "ced447a891638bf2cc804146c15fd5b0d6f511be94c9d2369e4be0e6d8abf09e",
+      "bytes": 45
+    },
+    {
+      "path": "starter-overlay/matchmind/.gitignore",
+      "sha256": "179849708329093c4b5c8c90bbb78339aed5a60049e8c594b0af39a414a33884",
+      "bytes": 99
+    },
+    {
+      "path": "starter-overlay/matchmind/AGENTS.md",
+      "sha256": "2345493c042c78756a96dd7da2614cd302a5fc71fd1c475742809eeac07e334f",
+      "bytes": 1653
+    },
+    {
+      "path": "starter-overlay/matchmind/ai/__init__.py",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "starter-overlay/matchmind/ai/requirements.txt",
+      "sha256": "18a906f6d2ef500fef684c88f76b3c66640fa0f260a5a7a9c8b55d8c5003f9ee",
+      "bytes": 74
+    },
+    {
+      "path": "starter-overlay/matchmind/ai/service.py",
+      "sha256": "1c6ac4c58d14778bdeff471848a65f144f503f1ba6cc45ec85d418493d73dfa4",
+      "bytes": 1298
+    },
+    {
+      "path": "starter-overlay/matchmind/AI_RULES.md",
+      "sha256": "a4e4152ae2f286728e0f4e09116fe8b09aed02b5f407840937e2f73895602c6b",
+      "bytes": 2950
+    },
+    {
+      "path": "starter-overlay/matchmind/backend/__init__.py",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "starter-overlay/matchmind/backend/README.md",
+      "sha256": "8b76e3db85f6f0bb66f7b9fa45700a2ba2d45d078ef2abe565ef9d2978eab970",
+      "bytes": 146
+    },
+    {
+      "path": "starter-overlay/matchmind/backend/requirements.txt",
+      "sha256": "043125beb70d6cb5766db1c7298cd3ca394535781307ec307b69836754b90955",
+      "bytes": 71
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/__init__.py",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/contract.schema.json",
+      "sha256": "95ef215eec6de4e0dd37f92e60760175fd34e147863132e0abab0ad3a6f7b343",
+      "bytes": 24208
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/examples/analysis_request.json",
+      "sha256": "39bb497cd7002692b5bcf9246aeb25651bbfc3a5bbb923a8fd256e11804e9880",
+      "bytes": 8045
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/examples/analysis_result.json",
+      "sha256": "cc17a2dfc0726b38d44cdb245d87818542e01a3be206fa0c309991918d52c694",
+      "bytes": 2389
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/examples/control_replay.json",
+      "sha256": "98050384a5f581f8970d3bda1db21f2bb7c608e286d3a3ec6e8292ef00939e45",
+      "bytes": 23
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/examples/create_replay.json",
+      "sha256": "fd1bec7a6e8e9adf0cc568ab028ada67272b2cbdea79176ec2604c281718401f",
+      "bytes": 45
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/examples/replay_snapshot.json",
+      "sha256": "1028f1a81f01e92cb6cf9f8c7363bafb50ff7c283b15bae1e4dbb9e2c183d5d7",
+      "bytes": 3025
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/examples/stream_message.json",
+      "sha256": "ec775465c1619592dc2b05828ac9873a04703a50a843a3baf5758033abe53c94",
+      "bytes": 2148
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/frozen.sha256.json",
+      "sha256": "d9fc4e622bf39334331b282e63ba73ea1d6860227664ebbbde9f489ca2bdb920",
+      "bytes": 1564
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/openapi.json",
+      "sha256": "f644e8f1f3d2db5c53f1a8930247c283d69575d4862d357dd2962b0f204fe389",
+      "bytes": 44706
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/types.ts",
+      "sha256": "e20276b1c9dfc93a67f838452a7a46f7edfa5c0e274edc652ee4e37476ff8424",
+      "bytes": 4318
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/validation.py",
+      "sha256": "7df437234e7f9ab9c9924e6ed5d53f4eaaf328e5aaf263bd486f88018fdda3a6",
+      "bytes": 2978
+    },
+    {
+      "path": "starter-overlay/matchmind/contracts/VERSION",
+      "sha256": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624",
+      "bytes": 6
+    },
+    {
+      "path": "starter-overlay/matchmind/data/fixtures/demo.events.jsonl",
+      "sha256": "5d21524296dc75a6bdec11aa24842453c1504b6717ed3dbb55c374eed49c3dc0",
+      "bytes": 7041
+    },
+    {
+      "path": "starter-overlay/matchmind/data/fixtures/demo.match.json",
+      "sha256": "3af5d5322b71a48ceaad5ae68926ab7bf21c1a2f6d8e794fa6909435ba2bf5a1",
+      "bytes": 296
+    },
+    {
+      "path": "starter-overlay/matchmind/data/fixtures/PROVENANCE.json",
+      "sha256": "ecb953bf465084f2161ed464a057ec7e6d0000063b0b198e73d88c6b5d58eb19",
+      "bytes": 369
+    },
+    {
+      "path": "starter-overlay/matchmind/deploy/README.md",
+      "sha256": "3d54bdc357c62a2c257b3424c7a2411626f590d0c8dfa343fc2f77ed057b0a8f",
+      "bytes": 193
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/00_plan.md",
+      "sha256": "3f1df2d76fea916d79d20e14f33ac1552aeea17ecc577d72f9f815f1315e8963",
+      "bytes": 4244
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/01_cn_setup.md",
+      "sha256": "1a27f4be19efdbabefcc6df2dd0761a53613474cbebf8be80395dff6c787b1ee",
+      "bytes": 5629
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/02_contract.md",
+      "sha256": "a94007f471342d1fbfa17f3a2ab7e15059d011aa228715a722e6b300ec31ac60",
+      "bytes": 7330
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/03_resources.md",
+      "sha256": "21b26225bb32bef6a7c8b0ca08142aeadbaf2b8f06ba0f3726faea2a9ed02311",
+      "bytes": 7378
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/04_merge.md",
+      "sha256": "ccdb3b15c63137ca9675ad670304bf9830621d79873b353152c675e496801269",
+      "bytes": 3145
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/05_acceptance.md",
+      "sha256": "0cfd96ee03291762ab4d7e7b5a595677b91dd6b0df5ed40d7d4fb779ddf864da",
+      "bytes": 2896
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/06_sources.md",
+      "sha256": "f5a7690be1343516f46ca14f2e6c6c40a14e8b42e1ad4c336854397d2592e234",
+      "bytes": 2414
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/handoff/ai.md",
+      "sha256": "e423cfed6522e76ecd45db89c171c9eadf2ce225e63c8d0e76510ae6c1275a50",
+      "bytes": 207
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/handoff/backend.md",
+      "sha256": "7062794a3dd1107341f2d67e5be8dc03065984650b42dc0fa4717fba13a5acff",
+      "bytes": 212
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/handoff/frontend.md",
+      "sha256": "368dda612b249e64b90d1d7d7c89ab62eccf9be3c9a9fbd13bdfaac94ffabb8c",
+      "bytes": 213
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/mirror_probe.json",
+      "sha256": "e98a7706e0713f43522c3398ee85adde774286879536fb16e02bccdc915667f0",
+      "bytes": 1837
+    },
+    {
+      "path": "starter-overlay/matchmind/docs/sources.json",
+      "sha256": "ea8056622e873238da871d410435401604f4ab4b5729b6672ad5fc69951f5f05",
+      "bytes": 3845
+    },
+    {
+      "path": "starter-overlay/matchmind/evaluation/README.md",
+      "sha256": "7625d2dc9dca5696c7c66fe35e84a97e4b343367b7032c16307831ddefd17953",
+      "bytes": 138
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/.npmrc",
+      "sha256": "a253aec1ecb783f5a56472a4b54cb5472ba0b27d61d3fe5c755bc333089e8e23",
+      "bytes": 41
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/package.json",
+      "sha256": "5c3805a33a7122c3af26016917aa6af00dbb1b55ef5ca20d6b419db20528c336",
+      "bytes": 557
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/pnpm-lock.yaml",
+      "sha256": "dbcf45239c178dd0cc1d263bba0aba90961df8ebf65b7181ede7264951f6022c",
+      "bytes": 23706
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/pnpm-workspace.yaml",
+      "sha256": "f7db753bdd2ec83b9396c2bb0230ed42493f5012fdab422e09d5492658ecbc5d",
+      "bytes": 93
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/src/contract.ts",
+      "sha256": "d74ca3b4b630e976232f465082dfc8bb222eb84ef68699a03393f4068714fb66",
+      "bytes": 144
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/tsconfig.json",
+      "sha256": "65f7dec61a295a9e35fc15d5320c1b0a9f8670dee79cd5cf4e6214370bab7857",
+      "bytes": 310
+    },
+    {
+      "path": "starter-overlay/matchmind/frontend/vite.config.ts",
+      "sha256": "cde71c1c3b673e8e67c1960fd4c1108f9156feaecc479d8e40f9f03d39c8dd98",
+      "bytes": 241
+    },
+    {
+      "path": "starter-overlay/matchmind/integration-snippets/ci.yml",
+      "sha256": "811f04fd2d0d21a8c2131e8b22af2e9056829bad0f5e0279bb2e229ebebf3125",
+      "bytes": 654
+    },
+    {
+      "path": "starter-overlay/matchmind/integration-snippets/CODEOWNERS.fragment",
+      "sha256": "1d249f3038e05a4115136d81110617e523c8a175e98f15d3e5e9feb19dc24a9c",
+      "bytes": 383
+    },
+    {
+      "path": "starter-overlay/matchmind/requirements-contracts.txt",
+      "sha256": "756cc9e506ae4ee1a6f6c0507088b5cfc0dc8ba350fb2d2d46f1ffa72033adb6",
+      "bytes": 19
+    },
+    {
+      "path": "starter-overlay/matchmind/requirements-dev.txt",
+      "sha256": "211c3c323c9795942e33b389925b5b8a83c69da53c09cf191dcbbebebaa3e610",
+      "bytes": 95
+    },
+    {
+      "path": "starter-overlay/matchmind/roles/A_FRONTEND.md",
+      "sha256": "b65ff2db1034038adbe465a01198357300a0ada8fc0a1285e21ab695e6a8110d",
+      "bytes": 3294
+    },
+    {
+      "path": "starter-overlay/matchmind/roles/B_BACKEND.md",
+      "sha256": "cb163a1c76e033c1afec3f10d3ab433edb315e72a7a49a41290bc7451ec8c998",
+      "bytes": 3330
+    },
+    {
+      "path": "starter-overlay/matchmind/roles/C_AI.md",
+      "sha256": "158d537224b089093a0db084f8fa0b830a91c33eaf491f5a7c4815cee6d492de",
+      "bytes": 3603
+    },
+    {
+      "path": "starter-overlay/matchmind/START_HERE.md",
+      "sha256": "eea2be7d60e10b956ab83ef7e4b9e061fd2375ddb4ed61e30424ea7486a757a3",
+      "bytes": 3144
+    },
+    {
+      "path": "starter-overlay/matchmind/TEAM_ROLES.json",
+      "sha256": "1db336decba421e5ebee450907f334885aff37f0f68399813f7c916514f2e8d0",
+      "bytes": 272
+    },
+    {
+      "path": "starter-overlay/matchmind/tests/test_contracts.py",
+      "sha256": "dc6129c8581bee38ced4f226226c7165b70a451d164f878648e471f6a09b8c9f",
+      "bytes": 3427
+    },
+    {
+      "path": "starter-overlay/matchmind/tests/test_mock_api.py",
+      "sha256": "68f94a4ae88f45ef7697214760b693cec082df045221d44ac3a6487bcb7c3389",
+      "bytes": 2575
+    },
+    {
+      "path": "starter-overlay/matchmind/THIRD_PARTY_NOTICES.md",
+      "sha256": "d923c4661df2bae04f229f68cc1ba3b79610804add8e36d76a3a67cff5a76f51",
+      "bytes": 1586
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/__init__.py",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/check_frozen.py",
+      "sha256": "95944a0ef6402d487dca627df0c5f9d8c740ddd0a9a6ac2a55f8a32ea53abaa0",
+      "bytes": 476
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/check_scope.py",
+      "sha256": "24172994429a05d700275ab5afb76db6e6380f7535b81201295cc422e5389a88",
+      "bytes": 1064
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/generate_openapi.py",
+      "sha256": "dbe4a447ba6110a88a98955ac313209a7484567c0014b9b10d8c98bfd59e7c1e",
+      "bytes": 2518
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/generate_types.py",
+      "sha256": "9365bde7c718fcda1004208a01169e0e505e6fe177384933085ae3af26a419f2",
+      "bytes": 1106
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/mock_api.py",
+      "sha256": "c3fb053f57576d8297569d72bc4503d5d92a06dc809cf12e4bfb8ed505789c70",
+      "bytes": 6816
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/probe_model.py",
+      "sha256": "428260fce4b7db08b60fe87c8f8f238691f207d8d84eb8aeafe90960ebc86b41",
+      "bytes": 2042
+    },
+    {
+      "path": "starter-overlay/matchmind/tools/reference.py",
+      "sha256": "45843ab136cbb3df361e39c7e3eb01fb577c4969db76bb5a535069412405ab37",
+      "bytes": 2391
+    },
+    {
+      "path": "starter-overlay/matchmind/VERIFICATION.md",
+      "sha256": "6e10efef8a0c81492a11639374ce1d343d80ce7dc13a7eeca998ba455f815bc6",
+      "bytes": 2143
+    }
+  ]
+}

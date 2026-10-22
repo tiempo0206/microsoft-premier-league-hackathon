@@ -1,0 +1,121 @@
+{
+  "replay": {
+    "replay_id": "REPLAY-001",
+    "run_id": 1,
+    "match_id": "MM-DEMO-01",
+    "clock_sec": 1650,
+    "speed": 5,
+    "status": "paused",
+    "last_seq": 1
+  },
+  "state": {
+    "match_id": "MM-DEMO-01",
+    "at_sec": 1650,
+    "score": {
+      "HOME": 0,
+      "AWAY": 0
+    },
+    "shots": {
+      "HOME": 2,
+      "AWAY": 0
+    },
+    "passes": {
+      "HOME": 3,
+      "AWAY": 10
+    },
+    "completed_passes": {
+      "HOME": 3,
+      "AWAY": 7
+    },
+    "possession_seconds": {
+      "HOME": 35,
+      "AWAY": 115
+    },
+    "last_event_id": "MM-DEMO-01-E020"
+  },
+  "insights": [
+    {
+      "insight_id": "INS-TASK-001",
+      "match_id": "MM-DEMO-01",
+      "window": {
+        "start_sec": 1500,
+        "end_sec": 1650
+      },
+      "type": "high_press",
+      "team_id": "HOME",
+      "metrics": {
+        "high_recoveries": 3,
+        "linked_shots": 2,
+        "window_seconds": 150,
+        "home_possession_seconds": 35,
+        "away_possession_seconds": 115,
+        "home_shots": 2,
+        "away_shots": 0
+      },
+      "evidence_event_ids": [
+        "MM-DEMO-01-E007",
+        "MM-DEMO-01-E009",
+        "MM-DEMO-01-E013",
+        "MM-DEMO-01-E015",
+        "MM-DEMO-01-E019"
+      ],
+      "claims": [
+        {
+          "claim_id": "C1",
+          "kind": "metric",
+          "text": "Harbor FC made 3 high recoveries in this window.",
+          "metric_key": "high_recoveries",
+          "metric_value": 3,
+          "evidence_event_ids": [
+            "MM-DEMO-01-E007",
+            "MM-DEMO-01-E009",
+            "MM-DEMO-01-E013",
+            "MM-DEMO-01-E015",
+            "MM-DEMO-01-E019"
+          ]
+        },
+        {
+          "claim_id": "C2",
+          "kind": "interpretation",
+          "text": "The recoveries and subsequent shots suggest an effective spell of pressure.",
+          "metric_key": null,
+          "metric_value": null,
+          "evidence_event_ids": [
+            "MM-DEMO-01-E007",
+            "MM-DEMO-01-E009",
+            "MM-DEMO-01-E013",
+            "MM-DEMO-01-E015",
+            "MM-DEMO-01-E019"
+          ]
+        }
+      ],
+      "narratives": {
+        "casual": "Harbor FC won the ball high up the pitch three times, creating two quick shooting opportunities.",
+        "analyst": "Three attacking-third recoveries led to two shots within 15 seconds in the same possessions. This suggests effective pressure; it does not establish the opponents’ fatigue or intent."
+      },
+      "verification": {
+        "status": "fallback",
+        "method": "code_only",
+        "rejected_claims": []
+      },
+      "generation": {
+        "mode": "rule_fallback",
+        "provider": "none",
+        "model": null
+      },
+      "display": {
+        "title": "Pressure creates chances",
+        "priority": 1
+      }
+    }
+  ],
+  "traces": [
+    {
+      "task_id": "TASK-001",
+      "agent": "validator",
+      "status": "fallback",
+      "duration_ms": 0,
+      "note": "Offline contract example; no live model invocation."
+    }
+  ]
+}

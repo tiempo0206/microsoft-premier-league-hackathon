@@ -1,0 +1,9 @@
+{
+  "A_frontend": null,
+  "B_backend_data": null,
+  "C_ai_integrator": null,
+  "submission_representative": null,
+  "baseline_sha": null,
+  "daily_sync_time_utc8": null,
+  "note": "请仅填姓名或 GitHub 用户名；不填密码、API Key、支付或证件信息。"
+}

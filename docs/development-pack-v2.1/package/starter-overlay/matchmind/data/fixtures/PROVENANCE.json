@@ -1,0 +1,10 @@
+{
+  "kind": "original_synthetic",
+  "authoring_date": "2026-10-21",
+  "license": "CC0-1.0",
+  "source": "Authored for this development package; no real match feed or third-party data copied.",
+  "scope": "Five-minute excerpt with fictional teams, event positions only; no off-ball tracking.",
+  "seed": 21,
+  "generator_version": "fixture-2.0.0",
+  "event_count": 30
+}

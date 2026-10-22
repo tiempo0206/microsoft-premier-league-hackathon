@@ -25,6 +25,7 @@ The owner's local working folder is `/Users/tianbo/Desktop/Microsoft+Premier Lea
 - [Hackathon links and submission reminders](docs/hackathon.md)
 - [Contribution workflow](CONTRIBUTING.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
+- [Three-person development starter v2.1](docs/development-pack-v2.1/README.md)
 - [Task tracking](https://github.com/tiempo0206/microsoft-premier-league-hackathon/issues)
 
 ## First steps

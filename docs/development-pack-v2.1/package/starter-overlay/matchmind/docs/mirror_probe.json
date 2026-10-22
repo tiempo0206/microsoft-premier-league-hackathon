@@ -1,0 +1,62 @@
+{
+  "checked_date": "2026-10-21",
+  "scope": "Metadata availability from this machine; no model inference or full mirror install performed.",
+  "results": [
+    {
+      "name": "npm_react",
+      "url": "https://registry.npmmirror.com/react/19.3.1",
+      "http_status": 200,
+      "required_version_listed": "19.3.1",
+      "live_model_requests": 0
+    },
+    {
+      "name": "npm_vite",
+      "url": "https://registry.npmmirror.com/vite/8.3.5",
+      "http_status": 200,
+      "required_version_listed": "8.3.5",
+      "live_model_requests": 0
+    },
+    {
+      "name": "npm_typescript",
+      "url": "https://registry.npmmirror.com/typescript/7.0.2",
+      "http_status": 200,
+      "required_version_listed": "7.0.2",
+      "live_model_requests": 0
+    },
+    {
+      "name": "npm_pnpm",
+      "url": "https://registry.npmmirror.com/pnpm/11.25.0",
+      "http_status": 200,
+      "required_version_listed": "11.25.0",
+      "live_model_requests": 0
+    },
+    {
+      "name": "pypi_contracts",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple/jsonschema/",
+      "http_status": 200,
+      "required_version_listed": true,
+      "live_model_requests": 0
+    },
+    {
+      "name": "pypi_fastapi",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple/fastapi/",
+      "http_status": 200,
+      "required_version_listed": true,
+      "live_model_requests": 0
+    },
+    {
+      "name": "pypi_framework_core",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple/agent-framework-core/",
+      "http_status": 200,
+      "required_version_listed": true,
+      "live_model_requests": 0
+    },
+    {
+      "name": "pypi_framework_provider",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple/agent-framework-openai/",
+      "http_status": 200,
+      "required_version_listed": true,
+      "live_model_requests": 0
+    }
+  ]
+}
