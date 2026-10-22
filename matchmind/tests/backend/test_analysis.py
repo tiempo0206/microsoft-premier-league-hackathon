@@ -196,3 +196,13 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         async with app.router.lifespan_context(app):
             self.assertEqual(len(app.state.dispatcher.workers), 1)
         self.assertEqual(app.state.dispatcher.workers, [])
+
+    async def test_negative_window_does_not_schedule_adapter(self):
+        from backend.data import Fixture
+        session = self.store.sessions[self.rid]
+        session.fixture = Fixture(session.fixture.match,
+                                  tuple(e for e in session.fixture.events if e["type"] != "recovery"))
+        await self.trigger()
+        await self.settled()
+        self.assertEqual(self.calls, [])
+        self.assertEqual(self.dispatcher.used, 0)

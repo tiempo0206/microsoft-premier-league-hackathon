@@ -38,7 +38,7 @@ Reconnections recover snapshots, not a complete transport log. Evidence queries 
 
 ## B4 handoff: dispatch versus model implementation
 
-B now implements a bounded dispatch controller. With a trusted async adapter injected, crossing 1650 enqueues exactly one fixed 1500–1650 window per replay generation. Queue wait plus adapter time share the default 12-second deadline. Initial limits are 1 active adapter, 8 queued jobs and 30 admitted tasks per monotonic hour bucket (not a rolling-hour quota). Rejected admission does not reset prior usage. Reset/expiry invalidates queued jobs and cancels active requests; late results remain subject to epoch and deadline checks.
+B now implements a bounded dispatch controller. With a trusted async adapter injected, crossing 1650 checks the fixed 1500–1650 window once per replay generation and enqueues it only when the shared numeric heuristic is satisfied (at least 3 high recoveries, at least 2 linked recoveries). Queue wait plus adapter time share the default 12-second deadline. Initial limits are 1 active adapter, 8 queued jobs and 30 admitted tasks per monotonic hour bucket (not a rolling-hour quota). Rejected admission does not reset prior usage. Reset/expiry invalidates queued jobs and cancels active requests; late results remain subject to epoch and deadline checks.
 
 The trusted async adapter must propagate cancellation, avoid blocking the event loop and apply its own SDK/network timeouts. Python cannot forcibly interrupt arbitrary blocking code or an adapter that indefinitely suppresses cancellation; this controller is not a process sandbox. Such an adapter would occupy its worker, although any result returned after the deadline is rejected.
 

@@ -40,6 +40,22 @@ Create replay with `{"match_id":"MM-DEMO-01","speed":5}`; it starts idle. POST `
 
 ## Checks
 
+For the complete B-only pipeline, run once from `matchmind/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m deploy.verify_backend
+```
+
+This checks reproducible data/readiness, exports evidence-based JSON/Markdown and a contract-valid offline AI input, runs backend/common tests, launches its own loopback API, verifies HTTP/control/SSE and stops only that child. Artifacts are under `.artifacts/backend-delivery/`. Acceptance records source-code hashes and explicitly leaves cloud, container and frontend/live-AI checks outstanding. It does not leave a development server running.
+
+For analysis export alone, without starting an API:
+
+```powershell
+.\.venv\Scripts\python.exe -m backend.reporting --output-dir .artifacts/backend-analysis
+```
+
+See `backend/DATA_PIPELINE.md` for definitions, acceptance and the Chinese handoff. These files are engineering artifacts; the HTTP contract is unchanged.
+
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests/backend -p 'test_*.py' -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p 'test_*.py' -v

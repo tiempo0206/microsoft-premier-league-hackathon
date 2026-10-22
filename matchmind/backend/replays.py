@@ -10,7 +10,9 @@ from .http import ApiError
 from .settings import Settings
 from .stats import state_at
 from .stats import window_metrics
-from contracts.validation import check_request, check_result, can_publish
+from .stats import high_press_detected
+from .inputs import analysis_input
+from contracts.validation import check_result, can_publish
 
 
 @dataclass
@@ -85,9 +87,10 @@ class Replays:
                 self._emit(session, "match_state", state_at(session.fixture, int(session.clock)))
             if self.analysis_hook is not None and not session.analysis_scheduled and int(session.clock) >= 1650:
                 session.analysis_scheduled = True
-                error = self.analysis_hook(session.replay_id, session.run_id)
-                if error is not None:
-                    self._emit(session, "error", error)
+                if high_press_detected(window_metrics(session.fixture, 1500, 1650)):
+                    error = self.analysis_hook(session.replay_id, session.run_id)
+                    if error is not None:
+                        self._emit(session, "error", error)
             if now - session.last_snapshot >= self.settings.snapshot_interval or session.status == "ended":
                 self._emit(session, "snapshot")
                 session.last_snapshot = now
@@ -236,15 +239,9 @@ class Replays:
             self._advance(session, self.clock())
             if start_sec > end_sec or start_sec < session.fixture.match["clip_start_sec"] or end_sec > int(session.clock):
                 raise ApiError(409, "STATE_CONFLICT", "Analysis must use an observed window in this clip.")
-            request = {"contract_version": "2.0.0", "task_id": "TASK-" + uuid.uuid4().hex,
-                       "replay_id": replay_id, "run_id": session.run_id,
-                       "match_id": session.fixture.match["match_id"],
-                       "window": {"start_sec": start_sec, "end_sec": end_sec},
-                       "type": "high_press", "team_id": "HOME", "language": language,
-                       "events": [copy.deepcopy(e) for e in session.fixture.events if start_sec <= e["timestamp_sec"] <= end_sec],
-                       "metrics": window_metrics(session.fixture, start_sec, end_sec)}
-            check_request(request)
-            return request
+            return analysis_input(session.fixture, replay_id=replay_id, run_id=session.run_id,
+                                  task_id="TASK-" + uuid.uuid4().hex, start_sec=start_sec,
+                                  end_sec=end_sec, language=language)
 
     async def publish_analysis(self, request, result):
         """Accept an AI-module result only after identity, numeric and epoch checks."""

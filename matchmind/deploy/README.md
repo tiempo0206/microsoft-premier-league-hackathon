@@ -4,6 +4,8 @@ This package runs the data/API service, with no frontend build, page assets, mod
 
 ## Local readiness and startup
 
+For a complete backend/data acceptance, use `python -m deploy.verify_backend` from `matchmind/`. It runs data/readiness, analysis export, backend/common tests and a real loopback HTTP/SSE probe, then stops its own server. No model, Docker or cloud account is required. Read `backend/DATA_PIPELINE.md`; the report distinguishes this local pass from outstanding Linux/cloud/frontend/live-AI validation.
+
 From `matchmind/`, after installing the pinned `backend/requirements.lock`:
 
 ```powershell
@@ -31,7 +33,7 @@ The image uses Python 3.12, pinned backend dependencies, one worker and a non-ro
 
 `Dockerfile.dockerignore` excludes the build context by default and explicitly permits the small required files. This avoids sending .venv, node_modules, .env and unrelated work to the builder. Docker supports an ignore file named for its Dockerfile in the same directory. [Official build-context documentation](https://docs.docker.com/build/concepts/context/#filename-and-location)
 
-The local Docker Linux engine cannot start because Windows denies access to a stale IPC socket directory, including after the human-authorized elevated repair attempt. The image has **not** been built or started. No factory reset, persistent-data deletion or ACL takeover was performed. Python 3.12 Linux x86-64 wheels for all 20 locked dependencies were resolved/downloaded successfully through TUNA; this is dependency availability evidence, not a substitute for an image test. No public service or paid resource has been created. Render's cloud builder does not require a working local Docker Desktop installation.
+Docker Desktop was upgraded in place from 4.78.0 to 4.96.2 using the official checksum and a valid Docker signature; the existing E: installation/data locations were retained. The Linux engine still cannot start because Windows denies access to an existing IPC socket. The human chose a manual reboot before further validation. The image has **not** been built or started. No factory reset, persistent-data deletion or ACL takeover was performed. Python 3.12 Linux x86-64 wheels for all 20 locked dependencies were resolved/downloaded successfully through TUNA; this is dependency availability evidence, not a substitute for an image test. No public service or paid resource has been created. Render's cloud builder does not require a working local Docker Desktop installation.
 
 ## Render account through preview acceptance
 

@@ -60,6 +60,22 @@ The unexpected-500 shared error-enum gap remains unchanged; it requires a separa
 
 Kimi: no CLI or desktop process discovered, so the planning pass did not run; Codex performed the implementation and review. DSPy skipped for deterministic data/deployment work.
 
+## Data and analysis closure — 2026-10-22
+
+The human explicitly extended B's focus to complete data preparation and deterministic analysis while A continues the frontend and C/real AI remains separately arranged. Development stays on `codex/backend-ab-mvp`; PR and merge remain deferred.
+
+- Added one shared event-window, possession-interval and recovery-chain implementation. Runtime metrics and offline evidence use it; public HTTP/SSE payloads stay frozen at 2.0.0.
+- Runtime now checks the actual 3-high-recovery / 2-linked-recovery predicate before optional adapter admission. Negative windows consume no AI budget.
+- Added `backend.inputs.analysis_input` as the common runtime/offline request builder, retaining the existing C signature and copied source events.
+- Added versioned, deterministic analysis export: whole-clip totals and contribution IDs, half-open ownership segments, event-time checkpoints, three negative controls, input hashes, 301 logical-second invariant checks and a contract-valid offline request. These are engineering files, not AI Insights or new frontend endpoints.
+- Added `python -m deploy.verify_backend`: readiness → analysis export → backend/common tests → owned loopback API → actual HTTP/control/SSE smoke → process-tree/port cleanup. Default output is ignored `.artifacts/backend-delivery/`, with source hashes and explicit unverified cloud/container/frontend/AI fields.
+- Fixed a Windows venv redirector cleanup issue found during acceptance: terminate only the tree rooted at the exact owned child, wait, and verify that its listener closed. Tests cover error-path cleanup; no global Python/process-name kill is used.
+- **63 backend tests and 19 common tests passed** in the final one-command run. Data/frozen/scope and Python compilation checks passed; no frontend, AI, contract or frozen-fixture file was edited. No extra dependency, new dataset account or model request is needed.
+
+Read `backend/DATA_PIPELINE.md` for the Chinese execution/hand-off instructions. The report and offline request are generated artifacts and can be recreated by teammates from the branch. No private logs or local settings are committed.
+
+Linux image execution and Render public acceptance remain outstanding. Docker Desktop was separately upgraded in place to 4.96.2 with official hash/signature verification; the existing Windows socket still prevents startup and the human chose a manual reboot before further validation. This local B pass does not claim a completed A/C integration or full competition submission.
+
 ## Reuse
 
 Earlier backend work referenced generic HTTP limits, cancellation, atomic budgets and idempotency designs in the user-specified `xingma-classroom-upgrade` baseline `4f5d0c93d7a87849e50cf55f6ce10122f2df0a82`. No old source file, D1/R2 migration, auth/course data, secret or cloud configuration was copied. The current dataset derives only from this hackathon starter's recorded CC0 synthetic events.
