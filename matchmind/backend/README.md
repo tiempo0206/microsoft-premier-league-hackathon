@@ -67,6 +67,6 @@ See `backend/DATA_PIPELINE.md` for definitions, acceptance and the Chinese hando
 
 State survives requests/reconnects only while this single process lives. No database or durable refresh recovery is claimed. Model readiness remains false and health degraded because no model is configured; a 200 health response plus a passed data preflight is the backend-only readiness check.
 
-The frozen original's scorer mismatch is preserved for shared compatibility tests; the runtime derivative fixes it without editing shared data. The generic 500 error-contract gap is unchanged and recorded in `docs/handoff/backend.md`. Read `deploy/README.md` for backend-only deployment. No public deployment or container-image test is claimed.
+The frozen original's scorer mismatch is preserved for shared compatibility tests; the runtime derivative fixes it without editing shared data. The generic 500 error-contract gap is unchanged and recorded in `docs/handoff/backend.md`. Read `deploy/README.md` for the completed local Linux image/HTTP/SSE/regression verification. Public deployment remains outstanding.
 
 Read `backend/INTEGRATION.md` for the verified A1 interface handoff and `deploy/RENDER_STEPS_CN.md` for account setup through preview acceptance.

@@ -59,4 +59,4 @@ A 继续使用现有十个 HTTP 接口及六种 SSE 消息；没有新增字段�
 
 真实 AI 由团队另行安排。C 可先读取 `analysis-request.json`，按冻结 AnalysisRequest/AnalysisResult 开发；集成时使用运行时分配的 replay/run/task 身份。B 不实现提示词、模型供应商或语义审核。本次没有新增任何依赖和真实模型调用。
 
-本地 B 闭环通过不等于公网比赛作品完成：Linux 镜像、Render 公网 SSE、A 页面和 C 真实模型仍须在实际环境验收。Docker 升级已完成但尚待重启后的运行验证；Render 注册与授权步骤见 `deploy/RENDER_STEPS_CN.md`。继续在 `codex/backend-ab-mvp` 开发，按人类要求最后再处理 PR/合并。
+本地 B 闭环及 Linux 镜像、容器 HTTP/SSE、合成回测和重启验证已通过。本机已使用 WSL2 原生 Docker Engine 替代故障 Desktop；启动入口是桌面“启动 Docker”。Render 公网 SSE、A 页面和 C 真实模型仍须在实际环境验收；Render 注册与授权步骤见 `deploy/RENDER_STEPS_CN.md`。继续在 `codex/backend-ab-mvp` 开发，按人类要求最后再处理 PR/合并。
