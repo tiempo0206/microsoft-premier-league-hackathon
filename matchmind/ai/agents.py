@@ -170,17 +170,11 @@ async def run_round(request, provider, config, deadline, traces, *, correction_i
         facts + "\n\nCLAIMS:\n" + claims_block(claims)
         + "\n\nNARRATIVES:\n" + claims_block(narratives))) or {}
     _capture(provider, "auditor", raw_audit)
-    audit_issues, auditor_rejected = [], []
-    approved = raw_audit.get("approved") is True
-    if not approved:
-        audit_issues.append("auditor did not approve")
-    for field in ("rejected_claims", "narrative_problems", "issues"):
-        value = raw_audit.get(field)
-        if isinstance(value, list) and value:
-            audit_issues.extend(str(item) for item in value)
-            if field == "rejected_claims":
-                auditor_rejected.extend(str(item) for item in value)
-    traces.append(_trace(request, "auditor", "completed" if not audit_issues else "rejected",
+    # Use the same derivation as the direct path: the decision comes from the auditor's lists, not
+    # from a boolean it can contradict.
+    from .service import _audit_approved
+    approved, audit_issues, auditor_rejected = _audit_approved(raw_audit)
+    traces.append(_trace(request, "auditor", "completed" if approved else "rejected",
                          started, "framework issues=%d" % len(audit_issues)))
     if audit_issues:
         # Same rule as the direct path: the auditor's refusals must not be reported as

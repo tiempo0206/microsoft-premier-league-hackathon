@@ -77,24 +77,34 @@ def _trace(request, agent, status, started, note):
 
 
 def _audit_approved(audit):
-    """Return (approved, issues, auditor_rejected_claim_ids).
+    """Return (approved, blocking_issues, auditor_rejected_claim_ids).
 
-    The auditor's own rejection list is carried out of here so a subsequent fallback can
-    record which claims were refused, instead of silently publishing an empty list.
+    The decision is DERIVED from the auditor's lists, never taken from a flag it asserts. Measured
+    problem this fixes: on a well-formed card the auditor answered `approved: false` while its own
+    reasoning said "no factual violations found" and its rejection lists were empty — a third of
+    runs, on a card the code gate had already accepted. A redundant boolean the model can contradict
+    is not a decision, it is noise.
+
+    `notes` is kept for the record and does not block. `issues` is accepted as a synonym so older
+    prompts and fixtures still work.
     """
     if not isinstance(audit, dict):
         return False, ["auditor returned a non-object"], []
-    issues = []
-    rejected = []
-    if audit.get("approved") is not True:
-        issues.append("auditor did not approve")
-    for field in ("rejected_claims", "narrative_problems", "issues"):
+    rejected, problems, notes = [], [], []
+    for field, bucket in (("rejected_claims", rejected), ("narrative_problems", problems)):
         value = audit.get(field)
-        if isinstance(value, list) and value:
-            issues.extend(str(item) for item in value)
-            if field == "rejected_claims":
-                rejected.extend(str(item) for item in value)
-    return not issues, issues, rejected
+        if isinstance(value, list):
+            bucket.extend(str(item) for item in value if str(item).strip())
+    for field in ("notes", "issues", "observations"):
+        value = audit.get(field)
+        if isinstance(value, list):
+            notes.extend(str(item) for item in value if str(item).strip())
+    blocking = [("claim " + item) for item in rejected] + problems
+    # An explicit false with nothing named is a contradiction; the code resolves it in favour of
+    # the card, because the code gate already verified every number in it.
+    if audit.get("approved") is False and not blocking:
+        notes.append("auditor reported approved=false but named nothing; treated as approval")
+    return not blocking, blocking, rejected
 
 
 def _reason_for(error):

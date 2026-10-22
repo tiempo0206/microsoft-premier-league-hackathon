@@ -249,6 +249,67 @@ class BoundedFailureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["error"]["code"], "MODEL_UNAVAILABLE")
 
 
+class AuditorDerivationTests(unittest.TestCase):
+    """The auditor's decision is derived from what it names, not from a flag it asserts.
+
+    Measured bug: on a card the code gate had already accepted, the auditor answered
+    `approved: false` while its own reasoning said "no factual violations found" and its rejection
+    lists were empty. It happened in about a third of runs and cost an extra model call per card,
+    and it made the visible correction look staged.
+    """
+
+    def test_an_empty_rejection_is_an_approval(self):
+        from ai.service import _audit_approved
+        approved, issues, rejected = _audit_approved(
+            {"rejected_claims": [], "narrative_problems": [], "notes": []})
+        self.assertTrue(approved)
+        self.assertEqual(issues, [])
+        self.assertEqual(rejected, [])
+
+    def test_a_self_contradicting_false_is_treated_as_approval_and_recorded(self):
+        from ai.service import _audit_approved
+        approved, issues, rejected = _audit_approved(
+            {"approved": False, "rejected_claims": [], "narrative_problems": [],
+             "notes": ["no factual violations found"]})
+        self.assertTrue(approved, "a false flag with nothing named is not a rejection")
+        self.assertEqual(issues, [])
+        self.assertEqual(rejected, [])
+
+    def test_naming_a_claim_rejects(self):
+        from ai.service import _audit_approved
+        approved, issues, rejected = _audit_approved(
+            {"rejected_claims": ["C2"], "narrative_problems": [], "notes": []})
+        self.assertFalse(approved)
+        self.assertEqual(rejected, ["C2"])
+        self.assertTrue(any("C2" in issue for issue in issues))
+
+    def test_naming_a_narrative_problem_rejects_without_naming_a_claim(self):
+        from ai.service import _audit_approved
+        approved, issues, rejected = _audit_approved(
+            {"rejected_claims": [], "narrative_problems": ["says all three scored"]})
+        self.assertFalse(approved)
+        self.assertEqual(rejected, [])
+        self.assertEqual(len(issues), 1)
+
+    def test_notes_alone_do_not_block(self):
+        from ai.service import _audit_approved
+        approved, issues, _ = _audit_approved(
+            {"rejected_claims": [], "narrative_problems": [],
+             "notes": ["wording could be tighter", "the second sentence is long"]})
+        self.assertTrue(approved)
+
+    def test_a_non_object_is_a_failure(self):
+        from ai.service import _audit_approved
+        approved, issues, _ = _audit_approved("not an object")
+        self.assertFalse(approved)
+        self.assertTrue(issues)
+
+    def test_the_auditor_prompt_no_longer_asks_for_a_flag(self):
+        from ai.prompts import AUDITOR_SYSTEM
+        self.assertNotIn('"approved":true|false', AUDITOR_SYSTEM)
+        self.assertIn("Do not send an approve/reject flag", AUDITOR_SYSTEM)
+
+
 class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
     async def test_one_correction_recovers_a_bad_first_attempt(self):
         request = load_request()

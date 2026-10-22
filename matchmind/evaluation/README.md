@@ -7,7 +7,8 @@ disabled, prompt `c3-1.1.0`. Reproduce any of them; none require Azure or Foundr
 | harness | question it answers | cost |
 | --- | --- | --- |
 | `benchmark.py` | does the pipeline publish correct cards, and how does one agent compare with three? `--auto-cases` derives the sample from any fixture | billable |
-| `factcheck_bench.py` | how many known-bad explanations does the verifier catch, and how many good ones does it wrongly reject? | free |
+| `factcheck_bench.py` | how many known-bad explanations does the code verifier catch, and how many good ones does it wrongly reject? | free |
+| `auditor_calibration.py` | how often does the *semantic* auditor reject a card that is actually fine? | billable |
 | `ablation.py` | what breaks when each specialist is switched off? (`--repeats 3` for an interpretable run) | billable |
 | `live_smoke.py` | one real end-to-end run with the raw output of every agent | billable |
 | `fixture_qualify.py` | is the synthetic data dense and complete enough to carry a demo? (`--recommend` finds a window that can explain an outcome) | free |
@@ -76,6 +77,33 @@ figure shows the checks work, not how accurate a model is.
 
 ---
 
+## 1a. The semantic auditor's false-alarm rate
+
+The code verifier is measured by §1 at zero cost. The auditor is a model, so its false-alarm rate
+needs real calls: `python -m evaluation.auditor_calibration --runs 5` feeds it claim sets the code
+gate already accepted, containing only supplied numbers and no causal claim, and reports how often
+it rejects them anyway.
+
+| prompt version | runs | false alarms |
+| --- | --- | --- |
+| `c3-1.2.0` | 6 | **33.3%** |
+| `c3-1.3.0` | 10 | **0.0%** |
+
+The defect was not judgement, it was contradiction: the auditor answered `approved: false` while
+its own `issues` text said *"No factual violations found"* and both rejection lists were empty. A
+redundant boolean the model can contradict is not a decision.
+
+The fix removes the flag. The auditor now returns only `rejected_claims`, `narrative_problems` and
+`notes`, and **the code derives the decision from the lists**. Notes are recorded and never block.
+An explicit `approved: false` with nothing named is treated as approval and recorded as a
+contradiction, because the code gate already verified every number on the card.
+
+This matters beyond tidiness: a constant rejection made the visible correction look staged, and it
+cost an extra model call on every card. After the fix, 8 of 11 dense-fixture cards resolve in three
+calls and the 3 corrections that do occur name a specific claim.
+
+---
+
 ## 2. Product evaluation — and why the sample size was the problem
 
 The old case set was hand-written against one 300-second fixture, which caps the whole evaluation at
@@ -92,15 +120,16 @@ Result on the dense half:
 
 | group | passed | fallback | rejected | agent calls |
 | --- | --- | --- | --- | --- |
-| positive | **5 / 5** | 0 | 0 | 19 |
-| non_trigger | 3 / 4 | 1 | 0 | 16 |
-| negative | 2 / 2 | 0 | 0 | 8 |
+| positive | **5 / 5** | 0 | 0 | 15 |
+| non_trigger | **4 / 4** | 0 | 0 | 16 |
+| negative | **2 / 2** | 0 | 0 | 8 |
 | tampered | 0 | 0 | **4 / 4** | **0** |
 
-**10 published cards, 1 honest fallback, 4 correct refusals, 0 contract violations**, median 8.4 s
-across the runs that reached the pipeline. On the shipped fixture the single positive window passes
-in some runs and falls back in others — that variance *is* the narrow-sample problem, and it is why
-the dense fixture exists rather than evidence that the pipeline is broken.
+**All 11 valid windows published, zero fallbacks, zero contract violations**, median 7.7 s, 39 agent
+calls. Eight of the eleven resolved in three calls, so the auditor approved the first draft; the
+other three were genuinely corrected. On the shipped fixture the single positive window passes in
+some runs and falls back in others — that variance *is* the narrow-sample problem, and it is why the
+dense fixture exists rather than evidence that the pipeline is broken.
 
 Reproduce:
 
@@ -109,7 +138,7 @@ python -m evaluation.dense_fixture_proposal --minutes 45 --out .artifacts/dense-
 python -m evaluation.benchmark --auto-cases --data-dir .artifacts/dense-half
 ```
 
-Three defects surfaced the moment this larger sample ran, all now fixed:
+Four defects surfaced the moment this larger sample ran, all now fixed:
 
 1. Metric definitions were absent from the facts block, so the auditor correctly rejected "followed
    by a shot within 15 seconds" as unsupported. The definitions now travel with the facts.
@@ -117,8 +146,10 @@ Three defects surfaced the moment this larger sample ran, all now fixed:
    rejected for repeating a fact it had just been given. Allowed numbers are now derived from the
    definitions, and an invariant test asserts the property.
 3. A narrator formatting failure consumed the auditor correction budget, so a later semantic
-   objection had none left and the window fell back with nothing wrong with its facts. The two
-   budgets are now separate, and prose that fails the code check twice gets no third attempt.
+   objection had none left. The two budgets are now separate.
+4. The auditor asserted `approved: false` while its own reasoning said "no factual violations
+   found" and its rejection lists were empty — about a third of runs, on cards the code gate had
+   already accepted. See §1a.
 
 ## 3. Three agents vs one agent
 
