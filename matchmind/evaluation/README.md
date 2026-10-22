@@ -8,9 +8,19 @@ disabled, prompt `c3-1.1.0`. Reproduce any of them; none require Azure or Foundr
 | --- | --- | --- |
 | `benchmark.py` | does the pipeline publish correct cards on 12 windows, and how does one agent compare with three? | billable |
 | `factcheck_bench.py` | how many known-bad explanations does the verifier catch, and how many good ones does it wrongly reject? | free |
-| `ablation.py` | what breaks when each specialist is switched off? | billable |
+| `ablation.py` | what breaks when each specialist is switched off? (`--repeats 3` for an interpretable run) | billable |
 | `live_smoke.py` | one real end-to-end run with the raw output of every agent | billable |
+| `fixture_qualify.py` | is the synthetic data dense and complete enough to carry a demo? (`--recommend` finds a window that can explain an outcome) | free |
+| `dense_fixture_proposal.py` | are those thresholds actually reachable? (generates a qualifying fixture into `.artifacts/`) | free |
 | `scan_competitors.py` / `fetch_readmes.py` | what is the field shipping? see [`research/README.md`](research/README.md) | free |
+
+Two documents sit alongside them for the submission:
+
+* [`PLAN_REVIEW.md`](PLAN_REVIEW.md) — the critical assessment, the 13 borrowed ideas, the gaps.
+* [`SUBMISSION_POSITIONING.md`](SUBMISSION_POSITIONING.md) — what we may claim per criterion, and
+  the sentences the submission must not contain.
+* [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md) — a 110-second shot list built only from things that exist.
+* [`CONTRACT_2_1_PROPOSAL.md`](CONTRACT_2_1_PROPOSAL.md) — the one reviewable contract bump.
 
 The critical assessment of the whole plan, including the borrowed ideas and the gaps,
 is in [`PLAN_REVIEW.md`](PLAN_REVIEW.md).
