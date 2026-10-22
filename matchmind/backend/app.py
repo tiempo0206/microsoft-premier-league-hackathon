@@ -18,6 +18,7 @@ import anyio
 from sse_starlette.sse import EventSourceResponse
 
 from .data import Catalog
+from .audit import audit_dataset
 from .http import ApiError, error_response, parse_second, read_body
 from .replays import Replays
 from .settings import Settings
@@ -27,8 +28,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist=None):
-    catalog = Catalog(Path(data_dir) if data_dir else ROOT / "data/fixtures")
     settings = settings or Settings.from_env()
+    directory = Path(data_dir) if data_dir is not None else Path(settings.data_directory)
+    if not directory.is_absolute():
+        directory = ROOT / directory
+    catalog = Catalog(directory)
+    data_report = audit_dataset(directory, catalog)
+    if data_report["status"] != "passed":
+        codes = ", ".join(sorted({issue["code"] for issue in data_report["issues"]}))
+        raise ValueError(f"Dataset readiness failed: {codes}. Run python -m deploy.preflight for details.")
     replays = Replays(catalog, settings, clock)
 
     @asynccontextmanager
@@ -45,6 +53,7 @@ def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist
     app = FastAPI(title="MatchMind", version="2.0.0", docs_url=None, redoc_url=None,
                   openapi_url=None, lifespan=lifespan)
     app.state.catalog = catalog
+    app.state.data_report = data_report
     app.state.replays = replays
     for fixture in catalog.fixtures.values():
         for warning in fixture.warnings:
@@ -173,7 +182,7 @@ def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist
 
     # A1 is a single-page entry; unknown /api routes must remain JSON 404s.
     assets = Path(frontend_dist) if frontend_dist else ROOT / "frontend/dist"
-    if (assets / "index.html").is_file():
+    if settings.serve_frontend and (assets / "index.html").is_file():
         app.mount("/", StaticFiles(directory=assets, html=True), name="frontend")
 
     return app

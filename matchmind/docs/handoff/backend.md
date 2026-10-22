@@ -1,56 +1,58 @@
-# Backend handoff — AB integration
+# Role B handoff — data processing and backend deployment
 
-- Role / developer: B / `wunianze666-netizen`, assisted by Codex.
+- Developer: B / `wunianze666-netizen`, assisted by Codex.
 - Task: [Issue #6](https://github.com/tiempo0206/microsoft-premier-league-hackathon/issues/6).
 - Local branch: `codex/backend-ab-mvp`.
-- A1 dependency/base: `f88d286092e602d73804e1afeb114ec0f126b2ff` (PR #3, not merged at start).
-- Contract: frozen `2.0.0`. Frontend, AI module, shared contracts and fixtures are unchanged.
+- Shared application base: A1 `f88d286092e602d73804e1afeb114ec0f126b2ff`.
+- Previous backend base: `16454f9`; data preparation slice: `3ee04dc`.
+- Contract remains `2.0.0`. This slice is limited to B-owned backend/data/deployment/tests and this handoff. Frontend/AI source and frozen contracts/fixtures are unchanged.
 
-## Scope and plan
+## Human scope and delivered behavior
 
-1. B1: independent local fixture loader, deterministic statistics and read APIs.
-2. B2/B3: isolated replay/control and bounded snapshot SSE, keeping A1's snapshot consumer working.
-3. AI handoff hooks only: create a validated observed request and publish a checked result. No automatic analysis scheduler, deadline/admission controller for models, prompts, model accounts or model-client implementation is included.
+The human explicitly narrowed work to their own data-processing and deployment responsibilities. No frontend build, browser operation, UI development, model implementation, cloud account creation or cross-task coordination is part of this slice.
 
-C is unclaimed. The human owns backend/data/deployment; this does not transfer C's model responsibilities to B. No database, user login or object storage is needed for this slice.
+1. Prepared a B-owned corrected synthetic dataset at `data/extra/validated-demo`, revision `fixture-2.0.1`. The original shared source stays frozen. Only Match generator_version and E023's scorer differ; the first 20 event objects and all previously audited totals are unchanged.
+2. Added explicit fictional rosters, independently specified expected states/metrics, CC0 provenance and source/output SHA-256 records.
+3. Added deterministic preparation/check commands. They verify frozen source digests and write only five managed files under the B-owned output directory; they are not a new football simulator or model job.
+4. Added fail-closed dataset audit and deployment preflight for shape/order, roster membership, one-to-one shot/goal relations, baseline totals, integrity and reproducibility. Missing/null/invalid metadata fails. Checks remain active under Python optimization.
+5. Switched default runtime to API-only. `MATCHMIND_SERVE_FRONTEND=0`; `/` is JSON 404 and no page files are needed. The backend's existing optional static hosting is reserved for a later, separately coordinated integration.
+6. Replaced the Node/frontend container stage with a Python-only backend image, non-root user, one worker, explicit source/context allowlists and offline data checks at build/startup. It contains no AI module or model SDK.
+7. Added backend-only environment examples and startup preflight. No key, token or database credential is required.
 
-## Known data and contract limits
+## Data provenance and compatibility
 
-The frozen fixture has shot(goal) E022 by H01 followed by goal E023 by H02. The loader reports this as a known shared-data warning without modifying frozen data. Structural/order/team conflicts fail loading. Before a public competition demo, the scorer relation needs a separately reviewed fixture correction; this branch does not claim complete football-semantic validation.
+The frozen original records scoring shot E022 as H01 and goal E023 as H02. The B-owned derivative records the confirmation as H01. Time and ID semantics remain unchanged; score is still counted only on goal. `prepare_demo.py --check` verifies exact bytes without editing the source. `PROVENANCE.json` records the explicit change and inherited CC0 license. This validates the sparse synthetic excerpt's declared event relationships, not continuous tracking or real-world causal claims.
 
-The shared error enum lacks a generic INTERNAL_ERROR. Known client errors use the frozen error shape. Unexpected 500 errors remain framework-sanitized until a shared contract patch is reviewed; do not mislabel them as model failures.
+## Commands
 
-## Runtime and verification
-
-B1 was committed locally as `71a709f`. B2/B3 add isolated create/get/control, monotonic playback, end/reset handling, bounded TTL sessions, UUID idempotency keys, expected-run guards, independent SSE queues and snapshot recovery. Periodic full snapshots keep the unchanged A1 client compatible; incremental match_event/match_state are also emitted. AI hooks can emit actual returned insight/agent_status after cross-field checks; no background analysis or live model calls run by default.
-
-Checks on Python 3.12.14 / Node 24.19.0:
-
-- 21 new backend tests (real HTTP/SSE plus clock-controlled domain tests); 19 inherited common tests; 11 inherited frontend role tests.
-- Actual A1 `getMatches`, `createReplay` and `subscribeToSnapshots` run against a real B process through `tests/backend/a1-consumer-check.mjs`: connected, clock reached 1505, pause held, reset run became 2. Page/JS assets use the same origin; unknown API returned JSON 404.
-- The existing frontend compiled with direct `node .../typescript/bin/tsc --noEmit` and `node .../vite/bin/vite.js build`. No A source or lockfile changed. Existing matching dependencies on E: were reused through an ignored node_modules junction, not a fresh frontend install.
-- Backend packages installed from TUNA at the prescribed pins; `backend/requirements.lock` records the resolved transitive versions. No AI-provider SDK was installed.
-- Frozen contracts/fixtures and role-B scope are checked. No browser visual test is claimed; this is an unchanged-client HTTP/SSE integration check.
-- Dockerfile/runbook provided; Docker's Linux engine is unavailable, so the container image is **not built/tested**. No account creation, model call, cloud resource, public deployment, access change or new backend push occurred.
-
-Commands from `matchmind/`:
+From `matchmind/`, using its existing Python 3.12 environment:
 
 ```powershell
+.\.venv\Scripts\python.exe data/generator/prepare_demo.py --check
+.\.venv\Scripts\python.exe -m deploy.preflight --output .artifacts/backend-preflight.json
 .\.venv\Scripts\python.exe -m unittest discover -s tests/backend -p 'test_*.py' -v
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p 'test_*.py' -v
 .\.venv\Scripts\python.exe tools/check_frozen.py
-.\.venv\Scripts\python.exe tools/check_scope.py --role B --base f88d286092e602d73804e1afeb114ec0f126b2ff
-node --experimental-strip-types --test tests/frontend/replay.test.mjs
-# With a local B service and frontend/dist present:
-node --experimental-strip-types tests/backend/a1-consumer-check.mjs http://127.0.0.1:8877
+.\.venv\Scripts\python.exe tools/check_scope.py --role B --base 16454f9
 ```
 
-## Remaining integration work
+`deploy/start-backend.ps1` runs preflight before the loopback server and restores the caller's PORT on exit. The container entry `python -m backend.run` checks readiness before starting one worker on the platform PORT. Read `backend/README.md` and `deploy/README.md` for the exact backend-only commands.
 
-A2 owns visible play/pause/reset controls; A1 currently displays server snapshots but has no buttons. A should also use a stable creation key across StrictMode/retries: abandoned anonymous creates otherwise consume capacity until TTL. C remains unclaimed. A future B/C integration slice needs bounded analysis dispatch, model timeouts/admission and honest precomputed/live/fallback labels before real AI exposure. The offline stub is only called in tests and its known saved-result label is not silently fixed in C's module. Public release also needs the reviewed shared fixture/error-contract corrections and a tested image/host. A1 refresh starts a new replay; durable or sessionStorage refresh recovery is not claimed.
+## Verification
 
-Kimi status: unavailable (no CLI or desktop process discovered), planning pass not run. Codex implements and reviews. DSPy skipped: deterministic backend work, no LM optimization.
+- 36 backend tests passed, including data-corruption/metadata/roster/scorer cases, optimized-Python preflight, API-only startup, config validation and report credential redaction.
+- 19 inherited common tests passed. Shared frozen hashes and role-B scope passed; frontend/AI/contract/frozen-source paths have no changes.
+- Default offline readiness report passed with corrected dataset, one worker, frontend disabled and required_credentials empty.
+- All 20 locked dependency wheels resolved/downloaded for Python 3.12 Linux x86-64 through TUNA, stored on E:. This validates availability, not actual Linux execution.
+- PowerShell startup syntax checked. New source and complete diff reviewed by Codex. No frontend or Node checks were run in this slice.
+- The local Docker Linux engine is unavailable; no successful image build/run is claimed. No cloud resources, paid requests, new backend push, PR merge or public deployment were performed.
 
-## Reuse record
+## Remaining boundary
 
-Design reference only: `farlyfeifei/xingma-qihang` at `4f5d0c93d7a87849e50cf55f6ce10122f2df0a82`, `lib/platform/http.ts`, `lib/platform/client.ts`, `lib/platform/budget.ts`, `lib/classroom/drafts.ts`. Generic ideas retained: bounded body reading, unified known errors, cancellation/deadlines, atomic admission and idempotent retry. No old source file, D1/R2 migration, classroom auth, secrets or cloud resource configuration is copied. The reviewed source has no explicit repository license; this is not a claim of a license to copy it.
+The unexpected-500 shared error-enum gap remains unchanged; it requires a separate shared-contract decision. Replay state remains bounded single-process memory and is lost on restart. This data/deployment slice does not implement runtime analysis dispatch, prompts or model readiness; existing internal handoff hooks are preserved.
+
+Kimi: no CLI or desktop process discovered, so the planning pass did not run; Codex performed the implementation and review. DSPy skipped for deterministic data/deployment work.
+
+## Reuse
+
+Earlier backend work referenced generic HTTP limits, cancellation, atomic budgets and idempotency designs in the user-specified `xingma-classroom-upgrade` baseline `4f5d0c93d7a87849e50cf55f6ce10122f2df0a82`. No old source file, D1/R2 migration, auth/course data, secret or cloud configuration was copied. The current dataset derives only from this hackathon starter's recorded CC0 synthetic events.

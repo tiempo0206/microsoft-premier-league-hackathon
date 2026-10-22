@@ -58,6 +58,15 @@ class APITests(unittest.TestCase):
         self.assertFalse(body["model_ready"])
         self.assertEqual(headers["Cache-Control"], "no-store")
 
+    def test_default_process_is_api_only_and_uses_validated_data(self):
+        status, body, headers = self.call("/")
+        self.assertEqual(status, 404)
+        self.assertEqual(body["error"]["code"], "NOT_FOUND")
+        self.assertIn("application/json", headers["Content-Type"])
+        status, matches, _ = self.call("/api/v1/matches")
+        self.assertEqual(status, 200)
+        self.assertEqual(matches[0]["generator_version"], "fixture-2.0.1")
+
     def test_match_events_and_stats_use_frozen_shapes(self):
         status, matches, _ = self.call("/api/v1/matches")
         self.assertEqual(status, 200)

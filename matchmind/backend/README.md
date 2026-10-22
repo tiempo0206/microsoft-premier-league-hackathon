@@ -1,6 +1,6 @@
-# MatchMind backend — AB development
+# MatchMind — Role B data processing and deployment
 
-Role B implements the frozen 2.0.0 API for A1. Source data is local synthetic JSON/JSONL. No model key, cloud account or classroom database is required.
+Role B implements the frozen 2.0.0 backend API. Runtime data is the B-owned validated synthetic revision under `data/extra/validated-demo`; the original shared fixture and contract remain untouched. No model key, cloud account or classroom database is required for development and preflight.
 
 ## Windows
 
@@ -10,13 +10,21 @@ From `matchmind/`, use this project's `.venv`, not another project's environment
 # First setup only, if no .venv exists:
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r backend/requirements.lock
-# Start the API. A may point MATCHMIND_BACKEND_URL at this address.
+# Read-only offline checks, then start only the backend API.
+.\.venv\Scripts\python.exe data/generator/prepare_demo.py --check
+.\.venv\Scripts\python.exe -m deploy.preflight --output .artifacts/backend-preflight.json
 .\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --workers 1
 ```
 
 Or run `deploy/start-backend.ps1` with PowerShell. It starts the existing environment without changing execution policy, installing cloud tools or creating resources.
 
-A can run its Vite dev server separately; set `MATCHMIND_BACKEND_URL=http://127.0.0.1:8000` in that process and restart Vite. When `frontend/dist/index.html` exists, B also serves that build at the API origin. It is not a frontend source change.
+Default mode is API-only. Check `http://127.0.0.1:8000/api/v1/health`; `/` returns a JSON 404. No page assets are needed, read or built. Existing optional static hosting is disabled with `MATCHMIND_SERVE_FRONTEND=0`; future integration owners may opt in separately.
+
+## Data preparation
+
+The original frozen excerpt contains a scorer mismatch. `data/generator/prepare_demo.py` applies one explicit correction in the B-owned output: E023's player becomes H01 to match the scoring shot. It updates generator_version to `fixture-2.0.1`; all timestamps, event IDs, coordinates and statistics stay the same. The first 20 event objects stay identical to the frozen example.
+
+The roster, manually audited totals and provenance/hash manifest travel with the output. Preflight validates event structure/order, player membership, one-to-one shot/goal relations, totals and hashes. It also checks byte reproducibility against the original source. Invalid data is rejected before startup. Rebuild only the five managed output files with `python data/generator/prepare_demo.py --write`; this is deterministic preparation, not a football simulator or model job.
 
 ## Current behavior
 
@@ -27,7 +35,7 @@ A can run its Vite dev server separately; set `MATCHMIND_BACKEND_URL=http://127.
 - strict known error bodies, actual byte and deadline limits; no automatic 422/HTML error for bad API input;
 - internal AI request/publish hooks, tested against the existing offline stub; no runtime model calls or scheduling.
 
-Create replay with `{"match_id":"MM-DEMO-01","speed":5}`; it starts idle. POST `{"action":"play"}` to `/api/v1/replays/{replay_id}/control`. A1 has no playback buttons yet, so A2 needs to wire those controls. Send expected-run and a stable idempotency key on retries; header support is additive and the shared OpenAPI update is pending review.
+Create replay with `{"match_id":"MM-DEMO-01","speed":5}`; it starts idle. POST `{"action":"play"}` to `/api/v1/replays/{replay_id}/control`. Send expected-run and a stable idempotency key on retries; header support is additive and the shared OpenAPI update is pending review.
 
 ## Checks
 
@@ -38,6 +46,6 @@ Create replay with `{"match_id":"MM-DEMO-01","speed":5}`; it starts idle. POST `
 .\.venv\Scripts\python.exe tools/check_scope.py --role B --base f88d286092e602d73804e1afeb114ec0f126b2ff
 ```
 
-State survives requests/reconnects only while this single process lives. A1 refresh currently creates a new replay; do not claim persisted refresh recovery. No database is planned. Model readiness is honestly false and health degraded while the model role is unclaimed.
+State survives requests/reconnects only while this single process lives. No database or durable refresh recovery is claimed. Model readiness remains false and health degraded because no model is configured; a 200 health response plus a passed data preflight is the backend-only readiness check.
 
-Known scorer mismatch and generic 500 error-contract gap remain in `docs/handoff/backend.md`. Read `deploy/README.md` before choosing a host. No public deployment or container-image test is claimed.
+The frozen original's scorer mismatch is preserved for shared compatibility tests; the runtime derivative fixes it without editing shared data. The generic 500 error-contract gap is unchanged and recorded in `docs/handoff/backend.md`. Read `deploy/README.md` for backend-only deployment. No public deployment or container-image test is claimed.

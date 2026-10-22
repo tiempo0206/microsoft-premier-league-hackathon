@@ -1,37 +1,52 @@
-# AB preview deployment
+# Role B — backend-only deployment
 
-One FastAPI process serves A1's built frontend and same-origin `/api/v1`. There are no runtime model calls, authentication, database or object storage. Review the frozen scorer mismatch and shared error-contract gap in `docs/handoff/backend.md` before the final competition demo.
+This package runs the data/API service, with no frontend build, page assets, model implementation, cloud provisioning, database or object storage. Default configuration is in `backend.env.example`; export its values in the process/platform environment. Arbitrary .env files are not auto-loaded.
 
-## Container target
+## Local readiness and startup
 
-From `matchmind/`:
+From `matchmind/`, after installing the pinned `backend/requirements.lock`:
 
-```sh
-docker build -f deploy/Dockerfile -t matchmind-ab .
-docker run --rm -p 8000:8000 -e PORT=8000 matchmind-ab
+```powershell
+.\.venv\Scripts\python.exe data/generator/prepare_demo.py --check
+.\.venv\Scripts\python.exe -m deploy.preflight --output .artifacts/backend-preflight.json
+.\.venv\Scripts\python.exe -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 --workers 1
 ```
 
-The Dockerfile builds A's pinned frontend, installs B's resolved Python dependencies and runs as a non-root user. Only allowlisted files enter the image. Model-provider SDKs are absent. The Docker executable exists locally, but its Linux engine is not running: **the image has not been built or tested**. Local frontend compilation and the Python runtime are checked separately.
+Or use `deploy/start-backend.ps1`; it validates readiness before starting, keeps the local listener on loopback and restores the caller's PORT setting on exit. It does not install or launch any cloud tool.
 
-## Initial host: Render
+`deploy.preflight` is read-only unless `--output` is explicitly supplied. Exit 0 means the backend dataset/config checks passed; exit 2 means they failed. It checks source/output hashes, roster membership, shot/goal pairing, audited statistics and deterministic reconstruction. It never prints environment values, model keys or credentials. Python `-O` does not disable its checks.
 
-Register at [Render](https://dashboard.render.com/). Local development needs no cloud account. Once publication/deployment is authorized and the branch is remote:
+The default dataset is `data/extra/validated-demo`, revision `fixture-2.0.1`. The original frozen `data/fixtures/` is preserved; selecting that known-invalid original deliberately fails readiness. Both the container entrypoint and application startup reject invalid configured data. No model readiness is required for backend startup.
 
-- Create one **Web Service** from the team repo. Its owner may need to authorize private-repo access.
-- Root directory: `matchmind`; runtime: Docker; Dockerfile: `deploy/Dockerfile`; build context: this root directory. Prefer Singapore if available.
-- Free is for previews and sleeps after 15 idle minutes. Consider the currently advertised US$7/month Starter compute instance for judging, after checking memory use and checkout price. Do not confuse it with a workspace-plan upgrade.
-- Keep one instance. `backend.run` reads `PORT` and starts one worker. Health path: `/api/v1/health`.
-- No database, disk or model key is needed for AB. No analysis jobs or model requests run by default.
-- Check page/assets, APIs, playback, SSE reconnect and restart behavior. A1 displays snapshots; A's UI controls remain A2 work.
+## Backend container
 
-Checked 2026-10-22: [first deploy](https://render.com/docs/your-first-deploy), [free limits](https://render.com/docs/free), [advertised compute price](https://render.com/articles/render-vs-railway). No resources were created by this runbook.
+Build context is `matchmind/`:
 
-## Student option, without blocking AB
+```sh
+docker build -f deploy/Dockerfile -t matchmind-backend .
+docker run --rm -p 8000:8000 --env-file deploy/backend.env.example matchmind-backend
+```
 
-The human may apply with their academic identity for [Azure for Students](https://azure.microsoft.com/en-us/free/students/). Official terms require age 18+, full-time attendance at an accredited degree-granting institution and academic verification. The offer currently advertises US$100 for 12 months without a credit card. Actual account/region eligibility and activation remain unverified; a hackathon login is not an Azure subscription. [Offer terms](https://azure.microsoft.com/en-us/pricing/offers/ms-azr-0170p/)
+The image uses Python 3.12, pinned backend dependencies, one worker and a non-root runtime user. It copies only backend modules, schemas and local data/preparation helpers. It runs offline preflight during the build and again at startup. No Node/npm/pnpm, frontend directory, AI module, model SDK, old classroom resource or API key is included.
 
-Keep Render as the immediate preview route. If student activation succeeds and the team chooses Azure, reuse the same image in one Container App, one active revision, min/max replicas 1 and a fixed resource budget. Add no Azure-specific API layer. The backend role does not need Foundry model resources.
+`Dockerfile.dockerignore` excludes the build context by default and explicitly permits the small required files. This avoids sending .venv, node_modules, .env and unrelated work to the builder. Docker supports an ignore file named for its Dockerfile in the same directory. [Official build-context documentation](https://docs.docker.com/build/concepts/context/#filename-and-location)
 
-## AI stays separate
+The local Docker Linux engine is not running, so the image has **not** been built or started. Python 3.12 Linux x86-64 wheels for all 20 locked dependencies were resolved/downloaded successfully through TUNA; this is dependency availability evidence, not a substitute for an image test. No public service or paid resource has been created.
 
-B creates observed inputs via `Replays.analysis_request(...)` and accepts checked outputs via `publish_analysis(request,result)`. A future integrator may call `await ai.service.analyze(request)` with explicit deadlines, admission limits and truthful generation labels. This branch has **no automatic analysis scheduler or runtime model call**. The unchanged fixture stub is only exercised by offline tests. Prompts, providers, orchestration and semantic auditing remain C work.
+## Host configuration for a later authorized deployment
+
+For a Docker web-service host such as the already selected Render route:
+
+| Setting | Value |
+| --- | --- |
+| Root/build context | `matchmind` |
+| Dockerfile | `deploy/Dockerfile` |
+| Process | `python -m backend.run` (image default) |
+| Port | Platform `PORT`, default 8000 |
+| Health path | `/api/v1/health` |
+| Instances/workers | Exactly 1 / 1; state is in process memory |
+| Frontend serving | `MATCHMIND_SERVE_FRONTEND=0` |
+| Data directory | `data/extra/validated-demo` |
+| Required model/database secrets | None |
+
+Verify HTTP health, match revision, statistics, playback/control, SSE reconnect and restart behavior after deployment. A container restart intentionally loses replay sessions. Keep the generic unexpected-500 error-contract limitation in the handoff record; shared contract changes require their own review. This runbook prepares deployment only and does not authorize publication, payment or changes to access.
