@@ -48,12 +48,9 @@ async function until(check) {
 
 let source, dispose;
 try {
-  const page = await fetch('/');
-  assert.equal(page.status, 200);
-  const html = await page.text();
-  assert.match(html, /MatchMind/);
-  const asset = html.match(/src="([^\"]+\.js)"/)[1];
-  assert.equal((await fetch(asset)).status, 200);
+  const health = await fetch('/api/v1/health');
+  assert.equal(health.status, 200);
+  assert.equal((await health.json()).contract_version, '2.0.0');
   const missing = await fetch('/api/v1/not-a-real-route');
   assert.equal(missing.status, 404);
   assert.equal((await missing.json()).error.code, 'NOT_FOUND');
@@ -86,7 +83,7 @@ try {
   assert.equal(latest.replay.clock_sec, 1500);
   assert.deepEqual(latest.state.score, { HOME: 0, AWAY: 0 });
   console.log(JSON.stringify({ result: 'passed', unchanged_A1_consumer: true,
-    static_assets: 'same origin', connected, observed_clock: observedClock,
+    transport: 'API-only HTTP and snapshot SSE', connected, observed_clock: observedClock,
     reset_run: latest.replay.run_id, runtime_model_calls: 0 }));
 } finally {
   dispose?.();

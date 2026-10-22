@@ -29,6 +29,7 @@ class Session:
     insights: list = field(default_factory=list)
     traces: list = field(default_factory=list)
     subscribers: dict = field(default_factory=dict)
+    analysis_scheduled: bool = False
 
 
 class Replays:
@@ -36,6 +37,8 @@ class Replays:
         self.catalog, self.settings, self.clock = catalog, settings or Settings(), clock
         self.sessions, self.idempotency = {}, {}
         self.lock = asyncio.Lock()
+        self.analysis_hook = None
+        self.analysis_invalidator = None
 
     def _snapshot(self, session):
         replay = {"replay_id": session.replay_id, "run_id": session.run_id,
@@ -80,6 +83,11 @@ class Replays:
                     self._emit(session, "match_event", event)
                     session.next_event += 1
                 self._emit(session, "match_state", state_at(session.fixture, int(session.clock)))
+            if self.analysis_hook is not None and not session.analysis_scheduled and int(session.clock) >= 1650:
+                session.analysis_scheduled = True
+                error = self.analysis_hook(session.replay_id, session.run_id)
+                if error is not None:
+                    self._emit(session, "error", error)
             if now - session.last_snapshot >= self.settings.snapshot_interval or session.status == "ended":
                 self._emit(session, "snapshot")
                 session.last_snapshot = now
@@ -88,6 +96,8 @@ class Replays:
     def _prune(self, now):
         for key, session in list(self.sessions.items()):
             if not session.subscribers and now - session.touched >= self.settings.session_ttl:
+                if self.analysis_invalidator is not None:
+                    self.analysis_invalidator(session.replay_id, session.run_id)
                 del self.sessions[key]
         for key, record in list(self.idempotency.items()):
             if now - record["created"] >= self.settings.idempotency_ttl:
@@ -162,7 +172,10 @@ class Replays:
             self._advance(session, now)
             action = body["action"]
             if action == "reset":
+                if self.analysis_invalidator is not None:
+                    self.analysis_invalidator(session.replay_id, session.run_id)
                 session.run_id += 1
+                session.analysis_scheduled = False
                 session.clock = session.fixture.match["clip_start_sec"]
                 session.status, session.next_event = "idle", 0
                 session.insights.clear()
@@ -251,6 +264,14 @@ class Replays:
                 self._emit(session, "agent_status", trace)
             self._emit(session, "insight", insight)
             self._emit(session, "snapshot")
+            return True
+
+    async def analysis_error(self, replay_id, run_id, error):
+        async with self.lock:
+            session = self.sessions.get(replay_id)
+            if session is None or session.run_id != run_id:
+                return False
+            self._emit(session, "error", error)
             return True
 
     async def run(self):

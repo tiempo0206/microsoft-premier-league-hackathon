@@ -1,0 +1,27 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "matchmind-backend-preview",
+      "runtime": "docker",
+      "repo": "https://github.com/tiempo0206/microsoft-premier-league-hackathon",
+      "branch": "codex/backend-ab-mvp",
+      "region": "singapore",
+      "plan": "free",
+      "numInstances": 1,
+      "autoDeployTrigger": "off",
+      "dockerfilePath": "./matchmind/deploy/Dockerfile",
+      "dockerContext": "./matchmind",
+      "healthCheckPath": "/api/v1/health",
+      "envVars": [
+        { "key": "PORT", "value": "10000" },
+        { "key": "MATCHMIND_SERVE_FRONTEND", "value": "0" },
+        { "key": "MATCHMIND_DATA_DIR", "value": "data/extra/validated-demo" },
+        { "key": "MATCHMIND_MAX_REPLAY_SESSIONS", "value": "8" },
+        { "key": "MATCHMIND_ANALYSIS_LIMIT_PER_HOUR", "value": "30" },
+        { "key": "MATCHMIND_MAX_CONCURRENT_ANALYSES", "value": "1" },
+        { "key": "MATCHMIND_MODEL_TIMEOUT_SEC", "value": "12" }
+      ]
+    }
+  ]
+}

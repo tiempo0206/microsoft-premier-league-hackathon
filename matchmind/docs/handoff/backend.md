@@ -18,6 +18,8 @@ The human explicitly narrowed work to their own data-processing and deployment r
 5. Switched default runtime to API-only. `MATCHMIND_SERVE_FRONTEND=0`; `/` is JSON 404 and no page files are needed. The backend's existing optional static hosting is reserved for a later, separately coordinated integration.
 6. Replaced the Node/frontend container stage with a Python-only backend image, non-root user, one worker, explicit source/context allowlists and offline data checks at build/startup. It contains no AI module or model SDK.
 7. Added backend-only environment examples and startup preflight. No key, token or database credential is required.
+8. Added optional B4 dispatch through an injected async adapter: fixed observed window, one task per replay generation, bounded queue/concurrency/hour bucket, cancellation, late-result protection and sanitized error messages. No adapter is injected by the default entrypoint; no model client or prompt is implemented.
+9. Added `backend/INTEGRATION.md`, a free Render backend Blueprint, Chinese account-to-deployment instructions and a public-origin smoke command. Read-only inspection of PR #3 confirms A1; its unchanged API/snapshot consumer was exercised against B without building or editing the frontend.
 
 ## Data provenance and compatibility
 
@@ -40,16 +42,17 @@ From `matchmind/`, using its existing Python 3.12 environment:
 
 ## Verification
 
-- 36 backend tests passed, including data-corruption/metadata/roster/scorer cases, optimized-Python preflight, API-only startup, config validation and report credential redaction.
+- 46 backend tests passed, including the previous data/API suite plus adapter dispatch, queue/call deadline, budget/concurrency, cancellation/old-run and invalid-output cases.
 - 19 inherited common tests passed. Shared frozen hashes and role-B scope passed; frontend/AI/contract/frozen-source paths have no changes.
 - Default offline readiness report passed with corrected dataset, one worker, frontend disabled and required_credentials empty.
 - All 20 locked dependency wheels resolved/downloaded for Python 3.12 Linux x86-64 through TUNA, stored on E:. This validates availability, not actual Linux execution.
-- PowerShell startup syntax checked. New source and complete diff reviewed by Codex. No frontend or Node checks were run in this slice.
-- The local Docker Linux engine is unavailable; no successful image build/run is claimed. No cloud resources, paid requests, new backend push, PR merge or public deployment were performed.
+- PowerShell startup syntax checked. New source and complete diff reviewed by Codex. The API-only Node check imported A1's unchanged consumer and passed catalogue/create/play/pause/reset through actual HTTP and named SSE. No frontend build, UI implementation or browser visual check was performed.
+- The backend smoke command passed on a real loopback server: health/data/stats/create retry/play/pause/reset retry/old-run rejection/invalid input/SSE reconnect.
+- The Render file passed its official JSON Schema locally, not the authenticated Render API. The local Docker engine remains unavailable after a human-authorized elevated transient-directory repair was denied by Windows; no image build/run is claimed. No cloud resources, paid requests, new backend push, PR merge or public deployment were performed.
 
 ## Remaining boundary
 
-The unexpected-500 shared error-enum gap remains unchanged; it requires a separate shared-contract decision. Replay state remains bounded single-process memory and is lost on restart. This data/deployment slice does not implement runtime analysis dispatch, prompts or model readiness; existing internal handoff hooks are preserved.
+The unexpected-500 shared error-enum gap remains unchanged; it requires a separate shared-contract decision. Replay state remains bounded single-process memory and is lost on restart. Dispatch is now implemented but disabled until a trusted async adapter is injected. That adapter must honor cancellation and network timeouts; arbitrary blocking Python code is not isolated. Prompts, real model readiness, semantic auditing and Microsoft Agent Framework implementation remain C/integration work. Public deployment needs a Render account and private repository authorization. Final frontend artifacts and real AI must be integrated separately; A1 does not yet contain A2 controls or A3 insight/evidence views in its pushed branch.
 
 Kimi: no CLI or desktop process discovered, so the planning pass did not run; Codex performed the implementation and review. DSPy skipped for deterministic data/deployment work.
 

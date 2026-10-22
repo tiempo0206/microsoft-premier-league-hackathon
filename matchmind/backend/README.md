@@ -33,7 +33,8 @@ The roster, manually audited totals and provenance/hash manifest travel with the
 - named snapshot/event/state SSE, periodic full snapshots for A1, bounded fan-out and snapshot reconnect;
 - optional UUID `Idempotency-Key`, optional positive `X-MatchMind-Expected-Run`, bounded sessions/keys/subscriptions and idle expiry;
 - strict known error bodies, actual byte and deadline limits; no automatic 422/HTML error for bad API input;
-- internal AI request/publish hooks, tested against the existing offline stub; no runtime model calls or scheduling.
+- optional bounded AI dispatch to an injected async adapter, once per replay generation at the fixed 1500–1650 window; queue/deadline/budget/reset guards are tested with the unchanged offline stub;
+- the default API-only entrypoint injects no adapter and makes no model calls. Model clients, prompts and semantic analysis remain C's responsibility.
 
 Create replay with `{"match_id":"MM-DEMO-01","speed":5}`; it starts idle. POST `{"action":"play"}` to `/api/v1/replays/{replay_id}/control`. Send expected-run and a stable idempotency key on retries; header support is additive and the shared OpenAPI update is pending review.
 
@@ -49,3 +50,5 @@ Create replay with `{"match_id":"MM-DEMO-01","speed":5}`; it starts idle. POST `
 State survives requests/reconnects only while this single process lives. No database or durable refresh recovery is claimed. Model readiness remains false and health degraded because no model is configured; a 200 health response plus a passed data preflight is the backend-only readiness check.
 
 The frozen original's scorer mismatch is preserved for shared compatibility tests; the runtime derivative fixes it without editing shared data. The generic 500 error-contract gap is unchanged and recorded in `docs/handoff/backend.md`. Read `deploy/README.md` for backend-only deployment. No public deployment or container-image test is claimed.
+
+Read `backend/INTEGRATION.md` for the verified A1 interface handoff and `deploy/RENDER_STEPS_CN.md` for account setup through preview acceptance.

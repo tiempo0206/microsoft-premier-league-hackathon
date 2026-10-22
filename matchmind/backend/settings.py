@@ -17,6 +17,10 @@ class Settings:
     snapshot_interval: float = 1
     max_request_bytes: int = 16384
     body_timeout: float = 10
+    analysis_concurrency: int = 1
+    analysis_queue_size: int = 8
+    analysis_limit_per_hour: int = 30
+    analysis_timeout: float = 12
 
     @classmethod
     def from_env(cls):
@@ -24,7 +28,11 @@ class Settings:
                  "max_subscribers": ("MATCHMIND_MAX_SUBSCRIBERS_PER_REPLAY", 1, 8),
                  "queue_size": ("MATCHMIND_SSE_QUEUE_SIZE", 2, 256),
                  "session_ttl": ("MATCHMIND_SESSION_TTL_SEC", 30, 86400),
-                 "max_request_bytes": ("MATCHMIND_MAX_REQUEST_BYTES", 256, 65536)}
+                 "max_request_bytes": ("MATCHMIND_MAX_REQUEST_BYTES", 256, 65536),
+                 "analysis_concurrency": ("MATCHMIND_MAX_CONCURRENT_ANALYSES", 1, 4),
+                 "analysis_queue_size": ("MATCHMIND_ANALYSIS_QUEUE_SIZE", 1, 32),
+                 "analysis_limit_per_hour": ("MATCHMIND_ANALYSIS_LIMIT_PER_HOUR", 1, 1000),
+                 "analysis_timeout": ("MATCHMIND_MODEL_TIMEOUT_SEC", 1, 60)}
         values = {}
         raw_directory = os.getenv("MATCHMIND_DATA_DIR")
         if raw_directory is not None:

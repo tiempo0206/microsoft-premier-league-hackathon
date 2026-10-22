@@ -19,6 +19,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from .data import Catalog
 from .audit import audit_dataset
+from .analysis import AnalysisDispatcher
 from .http import ApiError, error_response, parse_second, read_body
 from .replays import Replays
 from .settings import Settings
@@ -27,7 +28,8 @@ from .stats import state_at
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist=None):
+def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist=None,
+               analyzer=None, analysis_source="external"):
     settings = settings or Settings.from_env()
     directory = Path(data_dir) if data_dir is not None else Path(settings.data_directory)
     if not directory.is_absolute():
@@ -38,9 +40,15 @@ def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist
         codes = ", ".join(sorted({issue["code"] for issue in data_report["issues"]}))
         raise ValueError(f"Dataset readiness failed: {codes}. Run python -m deploy.preflight for details.")
     replays = Replays(catalog, settings, clock)
+    dispatcher = AnalysisDispatcher(replays, analyzer, analysis_source, clock) if analyzer is not None else None
+    if dispatcher is not None:
+        replays.analysis_hook = dispatcher.enqueue
+        replays.analysis_invalidator = dispatcher.invalidate
 
     @asynccontextmanager
     async def lifespan(app):
+        if dispatcher is not None:
+            await dispatcher.start()
         ticker = asyncio.create_task(replays.run())
         try:
             yield
@@ -48,6 +56,8 @@ def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist
             ticker.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await ticker
+            if dispatcher is not None:
+                await dispatcher.close()
             await replays.close()
 
     app = FastAPI(title="MatchMind", version="2.0.0", docs_url=None, redoc_url=None,
@@ -55,6 +65,7 @@ def create_app(data_dir=None, settings=None, clock=time.monotonic, frontend_dist
     app.state.catalog = catalog
     app.state.data_report = data_report
     app.state.replays = replays
+    app.state.dispatcher = dispatcher
     for fixture in catalog.fixtures.values():
         for warning in fixture.warnings:
             logging.getLogger(__name__).warning("Frozen synthetic fixture: %s", warning)

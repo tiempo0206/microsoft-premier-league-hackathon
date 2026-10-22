@@ -31,7 +31,19 @@ The image uses Python 3.12, pinned backend dependencies, one worker and a non-ro
 
 `Dockerfile.dockerignore` excludes the build context by default and explicitly permits the small required files. This avoids sending .venv, node_modules, .env and unrelated work to the builder. Docker supports an ignore file named for its Dockerfile in the same directory. [Official build-context documentation](https://docs.docker.com/build/concepts/context/#filename-and-location)
 
-The local Docker Linux engine is not running, so the image has **not** been built or started. Python 3.12 Linux x86-64 wheels for all 20 locked dependencies were resolved/downloaded successfully through TUNA; this is dependency availability evidence, not a substitute for an image test. No public service or paid resource has been created.
+The local Docker Linux engine cannot start because Windows denies access to a stale IPC socket directory, including after the human-authorized elevated repair attempt. The image has **not** been built or started. No factory reset, persistent-data deletion or ACL takeover was performed. Python 3.12 Linux x86-64 wheels for all 20 locked dependencies were resolved/downloaded successfully through TUNA; this is dependency availability evidence, not a substitute for an image test. No public service or paid resource has been created. Render's cloud builder does not require a working local Docker Desktop installation.
+
+## Render account through preview acceptance
+
+Follow `RENDER_STEPS_CN.md`. The prepared `render-backend.yaml` uses repo-root-relative paths, a free single-instance Singapore backend, no model/database secrets and disabled service auto-deploy. Also disable Blueprint Auto Sync in the dashboard. The branch must be pushed and the private repository authorized before creating the service. The file passed the official JSON Schema locally; authenticated platform validation and the first Linux build remain outstanding.
+
+Once the service is live, run from `matchmind/`:
+
+```sh
+python deploy/smoke_backend.py https://your-service.onrender.com
+```
+
+This explicitly creates one short-lived synthetic replay and checks health, data revision, audited statistics, idempotent create/reset, play/pause, old-run rejection, invalid input and named SSE snapshot recovery. It does not cross the analysis trigger window or request a model job. The backend-only `/` returns JSON 404; use `/api/v1/health` and the documented API. A public API preview is not the final frontend/AI website.
 
 ## Host configuration for a later authorized deployment
 
