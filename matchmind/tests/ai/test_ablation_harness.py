@@ -111,9 +111,14 @@ class HarnessTests(unittest.IsolatedAsyncioTestCase):
         source = inspect.getsource(ablation.main)
         self.assertIn("sys.argv[1:]", source)
 
-    def test_the_caveat_text_is_attached_to_every_report(self):
-        self.assertIn("UNDERPOWERED", ablation.CAVEATS)
+    def test_the_caveat_text_travels_with_every_report(self):
+        """The caveat must state what the numbers support AND what they do not, so a reader
+        cannot quote the repair result and then imply the other variants were measured."""
+        self.assertIn("WHAT THE MEASUREMENTS SUPPORT", ablation.CAVEATS)
+        self.assertIn("WHAT THEY DO NOT SUPPORT", ablation.CAVEATS)
+        self.assertIn("repair round", ablation.CAVEATS)
         self.assertIn("factcheck_bench", ablation.CAVEATS)
+        self.assertIn("repeats 3", ablation.CAVEATS)
 
 
 if __name__ == "__main__":

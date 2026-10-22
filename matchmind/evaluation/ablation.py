@@ -40,25 +40,37 @@ OUT = ROOT / ".artifacts" / "ablation"
 UNIVERSAL = re.compile(r"\b(each|every|all|always|never)\b|所有|全部|每次|都", re.I)
 
 CAVEATS = """\
-This ablation is UNDERPOWERED and its published numbers do not support a per-role claim.
-Read it as a measurement design, not as evidence.
+Read the spread before reading the table. With --repeats 3 (18 runs per variant) exactly one
+claim survives a noise test, and the report includes the numbers needed to check it.
 
-1. Six windows, one run per variant. The differences between variants (fallback counts
-   1/3/5/5/2) are consistent with run-to-run model variance rather than with the role that
-   was removed. In the first full run, removing the auditor produced FEWER fallbacks than
-   the full pipeline, which is the opposite of the expected direction and is most likely
-   noise.
-2. `published_with_bad_claims` is 0 for every variant, including `no_code_gate`. On clean
-   input the model rarely fabricates a number, so a 6-window live run cannot show what the
-   code gate is for. That is what `evaluation/factcheck_bench.py` measures instead, with
-   controlled corruption: 17/17 caught, 0/4 false alarms. Use that number, not this table.
-3. The real evidence for the multi-agent claim is structural, not statistical: frozen
-   contract 2.0.0 forbids publishing a `live_model` card unless
-   `verification.method == "agent_and_code"`, so a single self-reviewing agent cannot emit
-   `passed` at all.
+WHAT THE MEASUREMENTS SUPPORT
 
-How to make it worth publishing: at least 3 repetitions per variant, the same seeded
-windows, and report mean and spread per variant. Until then, quote the fact-check bench.
+  The repair round is worth about twelve extra published cards out of eighteen. Without it,
+  17 of 18 windows degrade to a rule fallback; with it, 5. Between-variant range of the means
+  is 4.33 and the within-variant spread is at most 1, so that difference is real.
+
+WHAT THEY DO NOT SUPPORT
+
+  Removing the code gate, the auditor or the tools changes the fallback count by at most 2,
+  which is the same size as the run-to-run spread. Do not claim a measured effect for those
+  three. `published_with_bad_claims` is 0 in every variant because on clean input the model
+  rarely fabricates a number: a live run cannot show what the code gate is for. That is what
+  evaluation/factcheck_bench.py measures, with controlled corruption (17/17 caught, 0/4 false
+  alarms).
+
+  With --repeats 1 (the default) nothing is separable at all. Use 3 or do not publish.
+
+WHY THE FLOOR IS THE WINDOW COUNT
+
+  Six windows, of which two are positive, is the binding constraint. More repeats narrow the
+  spread; they do not add coverage. The honest next step is more qualifying windows, which means
+  a denser fixture, which is what evaluation/fixture_qualify.py asks for.
+
+ATTRIBUTION
+
+  The real evidence for multi-agent is structural rather than statistical: frozen contract 2.0.0
+  forbids publishing a live_model card unless verification.method == "agent_and_code", so a
+  single self-reviewing agent cannot emit `passed` at all.
 """
 
 WINDOWS = [

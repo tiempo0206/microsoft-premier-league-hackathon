@@ -123,28 +123,41 @@ tests keep their traffic off the network).
 Equal quality, about 20–25% faster, slightly more calls. Consistent direction across two
 independent full runs and the positive-only run.
 
-## 5. Ablation: designed, run, and honestly underpowered
+## 5. Ablation: one variant is separated, the rest are not
 
-`python -m evaluation.ablation` disables one role at a time and scores every published card
-with the real, unpatched verifier.
+`python -m evaluation.ablation --repeats 3` disables one role at a time over 6 windows × 3
+repeats = 18 runs per variant, and scores every published card with the real, unpatched verifier.
 
-| variant | windows | published | fallback | agent calls | cards with contradicted numbers | cards with prose issues |
-| --- | --- | --- | --- | --- | --- | --- |
-| full | 6 | 6 | 1 | 22 | 0 | 0 |
-| no_code_gate | 6 | 6 | 5 | 23 | 0 | 0 |
-| no_auditor | 6 | 6 | 3 | 22 | 0 | 0 |
-| no_repair | 6 | 6 | 5 | 12 | 0 | 0 |
-| no_tools | 6 | 6 | 2 | 23 | 0 | 0 |
+| variant | fallback count | per repeat | within-variant spread | cards with a universal claim | median |
+| --- | --- | --- | --- | --- | --- |
+| `full` | 5 / 18 | 1, 2, 2 | 1 | 10 | 8 109 ms |
+| `no_code_gate` | 4 / 18 | 1, 1, 2 | 1 | 6 | 8 046 ms |
+| `no_auditor` | 6 / 18 | 2, 2, 2 | 0 | 9 | 8 141 ms |
+| **`no_repair`** | **17 / 18** | 6, 6, 5 | 1 | 6 | 5 750 ms |
+| `no_tools` | 6 / 18 | 2, 2, 2 | 0 | 6 | 8 094 ms |
 
-**Do not publish this as evidence of per-role value.** Six windows and one run per variant
-puts every difference inside model run-to-run variance; in the first run, removing the
-auditor produced *fewer* fallbacks than the full pipeline, the opposite of the expected
-direction. And `published_with_bad_claims` is 0 for every variant because on clean input the
-model rarely fabricates a number — so a live run cannot show what the code gate is for. That
-is what §1 measures instead.
+Between-variant range of the means is **4.33**, within-variant spread is at most **1**. So exactly
+one claim survives the noise test:
 
-To make it publishable: at least 3 repetitions per variant over the same windows, reporting
-mean and spread.
+> **The repair round is worth about twelve extra published cards out of eighteen.** Without it,
+> 17 of 18 windows degrade to a rule fallback instead of 5.
+
+Everything else is inside the noise: removing the code gate, the auditor or the tools changes the
+fallback count by at most 2, which is the same size as the run-to-run spread. **Do not claim those
+have a measured effect.**
+
+`published_with_bad_claims` is 0 for every variant, including `no_code_gate`. On clean input the
+model rarely fabricates a number, so a live run cannot show what the code gate is for — that is
+what §1 measures instead, with controlled corruption (17/17 caught, 0/4 false alarms). The code
+gate's value is a property of adversarial input, not of average input.
+
+An honest oddity worth keeping: `no_code_gate` produced *fewer* universal-quantifier cards (6) than
+the full pipeline (10). The plausible cause is that the repair round, which only runs when
+something is rejected, re-narrates and reintroduces generalising wording. Two runs of a small
+sample cannot settle that, and the numbers are recorded rather than explained away.
+
+To go further: more windows, not more repeats. Six windows with one positive window each is the
+binding constraint.
 
 ## 6. Known limits of every number here
 
