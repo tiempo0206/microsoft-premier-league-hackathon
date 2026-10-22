@@ -48,7 +48,11 @@ From `matchmind/`, using its existing Python 3.12 environment:
 - All 20 locked dependency wheels resolved/downloaded for Python 3.12 Linux x86-64 through TUNA, stored on E:. This validates availability, not actual Linux execution.
 - PowerShell startup syntax checked. New source and complete diff reviewed by Codex. The API-only Node check imported A1's unchanged consumer and passed catalogue/create/play/pause/reset through actual HTTP and named SSE. No frontend build, UI implementation or browser visual check was performed.
 - The backend smoke command passed on a real loopback server: health/data/stats/create retry/play/pause/reset retry/old-run rejection/invalid input/SSE reconnect.
-- The Render file passed its official JSON Schema locally, not the authenticated Render API. The local Docker engine remains unavailable after a human-authorized elevated transient-directory repair was denied by Windows; no image build/run is claimed. No cloud resources, paid requests, new backend push, PR merge or public deployment were performed.
+- The Render file passed its official JSON Schema locally, not the authenticated Render API. The local Docker engine remains unavailable after a human-authorized elevated transient-directory repair was denied by Windows; no image build/run is claimed. No cloud resources, paid requests, PR merge or public deployment were performed.
+
+## Publication
+
+The implementation through `e848395bc3723ba1ea2922af099437e20422dbbf` was pushed to `origin/codex/backend-ab-mvp` and the remote SHA was verified. This is the existing private team repository, not a new/public repository. A1 is still a branch dependency pending PR #3; no teammate branch or main was modified. No backend PR or cloud service has been created. The subsequent documentation commit records publication; use the current remote branch tip when deploying.
 
 ## Remaining boundary
 

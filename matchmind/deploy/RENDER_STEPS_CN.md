@@ -26,7 +26,7 @@
 
 ## 第二步：用准备好的配置创建一个后端服务
 
-前置条件：B 分支 `codex/backend-ab-mvp` 已推送到 GitHub。若 GitHub 分支列表中看不到它，必须先完成推送，不能选择只有文档的 main 代替。
+前置条件已完成：B 分支 [`codex/backend-ab-mvp`](https://github.com/tiempo0206/microsoft-premier-league-hackathon/tree/codex/backend-ab-mvp) 已推送到 GitHub，核心实现提交 `e848395`。若 Render 分支列表中看不到它，检查仓库授权并刷新，不能选择只有文档的 main 代替。
 
 1. 控制台选择 New → Blueprint，连接上述仓库。
 2. 选择分支 `codex/backend-ab-mvp`。

@@ -8,7 +8,7 @@ Checked 2026-10-22 by fetching Git refs and reading PR metadata. This document i
 
 A1 already selects a synthetic clip, creates a replay, consumes named snapshots and shows clock/score/statistics with loading, retry and reconnection states. Its handoff leaves playback controls/six incremental message kinds for A2, and insight cards/evidence/audience modes for A3. These are not present in the pushed A1 page. The illustrated pitch is not yet an evidence visualizer.
 
-B's branch `codex/backend-ab-mvp` includes A1 as a dependency plus backend/data/deployment work. The B code is local until its branch is pushed/reviewed; a teammate cannot fetch local-only commits. No main merge or visibility change has been performed.
+B's branch `codex/backend-ab-mvp` includes A1 as a dependency plus backend/data/deployment work. It is now pushed to the existing private team repository; the implementation commit is `e848395bc3723ba1ea2922af099437e20422dbbf`. Teammates can fetch that branch. Review and final integration remain pending; no main merge or visibility change has been performed.
 
 ## What can connect now
 
