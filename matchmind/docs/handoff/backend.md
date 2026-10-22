@@ -79,3 +79,17 @@ Linux image execution and Render public acceptance remain outstanding. Docker De
 ## Reuse
 
 Earlier backend work referenced generic HTTP limits, cancellation, atomic budgets and idempotency designs in the user-specified `xingma-classroom-upgrade` baseline `4f5d0c93d7a87849e50cf55f6ce10122f2df0a82`. No old source file, D1/R2 migration, auth/course data, secret or cloud configuration was copied. The current dataset derives only from this hackathon starter's recorded CC0 synthetic events.
+
+## Unified B plan and multi-case regression — 2026-10-22
+
+`backend/B_DELIVERY_PLAN.md` is now the single B execution/acceptance entry point. All work remains on `codex/backend-ab-mvp`; there is no new backend branch, PR or merge. B1–B6 are reported separately: local implementation and checks are not a substitute for container/public/A-C integration acceptance.
+
+- Added `data/generator/scenarios.py`, a finite original synthetic template suite with an independent per-second state oracle. It imports no backend implementation. Runtime data and frozen contracts/fixtures are unchanged.
+- The fixed full suite has **512 normal cases and 72 invalid cases**, using development seeds 1–8 and regression-holdout seeds 1001–1008, both teams/directions, eight normal templates and nine fault types. These are B numerical/data regressions, not C model training/evaluation.
+- Normal and invalid data are exported separately, with input hashes, per-split results and failing-case export. Data is generated locally (about 3.7 MB) and remains ignored under `.artifacts/`; it is not served as production data or copied into the image.
+- Final full backtest passed: **1,536 snapshot comparisons, 154,112 logical-second checks, 256 direction mirrors, 256 team swaps, zero synthetic false/missed triggers**. Holdout shares templates with development; no real-match generalization/AI-accuracy claim is made.
+- Tests injected missing linked-shot counts and double goal counts without changing the expected labels; the backtest correctly failed both faulty implementations.
+- The regression stage is now part of `python -m deploy.verify_backend`. **68 backend tests, 19 common tests, actual HTTP/SSE, frozen and B-scope checks passed.** Codex reviewed the complete diff; Kimi unavailable and DSPy skipped; no provider calls or new dependencies.
+- Verified remote main is still `760dbd5`, while B depends on A1 `f88d286`. B-only scope is currently checked against A1. Before a final main-targeted PR, the integrator must establish the approved shared/A baseline and B must synchronize it on the same branch, then verify a B-only final diff. Do not open a main PR claiming the unmerged starter/A files are B work.
+
+Current hardware/software is sufficient for offline B development and regression. Only the public preview requires a Render account and private-repository authorization; no token, model account, GPU, database or object storage is required now. Linux image/public acceptance and A/C integration remain pending.

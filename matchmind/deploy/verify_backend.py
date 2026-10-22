@@ -14,6 +14,7 @@ from urllib.request import urlopen
 from backend.audit import ROOT
 from backend.reporting import build_analysis_report, canonical, export_analysis, output_directory
 from backend.settings import Settings
+from backend.backtest import run_backtest
 from deploy.preflight import build_report
 from deploy.smoke_backend import probe
 
@@ -94,7 +95,7 @@ def runtime_probe(output, data_directory="data/extra/validated-demo"):
 
 def source_hashes():
     return {path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
-            for directory in (ROOT / "backend", ROOT / "deploy")
+            for directory in (ROOT / "backend", ROOT / "deploy", ROOT / "data/generator")
             for path in sorted(directory.glob("*.py"))}
 
 
@@ -122,6 +123,14 @@ def verify_backend(output):
         stage = "analysis_export"
         report = build_analysis_report(directory)
         result["analysis_files"] = export_analysis(report, output)
+        result["completed_stages"].append(stage)
+        stage = "synthetic_backtest"
+        backtest = run_backtest(output / "backtest")
+        result["synthetic_backtest"] = {key: backtest[key] for key in (
+            "status", "normal_cases", "invalid_cases", "cases_failed", "dataset_sha256",
+            "snapshot_comparisons", "logical_seconds_checked", "false_triggers", "missed_triggers")}
+        if backtest["status"] != "passed":
+            raise ValueError("Synthetic backtest failed; inspect backtest/failing-cases.jsonl")
         result["completed_stages"].append(stage)
         stage = "unit_tests"
         result["tests"] = run_checks(output)

@@ -2,6 +2,8 @@
 
 Role B implements the frozen 2.0.0 backend API. Runtime data is the B-owned validated synthetic revision under `data/extra/validated-demo`; the original shared fixture and contract remain untouched. No model key, cloud account or classroom database is required for development and preflight.
 
+The single Role B delivery plan is `backend/B_DELIVERY_PLAN.md`: fixed B1–B6 scope, one development branch, synthetic regression coverage, final PR baseline and account requirements. Continue all B work on `codex/backend-ab-mvp`; PR/merge are deferred.
+
 ## Windows
 
 From `matchmind/`, use this project's `.venv`, not another project's environment:
@@ -46,7 +48,7 @@ For the complete B-only pipeline, run once from `matchmind/`:
 .\.venv\Scripts\python.exe -m deploy.verify_backend
 ```
 
-This checks reproducible data/readiness, exports evidence-based JSON/Markdown and a contract-valid offline AI input, runs backend/common tests, launches its own loopback API, verifies HTTP/control/SSE and stops only that child. Artifacts are under `.artifacts/backend-delivery/`. Acceptance records source-code hashes and explicitly leaves cloud, container and frontend/live-AI checks outstanding. It does not leave a development server running.
+This checks reproducible data/readiness, exports evidence-based JSON/Markdown and a contract-valid offline AI input, runs the fixed 512-normal/72-invalid synthetic regression plus backend/common tests, launches its own loopback API, verifies HTTP/control/SSE and stops only that child. Artifacts are under `.artifacts/backend-delivery/`. Acceptance records source-code hashes and explicitly leaves cloud, container and frontend/live-AI checks outstanding. It does not leave a development server running. Separate generated datasets and detailed regression results are under `backtest/`; they are not model-training or production match data.
 
 For analysis export alone, without starting an API:
 

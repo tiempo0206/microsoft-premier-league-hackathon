@@ -1,12 +1,14 @@
 # Role B: reproducible data and analysis delivery
 
+Unified scope, branch, acceptance gates and resource requirements: **B_DELIVERY_PLAN.md**. This document describes the implementation and generated artifacts under that plan.
+
 Scope: B-owned data preparation, deterministic statistics/evidence, API/replay transport and deployment verification. Contract stays 2.0.0. No frontend, AI prompts/model implementation, shared schema or frozen fixture changes. The current dataset is a synthetic 25:00–30:00 excerpt, not a full match or tracking feed.
 
 ## Execution plan and acceptance
 
 1. **Evidence calculation**: derive high-recovery chains and the existing numeric trigger from the same functions used by runtime metrics. Verify direction, boundary times, duplicate-shot counting, negative windows and possession-time conservation. Build AI input using one shared B function; retain the existing request shape.
 2. **Analysis export**: export deterministic JSON, Markdown and a validated offline AnalysisRequest. Include audited source hashes, count evidence, metric definitions, positive/negative window results and explicit data limitations. Fail on invalid data, never call a model and never label this artifact an AI Insight.
-3. **Delivery acceptance**: one command checks preparation/readiness, runs backend/common tests, exports analysis, starts its own loopback API, verifies actual HTTP/control/SSE and stops only its own child. Record public deployment and Linux image checks as outstanding until actually performed.
+3. **Delivery acceptance**: one command checks preparation/readiness, exports analysis, runs generated-case regression and backend/common tests, starts its own loopback API, verifies actual HTTP/control/SSE and stops only its own child. Record public deployment and Linux image checks as outstanding until actually performed.
 
 Implement and verify these slices in order. No new third-party dependency, service, database or account is required. Use the existing .venv; generated artifacts remain ignored under .artifacts/ on the existing E: checkout. Inspect complete diffs and role/frozen checks before committing to codex/backend-ab-mvp. PR and merge remain deferred by the human.
 
@@ -27,7 +29,7 @@ Implement and verify these slices in order. No new third-party dependency, servi
 .\.venv\Scripts\python.exe -m deploy.verify_backend
 ```
 
-已有环境可直接运行，不需要新账号、模型 Key、Docker、数据库或下载比赛数据。该命令实际执行：数据来源/完整性与可重复性检查 → 统计和证据计算 → 分析包导出 → 后端及共同测试 → 启动独立临时 API → HTTP/回放/SSE 验收 → 关闭自己启动的服务。失败会返回非零退出码，具体阶段写入验收记录。
+已有环境可直接运行，不需要新账号、模型 Key、Docker、数据库或下载比赛数据。该命令实际执行：数据来源/完整性与可重复性检查 → 统计和证据计算 → 分析包导出 → 正常/异常合成回测 → 后端及共同测试 → 启动独立临时 API → HTTP/回放/SSE 验收 → 关闭自己启动的服务。失败会返回非零退出码，具体阶段写入验收记录。
 
 输出在 `.artifacts/backend-delivery/`：
 
@@ -38,6 +40,7 @@ Implement and verify these slices in order. No new third-party dependency, servi
 | `data-analysis.md` | 可直接阅读的分析说明 |
 | `analysis-request.json` | 与运行时共用构建函数的 C 输入样例；带固定离线身份，不能直接发布到真实回放 |
 | `acceptance.json` | 验收结果、失败阶段或测试数、源码哈希，以及尚未验证的部署/前端/AI 项 |
+| `backtest/` | 独立正常/异常合成数据集、开发/留出种子回归结果及失败案例；不用于模型训练 |
 | `tests-*.log` / `server.log` | 本次本地检查日志，不上传凭证 |
 
 该目录已忽略，不把本机日志提交仓库。分析输出可重复生成，默认命令只写上述产物，不修改源数据。输出路径保护会拒绝写入当前仓库的共享契约、冻结数据和其他成员目录。只导出分析时可运行 `python -m backend.reporting --output-dir .artifacts/backend-analysis`。
