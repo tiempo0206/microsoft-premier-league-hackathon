@@ -209,6 +209,23 @@ def _live_result(request, config, provider, claims, narratives):
     }
 
 
+def _select_orchestrator(config):
+    """Return (run_round, renarrate, label).
+
+    `framework` is opt-in and degrades to the direct path if the package is missing or
+    fails to import, so a deployment without Agent Framework still starts. The label goes
+    into the trace, because claiming a framework was used when it was not is exactly the
+    kind of dishonesty this project is built to avoid.
+    """
+    if getattr(config, "orchestrator", "direct") == "framework":
+        try:
+            from . import agents
+            return agents.run_round, agents.renarrate, "agent_framework"
+        except Exception:                       # noqa: BLE001 - degrade, never crash
+            return _run_round, _renarrate, "direct (framework unavailable)"
+    return _run_round, _renarrate, "direct"
+
+
 async def analyze(request, *, config=None, provider=None):
     """Frozen entry point: `await analyze(request)`.
 
@@ -254,9 +271,12 @@ async def analyze(request, *, config=None, provider=None):
         return rule_result(request, reason="no_model", traces=traces)
 
     provider = provider or ChatCompletionsProvider(config)
+    run_round, renarrate, orchestrator = _select_orchestrator(config)
+    traces.append({"task_id": request["task_id"], "agent": "validator", "status": "started",
+                   "duration_ms": 0, "note": "orchestrator=" + orchestrator})
 
     try:
-        state = await _run_round(request, provider, config, deadline, traces)
+        state = await run_round(request, provider, config, deadline, traces)
     except (ProviderTimeout, ProviderError) as error:
         traces.append({"task_id": request["task_id"], "agent": "validator",
                        "status": "failed", "duration_ms": 0,
@@ -285,7 +305,7 @@ async def analyze(request, *, config=None, provider=None):
         if not any(c["kind"] == "metric" for c in survivors):
             survivors = state["claims"]
         try:
-            narratives, narrative_issues = await _renarrate(
+            narratives, narrative_issues = await renarrate(
                 request, provider, survivors, deadline, traces, state["issues"])
         except (ProviderTimeout, ProviderError) as error:
             narratives, narrative_issues = None, ["repair failed: " + type(error).__name__]
@@ -299,8 +319,8 @@ async def analyze(request, *, config=None, provider=None):
     elif repair == "analysis":
         provider.last_validated_claims = state["claims"]
         try:
-            again = await _run_round(request, provider, config, deadline, traces,
-                                     correction_issues=state["issues"])
+            again = await run_round(request, provider, config, deadline, traces,
+                                    correction_issues=state["issues"])
         except (ProviderTimeout, ProviderError) as error:
             again = None
             traces.append({"task_id": request["task_id"], "agent": "validator",

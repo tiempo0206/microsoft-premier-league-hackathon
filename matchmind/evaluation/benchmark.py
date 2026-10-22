@@ -108,9 +108,21 @@ async def run_multi(request, config):
     except Exception as error:                      # noqa: BLE001 - report, never raise
         valid = "INVALID: " + str(error)
     insight = result.get("insight") or {}
+    # Agent invocations come from the trace, not from the HTTP counter: the framework
+    # path never touches ChatCompletionsProvider, so provider.calls reads 0 there and
+    # would understate a run as free.
+    agent_calls = sum(1 for t in result["traces"]
+                      if t["agent"] != "validator" and t["duration_ms"] > 0)
+    orchestrator = "direct"
+    for trace in result["traces"]:
+        if trace["agent"] == "validator" and trace.get("note", "").startswith("orchestrator="):
+            orchestrator = trace["note"].split("=", 1)[1]
+            break
     return {
         "mode": "three_agent", "status": result["status"], "contract": valid,
+        "orchestrator": orchestrator,
         "elapsed_ms": elapsed, "model_calls": provider.calls,
+        "agent_calls": agent_calls,
         "error_code": (result.get("error") or {}).get("code"),
         "claims_accepted": len(insight.get("claims") or []),
         "interpretations": sum(1 for c in (insight.get("claims") or []) if c["kind"] == "interpretation"),
@@ -204,7 +216,9 @@ def summarise(results, config):
             "statuses": statuses,
             "elapsed_ms": _stat([r.get("elapsed_ms") for r in rows]),
             "model_calls": _stat([r.get("model_calls") for r in rows]),
-            "total_model_calls": sum(r.get("model_calls") or 0 for r in rows),
+            "agent_calls": _stat([r.get("agent_calls") for r in rows]),
+            "total_model_calls": sum((r.get("agent_calls") if mode == "multi" else r.get("model_calls")) or 0
+                                     for r in rows),
             "claims_rejected_total": sum(len(r.get("claims_rejected") or []) for r in rows),
             # A refusal of an invalid request can never also satisfy the request schema,
             # so counting it as a contract failure would be a measurement bug, not a

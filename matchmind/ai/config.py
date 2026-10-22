@@ -13,6 +13,7 @@ from pathlib import Path
 # frozen 12 second analysis deadline. We therefore default to disabled and expose
 # a single knob instead of guessing per-provider.
 THINKING_STATES = ("disabled", "low", "high", "max")
+ORCHESTRATORS = ("direct", "framework")
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
@@ -25,6 +26,7 @@ class ModelConfig:
     timeout: float = 12.0
     thinking: str = "disabled"
     max_tool_calls: int = 3
+    orchestrator: str = "direct"
 
     @property
     def configured(self) -> bool:
@@ -44,7 +46,8 @@ class ModelConfig:
         return {"provider": self.provider, "model": self.label,
                 "base_url_configured": self.base_url.startswith("https://"),
                 "key_present": bool(self.api_key.strip()),
-                "configured": self.configured, "thinking": self.thinking}
+                "configured": self.configured, "thinking": self.thinking,
+                "orchestrator": self.orchestrator}
 
 
 def _read_env_file(path=ENV_FILE) -> dict:
@@ -105,6 +108,9 @@ def from_env(environ=None, *, use_env_file=True) -> ModelConfig:
         max_tool_calls = min(max(int(raw_tools), 0), 6)
     except ValueError:
         max_tool_calls = 3
+    orchestrator = read("MATCHMIND_ORCHESTRATOR", "direct").lower()
+    if orchestrator not in ORCHESTRATORS:
+        orchestrator = "direct"
     return ModelConfig(
         provider=read("MATCHMIND_MODEL_PROVIDER", "mock"),
         base_url=read("MATCHMIND_MODEL_BASE_URL", "").rstrip("/"),
@@ -113,4 +119,5 @@ def from_env(environ=None, *, use_env_file=True) -> ModelConfig:
         timeout=timeout,
         thinking=thinking,
         max_tool_calls=max_tool_calls,
+        orchestrator=orchestrator,
     )

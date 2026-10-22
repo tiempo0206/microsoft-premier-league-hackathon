@@ -44,9 +44,29 @@
 **这三条都属于"不修就会静默废掉一条评分项"的级别**：官方 §4.1(vi) 要多语言叙事，而它们让中文一次都出不来。修完 142 个测试全绿，中文正例可发布。
 
 
-### 3. 三个角色真的不是三个 prompt（C4）
+### 3. 三个角色真的不是三个 prompt（C4，**已接 Agent Framework**）
 
 冻结契约的 `Trace.agent` 枚举就是 `analyst / narrator / auditor / validator`，所以角色划分不是临时编的，是协议里预先写死的。
+
+**编排器可切换**：`MATCHMIND_ORCHESTRATOR=framework|direct`，默认 `direct`。
+
+- `direct`（默认）：`ai/provider.py` 直连 Chat Completions，带真实工具循环。
+- `framework`：`ai/agents.py` 用 `agent_framework.Agent` 三个实例共享一个 `OpenAIChatCompletionClient`，各自独立 instructions + 各自绑定工具。
+
+两条路径的 prompt、校验器、fallback 逻辑完全同一份，只有执行者换了。实际走哪条会写进 trace（`orchestrator=...`），因为把没用的框架写进材料是本项目最要避免的事。
+
+| | Agent Framework | 直连 |
+| --- | --- | --- |
+| 正例 2 个窗口 | 2/2 通过 | 2/2 通过 |
+| agent 调用次数 | 8 | 8 |
+| 中位延迟 | **8601ms** | 11414ms |
+
+同模型同输入下框架路径快约 25%。**这是两个窗口的延迟观察，不是质量结论**，完整 12 窗口的框架版还没跑。
+
+接线时踩到两个坑，都用真请求验证过：
+1. `agent_framework 1.22.0` **不再导出 `ChatAgent`**，类名是 `Agent`。照抄旧教程会在 import 处失败。
+2. DeepSeek 的 thinking 开关在框架里也能关：`ChatOptions` 是 TypedDict，OpenAI 客户端会转发 `extra_body`，所以 `{"thinking":{"type":"disabled"}}` 能到达 provider。实测同一 prompt：关掉 1047ms，开着 1719ms。
+
 
 | 角色 | 输入 | 输出 | 不能做什么 |
 | --- | --- | --- | --- |
@@ -215,7 +235,7 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 
 | 项 | 状态 | 说明 |
 | --- | --- | --- |
-| Agent Framework 编排落地 | **未接入运行时** | `agent_framework 1.22.0` 与 `OpenAIChatCompletionClient` 已装好、导入验证通过，但当前跑的是 `ai/provider.py` 的直连 Chat Completions（带真实工具循环）。原因：DeepSeek 在 **tools + thinking 同时开启**时要求逐轮回传 `reasoning_content`，否则 400；关掉 thinking 后直连路径更稳。接框架是下一步，需在 C4 单独做并保留 trace 对照。**提交材料不得声称已使用 Agent Framework。** |
+| Agent Framework 编排 | **已接入，opt-in** | `MATCHMIND_ORCHESTRATOR=framework` 可切换，正例 2/2 通过、比直连快约 25%。默认仍走 `direct`，因为 12 窗口基线是对直连测的；框架版只跑了正例 2 个窗口，**没有完整评测就不能在材料里写"已用框架达到最好效果"** |
 | MCP server | **未做** | 三个工具已成型，包一层 MCP 是最便宜的 Agentic 加分点，见下一块 |
 | 会话/并发上限 | 沿用 B 的实现 | C 侧无独立限流，沿用 8 会话 / 30 次每小时 / 并发 1 |
 | possession 口径自检 | **刻意不做** | `AnalysisRequest` 不带 `Match.initial_possession_team`，无法在 C 侧重算；已在 `consistency_issues` 的 docstring 里写明这是刻意的空白，不猜 |
@@ -227,11 +247,11 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 
 ## 八、下一工作块
 
-1. **把 Agent Framework 真正接进 `ai/agents.py`**：三个 `ChatAgent` 共享一个 `OpenAIChatCompletionClient`（base_url 指向 DeepSeek），保留 `ai/provider.py` 作为对照基线，用同一套 12 用例跑出"框架版 vs 直连版"的调用数与耗时对比。
+1. **完整 12 窗口的框架版评测**：现在只测了 2 个正例。拿到完整对照后，才能决定默认编排器是 `direct` 还是 `framework`，也才能在材料里写框架的使用效果。
 2. **MCP server**：把 `ai/tools.py` 的三个工具包成 MCP，让工具调用走 MCP 而不是函数直调 —— 判据里点名了 `MCP integration`，且完全本地、不需要云。
 3. **契约 2.1.0 一次性升版**：按第六节的 3 → 4 → 1 顺序，先和 A/B 确认消费端，再动 `contract.schema.json`。
 4. **`POST /recap` 的 recap 角色**：输入整段 prefix，与 moment 角色共用同一套校验器和 fallback。
-5. 补中文叙事的真实模型实测（目前中文只在 fallback 路径被自动测过）。
+5. 补中文叙事的**完整**评测（现在正例 P2 已通过，但样本只有 1 个窗口）。
 
 ---
 

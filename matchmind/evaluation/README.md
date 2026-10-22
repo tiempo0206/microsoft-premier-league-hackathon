@@ -68,6 +68,25 @@ Read this honestly:
 
 Do not claim multi-agent superiority on 12 windows. Quote the sample size.
 
+## Orchestrator comparison: Agent Framework vs direct HTTP
+
+`MATCHMIND_ORCHESTRATOR=framework` swaps what executes each role; the prompts, the
+verifier and the fallback logic are identical. Measured on the two `positive` windows:
+
+| | Agent Framework | direct Chat Completions |
+| --- | --- | --- |
+| windows passed | 2 / 2 | 2 / 2 |
+| agent invocations | 8 | 8 |
+| median latency | **8 601 ms** | 11 414 ms |
+
+The framework path is roughly 25% faster for the same work on the same model. That is a
+latency observation on two windows, not a quality claim; a full 12-window framework run
+has not been collected.
+
+`model_calls` in the harness counts HTTP requests seen by `ChatCompletionsProvider`, which
+is zero on the framework path. Report `agent_calls` (counted from the trace) when
+comparing orchestrators, not `model_calls`.
+
 ## What the run found, in order of severity
 
 1. **Chinese narratives could never pass.** The numeric check used a `\w` lookbehind and
