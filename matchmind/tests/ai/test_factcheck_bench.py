@@ -27,8 +27,35 @@ class FactcheckBenchTests(unittest.TestCase):
                          % (self.summary["false_alarms"],))
 
     def test_the_bench_is_wide_enough_to_mean_something(self):
-        self.assertGreaterEqual(self.summary["corruptions_required"], 15)
+        self.assertGreaterEqual(self.summary["corruptions_required"], 21)
         self.assertGreaterEqual(self.summary["clean_total"], 4)
+
+    def test_language_mismatch_is_one_of_the_covered_classes(self):
+        categories = {r["category"] for r in self.corruptions}
+        self.assertIn("wrong_language_english_for_chinese_request", categories)
+        self.assertIn("wrong_language_chinese_for_english_request", categories)
+
+    def test_evidence_of_the_wrong_type_is_one_of_the_covered_classes(self):
+        categories = {r["category"] for r in self.corruptions}
+        self.assertIn("recovery_claim_citing_only_a_shot", categories)
+        self.assertIn("shots_claim_citing_only_passes", categories)
+
+    def test_a_zero_metric_may_cite_any_event(self):
+        """Zero has no event of its own type to cite, so the evidence-type rule must exempt it.
+        Without the exemption a correct "took no shots" card was rejected."""
+        from ai.verify import check_claims
+        import copy
+        import json
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        request = json.loads((root / "contracts/examples/analysis_request.json")
+                             .read_text(encoding="utf-8"))
+        claim = {"claim_id": "C1", "kind": "metric",
+                 "text": "AWAY took no shots in this window.",
+                 "metric_key": "away_shots", "metric_value": 0,
+                 "evidence_event_ids": ["MM-DEMO-01-E003"]}
+        approved, rejected, issues = check_claims([claim], copy.deepcopy(request))
+        self.assertEqual(rejected, [], issues)
 
     def test_quantifier_overreach_is_documented_as_an_auditor_job(self):
         """The regex layer cannot tell "three of three" from "two of three". That is why

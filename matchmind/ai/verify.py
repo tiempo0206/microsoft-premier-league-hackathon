@@ -230,6 +230,55 @@ def _claim_evidence(claim):
     return values if isinstance(values, list) else []
 
 
+# Which event types can actually support which metric. A claim about recoveries backed only by a
+# shot is citing something that cannot demonstrate it. This is cheap and catches a real failure
+# mode: a model that cites plausible-looking ids without checking what they are.
+METRIC_EVIDENCE_TYPES = {
+    "high_recoveries": {"recovery"},
+    "linked_shots": {"shot", "goal", "recovery"},
+    "home_shots": {"shot", "goal"},
+    "away_shots": {"shot", "goal"},
+}
+
+_CJK = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+
+
+def language_issues(text, expected):
+    """Does this prose look like it was written in the language that was asked for?
+
+    Cheap and deliberately crude: an English request must not come back in Chinese, and a Chinese
+    request must contain Chinese. Multi-language output is a scored criterion, so shipping a card
+    that ignores the requested language is a real defect, not a style choice.
+    """
+    if not isinstance(text, str) or not text.strip():
+        return ["empty text"]
+    has_cjk = bool(_CJK.search(text))
+    if expected == "zh" and not has_cjk:
+        return ["requested Chinese but the text contains no Chinese characters"]
+    if expected == "en" and has_cjk:
+        return ["requested English but the text contains Chinese characters"]
+    return []
+
+
+def _evidence_type_issues(claim, request):
+    key = claim.get("metric_key")
+    allowed_types = METRIC_EVIDENCE_TYPES.get(key)
+    if not allowed_types:
+        return []
+    # A metric of ZERO cannot cite an event of its own type — there are none. The honest
+    # citation for "took no shots" is whatever did happen in the window, so zero is exempt.
+    if claim.get("metric_value") == 0:
+        return []
+    types = {e["type"] for e in request["events"]
+             if e["event_id"] in set(_claim_evidence(claim))}
+    if not types:
+        return ["claim cites no event that exists in the window"]
+    if not (types & allowed_types):
+        return ["a %s claim cites only %s events, which cannot support it"
+                % (key, "/".join(sorted(types)))]
+    return []
+
+
 def check_claims(raw_claims, request):
     """Return (approved claims, rejected claim ids, issues).
 
@@ -265,6 +314,8 @@ def check_claims(raw_claims, request):
                 problems.append("metric value does not equal the computed value")
             elif not states_value(text or "", metrics[key]):
                 problems.append("metric value is not stated in the claim text")
+            else:
+                problems.extend(_evidence_type_issues(claim, request))
         elif kind == "interpretation":
             if claim.get("metric_key") is not None or claim.get("metric_value") is not None:
                 problems.append("interpretation must not carry a numeric fact")
@@ -300,11 +351,14 @@ def check_narratives(raw, request, claims):
         return None, ["narrator returned a non-object"]
     claim_text = " ".join(c["text"] for c in claims)
     issues = []
+    expected_language = request.get("language", "en")
     for key in ("casual", "analyst"):
         value = raw.get(key)
         if not isinstance(value, str) or not value.strip():
             issues.append("missing narrative: " + key)
             continue
+        for problem in language_issues(value, expected_language):
+            issues.append("%s: %s" % (key, problem))
         stray = stray_numbers(value, request)
         if stray:
             issues.append("%s states unsupported numbers: %s"

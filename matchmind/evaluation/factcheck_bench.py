@@ -54,11 +54,11 @@ def corruptions():
     """(category, description, claims, narratives, must_be_caught)."""
     cases = []
 
-    def add(category, note, claims=None, narratives=None, must=True):
+    def add(category, note, claims=None, narratives=None, must=True, language="en"):
         cases.append({"category": category, "note": note,
                       "claims": claims if claims is not None else copy.deepcopy(GOOD_CLAIMS),
                       "narratives": narratives if narratives is not None else dict(GOOD_NARRATIVE),
-                      "must_be_caught": must})
+                      "must_be_caught": must, "language": language})
 
     add("wrong_metric_value", "metric_value says 9, backend computed 3",
         claims=_claims(metric_value=9))
@@ -104,6 +104,27 @@ def corruptions():
         narratives={"casual": GOOD_NARRATIVE["casual"]})
     add("narrative_empty", "empty prose",
         narratives={"casual": "", "analyst": GOOD_NARRATIVE["analyst"]})
+
+    # Language and evidence-type coverage, added after a real regression: a Chinese request that
+    # came back in English, and a recovery claim citing only a shot.
+    add("wrong_language_english_for_chinese_request",
+        "Chinese was requested, the prose is English",
+        narratives={"casual": GOOD_NARRATIVE["casual"],
+                    "analyst": GOOD_NARRATIVE["analyst"]}, language="zh")
+    add("wrong_language_chinese_for_english_request",
+        "English was requested, the prose is Chinese",
+        narratives={"casual": "主队在前场抢回球权三次。",
+                    "analyst": "本窗口记录到 3 次高位夺回。"}, language="en")
+    recovery_backed_by_a_shot = copy.deepcopy(GOOD_CLAIMS)
+    recovery_backed_by_a_shot[0]["evidence_event_ids"] = ["MM-DEMO-01-E009"]
+    add("recovery_claim_citing_only_a_shot",
+        "a high_recoveries claim cites a shot, which cannot demonstrate a recovery",
+        claims=recovery_backed_by_a_shot)
+    shots_backed_by_a_pass_only = copy.deepcopy(GOOD_CLAIMS)
+    shots_backed_by_a_pass_only[1]["evidence_event_ids"] = ["MM-DEMO-01-E008"]
+    add("shots_claim_citing_only_passes",
+        "a linked_shots claim cites only passes",
+        claims=shots_backed_by_a_pass_only)
     return cases
 
 
@@ -125,7 +146,9 @@ def clean_cases():
     zh[0]["text"] = "主队在本窗口内完成3次高位抢回球权。"
     zh[1]["text"] = "其中两次在15秒内形成射门。"
     zh[2]["text"] = "主队持续在前场抢回球权并迅速完成射门。"
-    cases.append({"category": "clean_chinese", "claims": zh,
+    zh[0]["evidence_event_ids"] = ["MM-DEMO-01-E007", "MM-DEMO-01-E013", "MM-DEMO-01-E019"]
+    zh[1]["evidence_event_ids"] = ["MM-DEMO-01-E009", "MM-DEMO-01-E015"]
+    cases.append({"category": "clean_chinese", "language": "zh", "claims": zh,
                   "narratives": {"casual": "这段时间主队抢回球权3次，还射了2次门；客队一次都没射门。",
                                  "analyst": "本窗口记录到 3 次高位夺回，其中 2 次在 15 秒内形成射门，"
                                             "持球时间为 35 秒对 115 秒。"}})
@@ -138,9 +161,10 @@ def clean_cases():
 
 
 def evaluate():
-    request = copy.deepcopy(REQUEST)
     results = []
     for case in corruptions():
+        request = copy.deepcopy(REQUEST)
+        request["language"] = case.get("language", "en")
         approved, rejected, claim_issues = check_claims(case["claims"], request)
         narratives, narrative_issues = check_narratives(
             case["narratives"], request, approved if approved else [])
@@ -153,6 +177,8 @@ def evaluate():
                         "issues": (claim_issues + narrative_issues)[:3]})
     false_alarms = []
     for case in clean_cases():
+        request = copy.deepcopy(REQUEST)
+        request["language"] = case.get("language", "en")
         approved, rejected, claim_issues = check_claims(case["claims"], request)
         narratives, narrative_issues = check_narratives(case["narratives"], request, approved)
         ok = not rejected and not claim_issues and narratives is not None

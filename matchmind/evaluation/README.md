@@ -28,9 +28,9 @@ is in [`PLAN_REVIEW.md`](PLAN_REVIEW.md).
 
 ---
 
-## 1. The verifier: 17/17 caught, 0/4 false alarms
+## 1. The verifier: 21/21 caught, 0/4 false alarms
 
-`python -m evaluation.factcheck_bench` exercises `ai/verify.py` directly with 18 controlled
+`python -m evaluation.factcheck_bench` exercises `ai/verify.py` directly with 22 controlled
 corruptions and 4 correct explanations, and is pinned by
 `tests/ai/test_factcheck_bench.py` so it cannot drift silently.
 
@@ -53,7 +53,18 @@ corruptions and 4 correct explanations, and is pinned by
 | narrative claims fatigue | yes |
 | narrative missing one audience | yes |
 | empty prose | yes |
+| Chinese requested, English prose | yes |
+| English requested, Chinese prose | yes |
+| a `high_recoveries` claim citing only a shot | yes |
+| a `linked_shots` claim citing only passes | yes |
 | universal quantifier ("each of the three") when only two did | **no — auditor's job** |
+
+Four of those classes were added after real defects rather than for symmetry: the language pair
+after a Chinese request came back in English, and the evidence-type pair after noticing that a claim
+could cite a plausible-looking id of the wrong type. A metric of ZERO is exempt from the
+evidence-type rule, because "took no shots" has no shot event to cite and its honest evidence is
+whatever did happen — that exemption exists because the first version of the check rejected correct
+cards.
 
 The last row is the honest gap and it is why the auditor agent exists: a regex cannot tell
 "two of three" from "three of three". The bench marks it `must_be_caught: false` rather than
