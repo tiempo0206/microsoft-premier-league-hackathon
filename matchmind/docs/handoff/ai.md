@@ -1,8 +1,9 @@
 # ai 交接记录 — Role C（AI 核验与集成）
 
 - 开发者：C / **Meng Yuxuan**（`farlyfeifei`）
-- 分支：`codex/ai-verification`
-- 基线 SHA：`4be6f02`（由 `codex/backend-ab-mvp` + `docs/development-plan` + `codex/development-pack-cn-v2.1` 三方合并，零冲突）
+- 分支：`codex/ai-verification`（远端 tip `27e4dd5`，PR **#8**，目标分支 `codex/backend-ab-mvp`）
+- 基线 SHA：`4be6f02`（本地三方合并 `codex/backend-ab-mvp` + `docs/development-plan` + `codex/development-pack-cn-v2.1`，零冲突）
+- 远端基线：`cd48448`（`codex/backend-ab-mvp` 的 tip；HTTPS 推送不通，改用 Git Data API 以单提交形式发布，所以 PR #1/#5 的文档没有在这个分支里重复）
 - 依赖的前端基线：A1 `f88d286092e602d73804e1afeb114ec0f126b2ff`
 - 契约版本：**2.0.0 未改**（`python tools/check_frozen.py` → `Frozen contracts and fixtures unchanged`）
 - 本次范围：`ai/`、`evaluation/`、`tests/ai/`、`docs/handoff/ai.md`，以及集成人职责内的 `TEAM_ROLES.json` 与 `tools/check_scope.py`。**没有修改 B 的 `backend/`、A 的 `frontend/`、`contracts/`、`data/fixtures/` 任何一行。**
@@ -31,6 +32,17 @@
 修法是加一道 `verify.consistency_issues()`：用同一份事件重算检测器，若 `high_recoveries`/`linked_shots`/`home_shots`/`away_shots`/`window_seconds` 与事件对不上，**在叫模型之前就 reject**。
 
 > 这是这套系统里最重要的一条：schema 只能证形状，这道门证算术。一个和证据矛盾的数字，无论措辞多漂亮都不能发布。
+
+### 2b. 12 用例评测又抓出两个中文误杀（都已修）
+
+| 缺陷 | 现象 | 根因 | 修法 |
+| --- | --- | --- | --- |
+| 中文数字读不出来 | 「时间为115秒」提取不到 115，**中文路径 100% 校验失败** | 正则 lookbehind 用了 `\w`，而 Python 的 `\w` 匹配 CJK 汉字 | 字符类改成显式 ASCII |
+| 汉字单字被当数字 | 「一次都没射门」的「一」被读成 1，「进攻三区」的「三」被读成 3 | 汉字「一二三」既是数字又是普通词 | 漂移检测不再扫裸单字，改由 `states_value` 在声称指标值时接受 |
+| 坐标被判为编数字 | 「恢复点在 x=78」的 78 不在允许集合 | 允许集合只放了指标值 | 允许集合并入事件里真实存在的全部坐标 |
+
+**这三条都属于"不修就会静默废掉一条评分项"的级别**：官方 §4.1(vi) 要多语言叙事，而它们让中文一次都出不来。修完 142 个测试全绿，中文正例可发布。
+
 
 ### 3. 三个角色真的不是三个 prompt（C4）
 
@@ -61,9 +73,33 @@ python -m uvicorn ai.app:app --host 127.0.0.1 --port 8000 --workers 1
 
 ### 5. 评测台（C5）
 
-`evaluation/benchmark.py`：12 个窗口 = 4 正例 + 4 负例 + 4 篡改，单 Agent 与三 Agent **同输入、同模型、同确定性校验器**。
+`evaluation/benchmark.py`：12 个窗口，单 Agent 与三 Agent **同输入、同模型、同确定性校验器**。
 
 `ai/single.py` 是刻意做弱的基线：一个 Agent 同时写 claims、写叙事、自我复核。
+
+**实测结果（2026-10-22，`deepseek-flash`，prompt `c3-1.1.0`）**：
+
+| group | 用例 | passed | fallback | rejected | 模型调用 |
+| --- | --- | --- | --- | --- | --- |
+| positive | 2 | 2 | 0 | 0 | 11 |
+| non_trigger | 4 | 3 | 1 | 0 | 19 |
+| negative | 2 | 2 | 0 | 0 | 10 |
+| tampered | 4 | 0 | 0 | 4 | **0** |
+
+合计 7 张发布卡片、1 次诚实降级、4 次正确拒绝；**篡改组零模型调用**。
+
+| | 三 Agent | 单 Agent |
+| --- | --- | --- |
+| 12 窗口模型调用 | 40 | 12 |
+| 中位延迟 | 10484ms | 3781ms |
+| 校验器拒绝的 claim | 5 | 8 |
+| 叙事校验失败的窗口 | 4 | 7 |
+| 能否标记 `passed` | 能 | **不能** |
+
+诚实结论：**三 Agent 贵 3.3 倍调用、慢 2.8 倍，但错误 claim 和失败叙事都更少（5 vs 8、4 vs 7）**，而且单 Agent 在契约上根本拿不到 `passed`。12 个窗口不足以宣称泛化能力，报告里已写明样本量，**不要在提交材料里把它写成"多 Agent 更好"的统计结论**。
+
+**注意用例分组的诚实性**：出厂 fixture 里**只有一个窗口会触发**高位夺回检测器，所以"4 个正例"物理上不存在。把 3 个不触发的窗口标成正例会虚高通过率，所以分组改成了 positive / non_trigger / negative / tampered。**这个空缺本身就是"数据太稀"的证据**，和第六节第 1 项那条契约变更呼应。
+
 
 ---
 
@@ -102,7 +138,7 @@ tools/check_scope.py   C 的白名单补上根配置、共享测试和 tools/ �
 在 `matchmind/` 下，用 `.venv\Scripts\python.exe`（Python 3.12.10）：
 
 ```
-python -m pytest tests -q                       → 133 passed, 33 subtests passed
+python -m pytest tests -q                       → 142 passed, 33 subtests passed
 python tools/check_frozen.py                    → Frozen contracts and fixtures unchanged
 python tools/check_scope.py --role C --base HEAD→ Role scope OK
 python -m ai.probe                              → configured: true
@@ -119,7 +155,7 @@ python -m evaluation.benchmark                  → 报告落在 .artifacts/eval
 
 | 状态 | 是否有真实调用 | 标签 | 已验证 |
 | --- | --- | --- | --- |
-| 离线（裸调用 `analyze(request)`） | 无 | `rule_fallback` / `code_only` / `model=null` | ✅ 37 个测试走这条 |
+| 离线（裸调用 `analyze(request)`） | 无 | `rule_fallback` / `code_only` / `model=null` | ✅ 53 个 AI 测试里大部分走这条 |
 | 无 key 的组合根 | 无 | 同上 + `error.code=MODEL_UNAVAILABLE` | ✅ |
 | 真实模型 | **有** | `live_model` / `agent_and_code` / `model=deepseek-flash` | ✅ 实测通过 |
 | 真实模型失败 | 有（失败） | 降级为 `rule_fallback` + `error.code` | ✅ 401 / 超时 / 非 JSON 均覆盖 |

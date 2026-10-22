@@ -42,24 +42,42 @@ _WORD_NUMBERS["fifty"] = 50
 _ZH_DIGITS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
               "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
 _ZH_COMPOUND = re.compile(r"([一二两三四五六七八九])?十([一二三四五六七八九])?")
-_ZH_SINGLE = re.compile(r"[零一二三四五六七八九两]")
+_CJK_VALUE = {0: ("零",), 1: ("一",), 2: ("二", "两"), 3: ("三",), 4: ("四",),
+              5: ("五",), 6: ("六",), 7: ("七",), 8: ("八",), 9: ("九",),
+              10: ("十",)}
 
 
 def allowed_numbers(request):
-    """Every number an explanation in this window is allowed to state."""
+    """Every number an explanation in this window is allowed to state.
+
+    Event coordinates are included because they are supplied facts: a good analyst claim
+    legitimately says "the recovery came at x=78", and refusing that would punish the
+    model for being specific. Note the honest consequence: the stray-number check is
+    correspondingly looser, which is one of the reasons the auditor agent still exists.
+    """
     values = {float(v) for v in request["metrics"].values()}
     values.add(float(LINKED_SHOT_HORIZON_SEC))
     values.add(float(request["window"]["start_sec"]))
     values.add(float(request["window"]["end_sec"]))
+    for event in request["events"]:
+        for point in (event.get("position"), event.get("end_position")):
+            if point:
+                values.add(float(point["x"]))
+                values.add(float(point["y"]))
     return values
 
 
 def numbers_in(text):
-    """Digits, English number words and 1-99 Chinese numerals found in the text.
+    """Digits, English number words and Chinese 十-compounds found in the text.
 
-    Documented limitation: only Chinese compounds of the form 十, X十, 十Y and X十Y
-    are recognised. A sentence that spells a number in some other scheme is not caught
-    by this check, which is one reason the auditor agent still exists.
+    Bare single-character Chinese numerals are deliberately NOT scanned. 一, 二 and 三
+    double as ordinary words ("一次都没射门", "进攻三区"), so a regex cannot tell the
+    number from the article, and scanning them rejected perfectly good Chinese prose.
+    `states_value` still accepts a Chinese numeral written for a metric claim, so metric
+    claims stay verified while ordinary prose stops being rejected.
+
+    Documented limit: an unsupported number spelled as a bare Chinese character inside an
+    interpretation is not caught by this check. The auditor agent covers that class.
     """
     found = set()
     for token in _NUMBER.findall(_ID_TOKEN.sub(" ", text)):
@@ -74,9 +92,17 @@ def numbers_in(text):
     for match in _ZH_COMPOUND.finditer(text):
         tens, ones = match.group(1), match.group(2)
         found.add(float((_ZH_DIGITS.get(tens, 1) * 10) + _ZH_DIGITS.get(ones, 0)))
-    for char in _ZH_SINGLE.findall(_ZH_COMPOUND.sub(" ", text)):
-        found.add(float(_ZH_DIGITS[char]))
     return found
+
+
+def _states_cjk_value(text, value):
+    if value != int(value):
+        return False
+    whole = int(value)
+    for token in _CJK_VALUE.get(whole, ()):
+        if token in text:
+            return True
+    return False
 
 
 _ZERO_EXPRESSIONS = ("zero", "none", "no shots", "no shot", "not a single", "without a shot",
@@ -96,7 +122,7 @@ def states_value(text, value):
     if value == 0:
         lowered = text.lower()
         return any(phrase in lowered for phrase in _ZERO_EXPRESSIONS)
-    return False
+    return _states_cjk_value(text, value)
 
 
 def unsupported_phrases(text):

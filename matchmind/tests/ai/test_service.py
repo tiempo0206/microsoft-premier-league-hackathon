@@ -404,10 +404,15 @@ class VerificationUnitTests(unittest.TestCase):
         self.assertIsNone(narratives)
 
     def test_number_words_and_chinese_numerals_are_read(self):
+        from ai.verify import states_value
         self.assertIn(3.0, numbers_in("three recoveries"))
         self.assertIn(15.0, numbers_in("within 15 seconds"))
-        self.assertIn(2.0, numbers_in("两次射门"))
         self.assertIn(15.0, numbers_in("十五秒内"))
+        # Bare Chinese numerals are words as often as numbers ("一次都没射门"), so they
+        # are accepted when stating a value but not scanned as stray numbers.
+        self.assertTrue(states_value("两次射门", 2))
+        self.assertTrue(states_value("三次夺回", 3))
+        self.assertFalse(states_value("五次夺回", 3))
 
     def test_ascii_digits_inside_chinese_prose_are_read(self):
         """Regression: a \\w lookbehind treats CJK as a word character and silently
@@ -446,6 +451,33 @@ class VerificationUnitTests(unittest.TestCase):
         allowed = allowed_numbers(request)
         for value in request["metrics"].values():
             self.assertIn(float(value), allowed)
+
+    def test_allowed_numbers_includes_event_coordinates(self):
+        """A specific claim says 'the recovery came at x=78'. That is a supplied fact and
+        must not be treated as an invented number."""
+        request = load_request()
+        allowed = allowed_numbers(request)
+        for event in request["events"]:
+            for point in (event.get("position"), event.get("end_position")):
+                if point:
+                    self.assertIn(float(point["x"]), allowed)
+                    self.assertIn(float(point["y"]), allowed)
+        self.assertEqual(stray_numbers("the recovery came at x=78", request), [])
+
+    def test_ordinary_chinese_prose_is_not_read_as_numbers(self):
+        """Regression: 一 in '一次都没射门' and 三 in '进攻三区' were read as 1 and 3,
+        which made every Chinese narrative fail the stray-number check."""
+        request = load_request()
+        request["language"] = "zh"
+        self.assertEqual(numbers_in("客队一次都没射门"), set())
+        self.assertEqual(numbers_in("出现在主队于进攻三区完成恢复之后"), set())
+        claims, _, _ = check_claims(GOOD_CLAIMS["claims"], request)
+        narratives, issues = check_narratives(
+            {"casual": "这段时间主队抢回球权3次，还射了2次门；客队虽然控球更多，但一次都没射门。",
+             "analyst": "主队完成高位恢复3次、射门2次，控球时间35秒；客队控球115秒、射门0次。"},
+            request, claims)
+        self.assertEqual(issues, [])
+        self.assertIsNotNone(narratives)
 
 
 class ToolboxTests(unittest.TestCase):
