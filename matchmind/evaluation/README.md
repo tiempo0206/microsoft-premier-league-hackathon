@@ -207,37 +207,35 @@ independent full runs and the positive-only run.
 
 `python -m evaluation.ablation --repeats 3` disables one role at a time over 6 windows × 3
 repeats = 18 runs per variant, and scores every published card with the real, unpatched verifier.
+These are the numbers after the prompt fixes above, which is why they differ from the earlier run.
 
 | variant | fallback count | per repeat | within-variant spread | cards with a universal claim | median |
 | --- | --- | --- | --- | --- | --- |
-| `full` | 5 / 18 | 1, 2, 2 | 1 | 10 | 8 109 ms |
-| `no_code_gate` | 4 / 18 | 1, 1, 2 | 1 | 6 | 8 046 ms |
-| `no_auditor` | 6 / 18 | 2, 2, 2 | 0 | 9 | 8 141 ms |
-| **`no_repair`** | **17 / 18** | 6, 6, 5 | 1 | 6 | 5 750 ms |
-| `no_tools` | 6 / 18 | 2, 2, 2 | 0 | 6 | 8 094 ms |
+| `full` | 2 / 18 | 1, 0, 1 | 1 | 11 | 8 203 ms |
+| `no_code_gate` | 0 / 18 | 0, 0, 0 | 0 | 12 | 7 922 ms |
+| `no_auditor` | 0 / 18 | 0, 0, 0 | 0 | 9 | 7 125 ms |
+| **`no_repair`** | **11 / 18** | 3, 3, 5 | 2 | 8 | 5 719 ms |
+| `no_tools` | 3 / 18 | 1, 1, 1 | 0 | 9 | 8 469 ms |
 
-Between-variant range of the means is **4.33**, within-variant spread is at most **1**. So exactly
-one claim survives the noise test:
+Between-variant range of the means is **3.67**, within-variant spread is at most **2**. Exactly one
+claim survives the noise test:
 
-> **The repair round is worth about twelve extra published cards out of eighteen.** Without it,
-> 17 of 18 windows degrade to a rule fallback instead of 5.
+> **The repair round is worth about nine extra published cards out of eighteen.** Without it, 11 of
+> 18 windows degrade to a rule fallback; with it, 2.
 
-Everything else is inside the noise: removing the code gate, the auditor or the tools changes the
-fallback count by at most 2, which is the same size as the run-to-run spread. **Do not claim those
-have a measured effect.**
+Everything else is inside or barely above the noise. Removing the code gate, the auditor or the tools
+changes the fallback count by at most 3, and two of those variants produced *fewer* fallbacks than
+the full pipeline, which is the opposite of the expected direction and is most likely variance. **Do
+not claim those have a measured effect.**
 
 `published_with_bad_claims` is 0 for every variant, including `no_code_gate`. On clean input the
-model rarely fabricates a number, so a live run cannot show what the code gate is for — that is
-what §1 measures instead, with controlled corruption (17/17 caught, 0/4 false alarms). The code
-gate's value is a property of adversarial input, not of average input.
-
-An honest oddity worth keeping: `no_code_gate` produced *fewer* universal-quantifier cards (6) than
-the full pipeline (10). The plausible cause is that the repair round, which only runs when
-something is rejected, re-narrates and reintroduces generalising wording. Two runs of a small
-sample cannot settle that, and the numbers are recorded rather than explained away.
+model rarely fabricates a number, so a live run cannot show what the code gate is for — that is what
+§1 measures instead, with controlled corruption. The code gate's value is a property of adversarial
+input, not of average input. The auditor's value is measured separately by §1a, because a live run
+where the auditor rarely objects cannot show it either.
 
 To go further: more windows, not more repeats. Six windows with one positive window each is the
-binding constraint.
+binding constraint; the dense fixture in §2 is the fix.
 
 ## 6. Known limits of every number here
 
