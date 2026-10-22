@@ -6,6 +6,7 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+import uuid
 
 import uvicorn
 from backend.app import create_app
@@ -80,6 +81,61 @@ class APITests(unittest.TestCase):
         ]:
             with self.subTest(path=path):
                 status, body, _ = self.call(path)
+                self.assertEqual(status, expected)
+                check_shape("ErrorResponse", body)
+
+    def test_replay_create_control_and_idempotent_reset(self):
+        create_key = str(uuid.uuid4())
+        status, snapshot, _ = self.call("/api/v1/replays", "POST", {"match_id": "MM-DEMO-01", "speed": 5},
+                                        {"Idempotency-Key": create_key})
+        self.assertEqual(status, 201)
+        check_shape("ReplaySnapshot", snapshot)
+        rid = snapshot["replay"]["replay_id"]
+        status, duplicate, _ = self.call("/api/v1/replays", "POST", {"match_id": "MM-DEMO-01", "speed": 5},
+                                         {"Idempotency-Key": create_key})
+        self.assertEqual(duplicate, snapshot)
+        key = {"Idempotency-Key": str(uuid.uuid4()), "X-MatchMind-Expected-Run": "1"}
+        status, reset, _ = self.call(f"/api/v1/replays/{rid}/control", "POST", {"action": "reset"}, key)
+        status, retried, _ = self.call(f"/api/v1/replays/{rid}/control", "POST", {"action": "reset"}, key)
+        self.assertEqual(reset, retried)
+        self.assertEqual(reset["replay"]["run_id"], 2)
+        status, error, _ = self.call(f"/api/v1/replays/{rid}/control", "POST", {"action": "play"},
+                                    {"X-MatchMind-Expected-Run": "1"})
+        self.assertEqual(status, 409)
+        check_shape("ErrorResponse", error)
+
+    def test_sse_begins_with_snapshot_even_with_last_event_id(self):
+        _, snap, _ = self.call("/api/v1/replays", "POST", {"match_id": "MM-DEMO-01", "speed": 5})
+        rid = snap["replay"]["replay_id"]
+        request = urllib.request.Request(self.base + f"/api/v1/replays/{rid}/stream",
+                                         headers={"Last-Event-ID": f"{rid}:1:999"})
+        with urllib.request.urlopen(request, timeout=3) as response:
+            lines = []
+            while True:
+                line = response.readline().decode().strip()
+                if not line:
+                    break
+                lines.append(line)
+            body = json.loads(next(line[6:] for line in lines if line.startswith("data: ")))
+            check_shape("StreamMessage", body)
+            self.assertEqual(body["kind"], "snapshot")
+            self.assertEqual(body["replay_id"], rid)
+            self.assertEqual(response.headers["X-Accel-Buffering"], "no")
+        deadline = time.monotonic() + 2
+        while self.app.state.replays.sessions[rid].subscribers and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(len(self.app.state.replays.sessions[rid].subscribers), 0)
+
+    def test_invalid_json_body_size_and_media_are_rejected(self):
+        for raw, headers, expected in [
+            (b'{"match_id":', {"Content-Type": "application/json"}, 400),
+            (b"x" * 17000, {"Content-Type": "application/json"}, 413),
+            (b"{}", {"Content-Type": "text/plain"}, 415),
+            (b'{"match_id":"MM-DEMO-01","speed":5,"extra":1}', {"Content-Type": "application/json"}, 400),
+            (b'{"match_id":"MM-DEMO-01","speed":true}', {"Content-Type": "application/json"}, 400),
+        ]:
+            with self.subTest(expected=expected):
+                status, body, _ = self.call("/api/v1/replays", "POST", headers=headers, raw=raw)
                 self.assertEqual(status, expected)
                 check_shape("ErrorResponse", body)
 

@@ -19,8 +19,7 @@ def error_response(error: ApiError):
 
 
 async def read_body(request: Request, shape: str, limit=16384, timeout=10):
-    if request.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json":
-        raise ApiError(415, "INVALID_REQUEST", "Content-Type must be application/json.")
+    is_json = request.headers.get("content-type", "").split(";", 1)[0].strip().lower() == "application/json"
     body = bytearray()
     try:
         async with asyncio.timeout(timeout):
@@ -28,6 +27,10 @@ async def read_body(request: Request, shape: str, limit=16384, timeout=10):
                 if len(body) + len(chunk) > limit:
                     raise ApiError(413, "INVALID_REQUEST", "Request exceeds the byte limit.")
                 body.extend(chunk)
+        # Finish a bounded small upload before replying. Closing with unread bytes
+        # can reset the TCP connection instead of delivering the intended 415.
+        if not is_json:
+            raise ApiError(415, "INVALID_REQUEST", "Content-Type must be application/json.")
         def invalid_constant(value):
             raise ValueError(value)
         value = json.loads(body, parse_constant=invalid_constant)
