@@ -1,9 +1,9 @@
 {
-  "A_frontend": null,
-  "B_backend_data": null,
-  "C_ai_integrator": null,
-  "submission_representative": null,
-  "baseline_sha": null,
-  "daily_sync_time_utc8": null,
+  "A_frontend": "Tianbo Cao (tiempo0206)",
+  "B_backend_data": "wunianze666-netizen",
+  "C_ai_integrator": "Meng Yuxuan (farlyfeifei)",
+  "submission_representative": "Tianbo Cao (tiempo0206)",
+  "baseline_sha": "pending: codex/ai-verification merge commit",
+  "daily_sync_time_utc8": "21:00",
   "note": "请仅填姓名或 GitHub 用户名；不填密码、API Key、支付或证件信息。"
 }
