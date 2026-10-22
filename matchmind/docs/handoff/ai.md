@@ -354,3 +354,39 @@ MCP 工具从 5 个增加到 6 个，新增 `build_overlay`。
 - **recap 角色**：官方 §4.1(iii) 明写 `automated match recaps`，契约 v0.1 有、2.0.0 砍了。这是我判断的下一块最高价值工作：它的输入粒度（整段 prefix）和 moment 角色（单窗口）不同，是多 Agent 不可合并的第二个天然战场。
 - **storyline 还没接进发布链路**：它是纯策略 + 测试，激活需要在契约 2.1.0 里加 `Insight.sequence` / `Insight.continues_from`，否则前端无法渲染连续性而不自己编。
 - **A2A 的 `/a2a` JSON-RPC 端点**：卡片有了，协议端点还没实现（那需要 HTTP 端点，落在 B 的 app 上，属于需要协调的部分）。
+
+---
+
+## 十二、第四轮：recap 角色
+
+### 12.1 交付
+
+`ai/recap.py`（新增），`python -m ai.recap` 可独立运行，MCP 工具增到 **7 个**（新增 `build_recap`），A2A skill 同步到 7 个，18 个测试。
+
+### 12.2 为什么它是一个独立的角色，而不是"更长的 moment 卡"
+
+**因为它的输入粒度不同。** moment 卡读一个窗口，recap 读整段 prefix 并要判断跨窗口什么最重要。这正是 `Best Multi-Agent` 判据要的「specialized agents with distinct roles」，也是除了契约里 `agent_and_code` 那条之外，**第二个结构性的多 Agent 论证**。
+
+而且它**实际解决了 10.4(2) 那个窗口边界缺陷**：实测输出里，recap 明确写出「比分 Harbor FC 1 - 0 Mountain United，进球来自 H01」和「最近一次夺回在 40 秒后奏效」。**任何单张 moment 卡都做不到这件事**，因为夺回和进球从来不在同一个窗口里。
+
+```
+python -m ai.recap
+→ analyst: "300 seconds played, Harbor FC 1 - 0 Mountain United. Possession is 110 to 190
+   seconds, 37% to the home side. 3 to 1 on shots, and 5 to 10 completed passes.
+   Goals: H01 for HOME. The most recent recovery paid off 40 seconds later.
+   The score changed inside this window. These are auditable counts, not a causal explanation."
+```
+
+### 12.3 三条约束（都有测试）
+
+1. **不读 cutoff 之后的事件**：`recap_facts` 自己校验 `events[-1].timestamp_sec <= end_sec`；用 1650 截断时 `goals` 必须为空（1681 的进球在窗外），有专门测试。
+2. **不重算，只复用**：用 C 的 `high_press_chains`（唯一实现），不写第二份；数值全部来自 `backend.stats`。
+3. **叙事数字必须能在 facts 里找到**：有一条测试把叙事文本里的所有数字提取出来，逐个比对 facts，多一个就红。
+
+### 12.4 还有一个内部函数值得说明
+
+`recap_from_insights(insights)` 走的是**已发布卡片**路径而不是原始事件流 —— 这样 recap 只能提到观众真的看过的内容，不会悄悄引入一张没播过的卡。混用模式时会如实报告 `source_modes`（例如 `["live_model","rule_fallback"]`），不把两种来源抹平。
+
+### 12.5 契约仍然缺的那一块
+
+`recap` 现在是自描述载荷（`matchmind.recap/1` + 自带 `validate_recap`），**不在冻结契约里**。要进契约需要一次性升到 2.1.0：新增 `Recap` 定义 + `POST /api/v1/replays/{id}/recap`，同时把 `Insight.sequence` / `Insight.continues_from` 一起加（storyline 需要）。这是同一批改动，不要分两次做。

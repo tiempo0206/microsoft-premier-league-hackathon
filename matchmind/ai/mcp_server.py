@@ -30,6 +30,7 @@ from mcp.server.mcpserver import MCPServer           # noqa: E402
 
 from ai.config import from_env                       # noqa: E402
 from ai.overlay import overlay_payload, validate_payload   # noqa: E402
+from ai.recap import build_recap as recap_payload      # noqa: E402
 from ai.service import analyze                       # noqa: E402
 from ai.tools import Toolbox                         # noqa: E402
 from ai.verify import consistency_issues, high_press_chains   # noqa: E402
@@ -177,8 +178,28 @@ async def build_overlay(match_id: str, start_sec: int, end_sec: int,
             "source_mode": insight["generation"]["mode"]}
 
 
+def build_recap(match_id: str, start_sec: int, end_sec: int, team_id: str = "HOME",
+                language: str = "en") -> dict:
+    """Summarise the whole prefix so far: score, shots, possession, goals, key links.
+
+    This is the role a moment card cannot replace. No single 150-second window in the shipped
+    fixture contains both the 1640 recovery and the 1680 goal, so only a recap can report the
+    goal; moment cards by construction cannot. Deterministic: no model is called.
+    """
+    if language not in ("en", "zh"):
+        raise ValueError("language must be en or zh")
+    if team_id not in ("HOME", "AWAY"):
+        raise ValueError("team_id must be HOME or AWAY")
+    _fixture(match_id)          # validate the match before the window
+    payload = recap_payload(match_id, start_sec, end_sec, team_id=team_id,
+                            language=language, model_ready=False)
+    if payload["problems"]:
+        raise ValueError("recap failed its own validation: " + "; ".join(payload["problems"]))
+    return payload
+
+
 for _fn in (list_matches, get_metrics, get_event_window, get_candidate_moments,
-            explain_window, build_overlay):
+            explain_window, build_overlay, build_recap):
     server.add_tool(_fn)
 
 

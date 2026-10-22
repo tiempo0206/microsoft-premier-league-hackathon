@@ -57,6 +57,12 @@ SKILLS = [
            "stat lines and evidence pins, each labelled with its source mode.",
            ["broadcast", "overlay", "graphics"],
            ["Give me the overlay JSON for the 1500-1650 window."]),
+    _skill("build_recap",
+           "Summarise the whole observed prefix: score, shots, possession, goals and key "
+           "links. Deterministic, and the only role that can report a goal no single moment "
+           "window contains.",
+           ["recap", "summary", "deterministic"],
+           ["Recap the match so far between 1500 and 1800 seconds."]),
 ]
 
 
