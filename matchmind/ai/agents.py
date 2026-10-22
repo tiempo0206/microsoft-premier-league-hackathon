@@ -163,8 +163,10 @@ async def run_round(request, provider, config, deadline, traces, *, correction_i
     traces.append(_trace(request, "auditor", "completed" if not audit_issues else "rejected",
                          started, "framework issues=%d" % len(audit_issues)))
     if audit_issues:
+        # Same rule as the direct path: the auditor's refusals must not be reported as
+        # code-gate rejections, or the cheap narration repair never runs.
         return {"claims": claims, "narratives": narratives, "issues": audit_issues,
-                "rejected": list(dict.fromkeys(rejected_ids + auditor_rejected)),
+                "rejected": rejected_ids,
                 "audit_issues": audit_issues, "auditor_rejected": auditor_rejected}
     return {"claims": claims, "narratives": narratives, "issues": [],
             "rejected": rejected_ids, "audit_issues": [], "auditor_rejected": []}

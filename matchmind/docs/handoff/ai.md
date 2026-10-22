@@ -235,8 +235,10 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 
 | 项 | 状态 | 说明 |
 | --- | --- | --- |
-| Agent Framework 编排 | **已接入，opt-in** | `MATCHMIND_ORCHESTRATOR=framework` 可切换，正例 2/2 通过、比直连快约 25%。默认仍走 `direct`，因为 12 窗口基线是对直连测的；框架版只跑了正例 2 个窗口，**没有完整评测就不能在材料里写"已用框架达到最好效果"** |
-| MCP server | **未做** | 三个工具已成型，包一层 MCP 是最便宜的 Agentic 加分点，见下一块 |
+| Agent Framework 编排 | **已接入，且是默认** | `MATCHMIND_ORCHESTRATOR=framework` 为默认；正例 2/2、12 窗口 6/12 发布，比直连快约 20–25%，质量打平。不可导入时自动降级为直连并在 trace 里写明。见第十节 |
+| MCP server | **已完成** | `ai/mcp_server.py`，5 个工具（`list_matches` / `get_metrics` / `get_event_window` / `get_candidate_moments` / `explain_window`），12 个测试，复用同一份确定性代码。`python -m ai.mcp_server`（stdio）或 `--http` |
+| A2A agent card + 端点 | **未做** | 判据点名 A2A，三个头部竞品都有。见 `evaluation/PLAN_REVIEW.md` §5 第 2 项 |
+| broadcast overlay JSON 导出 | **未做** | 官方 §4.1 要求输出「machine-readable enough to be rendered as synchronized graphical overlays」。见 §5 第 3 项 |
 | 会话/并发上限 | 沿用 B 的实现 | C 侧无独立限流，沿用 8 会话 / 30 次每小时 / 并发 1 |
 | possession 口径自检 | **刻意不做** | `AnalysisRequest` 不带 `Match.initial_possession_team`，无法在 C 侧重算；已在 `consistency_issues` 的 docstring 里写明这是刻意的空白，不猜 |
 | 中文数字校验 | 部分覆盖 | 只认 `十 / X十 / 十Y / X十Y` 形态，其它写法靠 auditor 兜；已在 docstring 里写明限制 |
@@ -259,4 +261,61 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 
 - **给 A**：`ai.app` 已经能被 uvicorn 拉起来，`/api/v1/health` 会如实报 `model_ready`。A3 只要按冻结的 `Insight` 结构渲染即可，`claims[].metric_key/metric_value` 和 `evidence_event_ids` 都是可信的；`verification.rejected_claims` 非空时请把"本卡已剔除 N 条未通过核验的主张"显示出来 —— 那是这套产品的卖点。
 - **给 B**：我没有改你任何一行，`backend.app:app` 仍然无 dispatcher。B4 的注入在 `ai/app.py`，`analysis_source="external"`。注意 `MATCHMIND_MODEL_TIMEOUT_SEC` 现在设成 20，你的 `Settings.analysis_timeout` 会跟着走。
-- **给提交代表**：真实调用过的**只有** DeepSeek 的 `deepseek-flash`（Chat Completions）。**没有用过 Foundry，没有用过 Azure，Agent Framework 尚未接入运行时。** 提交材料按这个写，别多写一个词。
+- **给提交代表**：真实调用过的**只有** DeepSeek 的 `deepseek-flash`（Chat Completions）。**没有用过 Foundry，没有用过 Azure。** Agent Framework 已接入且是默认编排器（见第十节），但**没有做过任何 Foundry 调用**，材料里不能写 Foundry。Agent Framework 可以写，因为 trace 里有真实执行记录。
+
+---
+
+## 十、第二轮：2026-10-23 夜间（MCP + 竞赛情报 + 自批判）
+
+### 10.1 又修了 4 个真 bug
+
+| # | 缺陷 | 怎么发现的 | 影响 |
+| --- | --- | --- | --- |
+| 7 | **修复路径选错**：把「审核员否掉的 claim」当成「代码门否掉的 claim」，于是走了昂贵的整轮重分析，廉价叙事重写永远不触发 | 框架版完整评测出现 6 次降级，看 trace 才定位 | 修完两个编排器从 2/12 打到 6/12 |
+| 8 | **工具被模型传字符串参数就抛错**：`get_event_window("1500","1650")` 直接 `ValueError`，工具调用白费 | 消融实验日志里刷屏 `Function get_event_window failed` | 工具层对数字字符串做强制转换 |
+| 9 | **默认编排器改成 framework 后，注入 mock transport 的测试被路由到框架、绕过 mock 直连真实 API**，跑了 60 秒真网络 | 13 个测试变红 + 耗时从 20 秒涨到 60 秒 | 注入 transport 时强制走直连，并加专门测试 |
+| 10 | **「框架不可用」的降级是假的**：`ai.agents` 延迟导入，所以那个判断永远成立 | 降级测试没通过 | 选择器真的去 `import agent_framework` |
+
+**第 9 条最值得记住**：一个默认值的改动把测试变成了付费 API 调用。任何「换默认实现」的动作都必须检查测试的 traffic 去哪。
+
+### 10.2 新增交付
+
+| 文件 | 内容 |
+| --- | --- |
+| `ai/mcp_server.py` | **MCP server**，5 个工具，复用同一份确定性代码，12 个测试。**这是判据点名 `MCP integration` 的能力，之前一个都没有** |
+| `ai/framework_spike.py` | Agent Framework 接 DeepSeek 的可复现探针 |
+| `evaluation/factcheck_bench.py` | 复核器**检出率/误报率**基准：**17/17 检出，0/4 误报**，已用回归测试锁死 |
+| `evaluation/ablation.py` | 按角色消融实验（**结果不显著，已如实标注**，见下） |
+| `evaluation/scan_competitors.py` / `fetch_readmes.py` | 参赛项目情报扫描（9 个查询 → 125 候选 → 17 份 README） |
+| `evaluation/research/` | 竞品原始清单 + 17 份 README + 索引 |
+| `evaluation/PLAN_REVIEW.md` | **自批判评估**：13 项竞品领先点、8 项自身弱点、借鉴清单 |
+| `evaluation/README.md` | 五个 harness 的完整结果与限制 |
+
+依赖新增一个：`mcp==2.3.0`（官方 SDK）。注意 **SDK 已是 2.x，`FastMCP` 改名为 `MCPServer`**，照抄 1.x 教程会在 import 处失败。
+
+### 10.3 竞品情报的关键结论（详见 `evaluation/PLAN_REVIEW.md`）
+
+扫描了 9 个查询、125 个候选仓库、113 个相关、17 份精读 README。**头部队伍普遍已经有而我们之前没有的三样**：MCP（5/5 最强项目都有）、broadcast overlay JSON（4 个）、A2A（3 个）。MCP 当晚补上了，另外两个排在 `PLAN_REVIEW.md` §5。
+
+最值得偷的三个设计：
+1. **Touchline 的按角色消融**：「关掉 FactChecker 后 99.7% 的数值/人名错误被拦下、零误报」「关掉 MomentScout 后每分钟 21 张卡而不是 0.7 张」—— 这才是 `Best Multi-Agent` 判据「an outcome a single agent could not achieve」的直接证据形式。
+2. **GamePulse 的 overlay JSON 与真实数据校验**：同一份事件契约同时跑模拟赛与公开 Wyscout/Sportec 数据；模拟器总量对 1446 场真实联赛 8/8 达标。
+3. **Second Act 的可证伪预测**：半场把每位教练的调整写成可测量的检验，下半场逐条确认或推翻。全场最有原创性的机制。
+
+### 10.4 必须如实说明的两件事
+
+**（1）消融实验目前不显著，不能拿来吹。** 6 个窗口、每变体只跑 1 次，各变体差异（降级数 1/3/5/5/2）落在模型随机波动范围内；第一轮里「去掉审核员反而降级更少」就是噪声。而且 `no_code_gate` 变体的坏 claim 数也是 0 —— 干净输入下模型很少编数字，所以 12 窗口实测**无法**证明代码门的价值。代码门的价值由 `factcheck_bench` 用受控污染证明（17/17）。**要发表消融，必须每变体重复 ≥3 次并报均值与离散度。**
+
+**（2）修正一个我之前的错误诊断。** 我原先说「15 秒阈值漏掉了进球」。**实际是窗口边界问题**：第三次夺回在 1640、进球在 1680，默认检测窗口 1500–1650 里没有进球事件，而 1650–1800 窗口里没有那次夺回。**没有任何一张卡片能同时看到两者**，加宽阈值毫无用处。C 侧只能提供 45 秒的上下文档（当窗口同时包含两者时有效，已有测试证明），真正的修法是 B 侧选窗或加有界回看。已写进 `PLAN_REVIEW.md` §3.2 与第七节。
+
+### 10.5 第二轮后的门禁状态
+
+```
+python -m pytest tests -q                       → 170 passed, 33 subtests passed
+python tools/check_frozen.py                    → Frozen contracts and fixtures unchanged
+python tools/check_scope.py --role C --base HEAD→ Role scope OK
+python -m evaluation.factcheck_bench            → catch 17/17, false alarms 0/4
+python -m evaluation.benchmark                  → 6 published / 2 fallback / 4 rejected（两个编排器一致）
+```
+
+契约仍然是 **2.0.0**，仍然没有改任何冻结文件、`backend/`、`frontend/`。

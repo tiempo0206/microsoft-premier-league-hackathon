@@ -4,6 +4,7 @@ Role B packs the whole window into the AnalysisRequest, so these tools read only
 request that was handed over. They never reach into a backend database, a session
 store or a fixture path. Every call is scoped to the current run and time window.
 """
+from .verify import high_press_chains
 
 TOOL_SCHEMAS = [
     {
@@ -33,7 +34,9 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_candidate_moments",
-            "description": "Return high-recovery chains for the analysed team, as ranked candidates.",
+            "description": ("Return high-recovery chains for the analysed team. Each chain "
+                            "reports linked_shots (within 15s, the frozen metric) and "
+                            "sustained_shots (within 45s, context only, includes goals)."),
             "parameters": {"type": "object", "properties": {}, "required": []},
         },
     },
@@ -51,9 +54,25 @@ class Toolbox:
         self.calls = []
 
     def _clamp(self, value):
-        if not isinstance(value, int) or isinstance(value, bool):
+        """Accept what a language model actually sends.
+
+        Observed in a live run: the analyst passed "1500" as a string, the strict check
+        raised, and the tool result became an error the model had to work around. The tool
+        layer is a model-facing surface, so it coerces numeric-looking input instead of
+        failing. Genuinely non-numeric input still raises.
+        """
+        if isinstance(value, bool):
             raise ValueError("start_sec and end_sec must be integers")
-        return value
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float) and value.is_integer():
+            return int(value)
+        if isinstance(value, str):
+            try:
+                return int(float(value.strip()))
+            except ValueError:
+                raise ValueError("start_sec and end_sec must be integers") from None
+        raise ValueError("start_sec and end_sec must be integers")
 
     def get_metrics(self):
         self.calls.append("get_metrics")
@@ -73,28 +92,16 @@ class Toolbox:
                 for e in self.request["events"] if start <= e["timestamp_sec"] <= end]
 
     def get_candidate_moments(self):
+        """High-recovery chains, with both the frozen 15s link and the wider context link.
+
+        `linked_shots` mirrors the frozen metric exactly. `sustained_shot_event_ids` is
+        context: a shot or goal from the same possession within 45 seconds, which is how
+        the only goal in the shipped fixture becomes visible. Reporting them separately is
+        the whole point - a tool result may say more than a metric may, as long as it never
+        claims to be the metric.
+        """
         self.calls.append("get_candidate_moments")
-        events = self.request["events"]
-        attacks_right = self.team == "HOME"   # frozen convention: HOME attacks right
-        moments = []
-        for recovery in events:
-            if recovery["type"] != "recovery" or recovery["team_id"] != self.team:
-                continue
-            x = recovery["position"]["x"] if attacks_right else 100 - recovery["position"]["x"]
-            if x < 66.67:
-                continue
-            following = [e for e in events
-                         if e["team_id"] == self.team
-                         and e.get("possession_id") == recovery.get("possession_id")
-                         and 0 < e["timestamp_sec"] - recovery["timestamp_sec"] <= 15]
-            moments.append({
-                "recovery_event_id": recovery["event_id"],
-                "timestamp_sec": recovery["timestamp_sec"],
-                "attack_normalized_x": round(x, 2),
-                "linked_shot_event_ids": [e["event_id"] for e in following if e["type"] == "shot"],
-                "evidence_event_ids": [recovery["event_id"], *[e["event_id"] for e in following]],
-            })
-        return moments
+        return high_press_chains(self.request)
 
     def dispatch(self, name, arguments):
         if name == "get_metrics":

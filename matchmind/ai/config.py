@@ -26,7 +26,10 @@ class ModelConfig:
     timeout: float = 12.0
     thinking: str = "disabled"
     max_tool_calls: int = 3
-    orchestrator: str = "direct"
+    # Agent Framework is the default because it measured equal in quality and about 20%
+    # faster than the direct HTTP path on the 12-window harness. `ai.service` degrades to
+    # the direct path when the package is missing, so this default is safe to ship.
+    orchestrator: str = "framework"
 
     @property
     def configured(self) -> bool:
@@ -108,7 +111,7 @@ def from_env(environ=None, *, use_env_file=True) -> ModelConfig:
         max_tool_calls = min(max(int(raw_tools), 0), 6)
     except ValueError:
         max_tool_calls = 3
-    orchestrator = read("MATCHMIND_ORCHESTRATOR", "direct").lower()
+    orchestrator = read("MATCHMIND_ORCHESTRATOR", "framework").lower()
     if orchestrator not in ORCHESTRATORS:
         orchestrator = "direct"
     return ModelConfig(

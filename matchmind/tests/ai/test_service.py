@@ -18,6 +18,7 @@ from ai.service import analyze
 from ai.tools import Toolbox
 from ai.verify import (allowed_numbers, check_claims, check_narratives,
                        consistency_issues, numbers_in, stray_numbers)
+from ai.verify import SUSTAINED_HORIZON_SEC
 from contracts.validation import check_result
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -300,6 +301,26 @@ class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["insight"]["verification"]["rejected_claims"], ["C2"])
         check_result(request, result)
 
+    async def test_auditor_rejection_uses_the_cheap_repair_not_a_full_reanalysis(self):
+        """Regression: an auditor refusal was reported as a code-gate refusal, so the
+        expensive re-analysis ran instead of the cheap narration repair, and the same
+        overreaching sentence came back. The two kinds of rejection must stay distinct."""
+        request = load_request()
+        rejected_audit = {"approved": False, "rejected_claims": ["C2"],
+                          "narrative_problems": ["generalises over all three"],
+                          "issues": ["C2 overreaches"]}
+        provider, transport = provider_for(
+            [GOOD_CLAIMS, GOOD_NARRATIVES, rejected_audit, GOOD_NARRATIVES])
+        result = await analyze(request, config=config(), provider=provider)
+        self.assertEqual(result["status"], "passed")
+        # 4 calls = analyst, narrator, auditor, one narrator repair. A full re-analysis
+        # would have cost 6 and re-run the analyst prompt.
+        self.assertEqual(len(transport.requests), 4)
+        analyst_calls = sum(1 for body in transport.requests
+                            if "YOUR ROLE: analyst" in body["messages"][0]["content"])
+        self.assertEqual(analyst_calls, 1, "the analyst must not be re-run for a wording problem")
+        self.assertIn("C2", result["insight"]["verification"]["rejected_claims"])
+
 
 class VerificationUnitTests(unittest.TestCase):
     def test_invented_event_id_is_rejected(self):
@@ -494,6 +515,18 @@ class ToolboxTests(unittest.TestCase):
         events = self.box.get_event_window(0, 100000)
         self.assertEqual(len(events), len(self.request["events"]))
 
+    def test_tools_coerce_the_numeric_strings_a_model_actually_sends(self):
+        """Observed live: the analyst passed "1500" as a string and the tool raised, so a
+        whole tool call was wasted. The tool layer is model-facing and must be lenient."""
+        events = self.box.get_event_window("1500", "1650")
+        self.assertEqual(len(events), len(self.request["events"]))
+        events = self.box.get_event_window(1500.0, 1650.0)
+        self.assertEqual(len(events), len(self.request["events"]))
+        with self.assertRaises(ValueError):
+            self.box.get_event_window("not-a-number", 1650)
+        with self.assertRaises(ValueError):
+            self.box.get_event_window(True, 1650)
+
     def test_reversed_window_raises(self):
         with self.assertRaises(ValueError):
             self.box.get_event_window(1600, 1500)
@@ -505,8 +538,48 @@ class ToolboxTests(unittest.TestCase):
     def test_candidate_moments_match_the_frozen_metrics(self):
         moments = self.box.get_candidate_moments()
         self.assertEqual(len(moments), self.request["metrics"]["high_recoveries"])
-        self.assertEqual(sum(1 for m in moments if m["linked_shot_event_ids"]),
+        self.assertEqual(sum(1 for m in moments if m["linked_shots"]),
                          self.request["metrics"]["linked_shots"])
+
+    def test_sustained_tier_reports_the_goal_when_the_window_contains_it(self):
+        """With a window that contains both the recovery and the goal, the wider context
+        tier links them and linked_shots does not move."""
+        request = load_request()
+        fixture_events = self.request["events"]
+        self.assertNotIn("MM-DEMO-01-E022",
+                         [e["event_id"] for e in fixture_events],
+                         "the default demo window cannot see the goal at all")
+        wider = copy.deepcopy(request)
+        wider["window"] = {"start_sec": 1500, "end_sec": 1700}
+        lines = (ROOT / "data/extra/validated-demo/demo.events.jsonl").read_text(
+            encoding="utf-8").splitlines()
+        all_events = [json.loads(line) for line in lines if line.strip()]
+        wider["events"] = [e for e in all_events if 1500 <= e["timestamp_sec"] <= 1700]
+        wider["metrics"] = {"high_recoveries": 3, "linked_shots": 2, "window_seconds": 200,
+                            "home_possession_seconds": 40, "away_possession_seconds": 160,
+                            "home_shots": 3, "away_shots": 0}
+        moments = Toolbox(wider).get_candidate_moments()
+        late = [m for m in moments if m["sustained_shots"] and not m["linked_shots"]]
+        self.assertEqual(len(late), 1, [m["recovery_event_id"] for m in moments])
+        self.assertEqual(late[0]["sustained_span_sec"], 40)
+        self.assertIn("MM-DEMO-01-E022", late[0]["sustained_shots"])
+        self.assertEqual(sum(1 for m in moments if m["linked_shots"]), 2)
+
+    def test_default_window_cannot_see_the_goal_and_that_is_a_window_defect(self):
+        """Pins the real finding: the shipped 1500-1650 window contains the third high
+        recovery (1640) but not the goal (1680), and the 1650-1800 window contains the goal
+        but not the recovery. No single card can connect them, and widening the horizon
+        does not help - only a different window does. Reported in evaluation/PLAN_REVIEW.md."""
+        early = self.box.get_candidate_moments()
+        self.assertTrue(all(m["sustained_shots"] == m["linked_shots"] for m in early),
+                        "inside 1500-1650 the context tier adds nothing: no shot follows "
+                        "the 1640 recovery before the window ends")
+
+    def test_sustained_span_is_an_allowed_number_but_event_times_are_not(self):
+        allowed = allowed_numbers(self.request)
+        self.assertIn(40.0, allowed, "a sentence may say '40 seconds later'")
+        self.assertIn(float(SUSTAINED_HORIZON_SEC), allowed)
+        self.assertNotIn(1501.0, allowed, "individual event timestamps stay out")
 
 
 class ToolLoopTests(unittest.IsolatedAsyncioTestCase):

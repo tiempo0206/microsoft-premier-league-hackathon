@@ -33,12 +33,26 @@ Rules for claims:
 - kind "interpretation" MUST set metric_key and metric_value to null. It must cite
   events and must not contain any number that is not in ALLOWED_NUMBERS.
 - Produce between 2 and 5 claims. At least one must be kind "metric".
+- Use get_candidate_moments when the shape of the sequence matters. Each chain reports TWO
+  links and they are not the same thing: `linked_shots` is a shot within 15 seconds and IS
+  the frozen metric; `sustained_shots` is a shot OR goal within 45 seconds and is CONTEXT,
+  not a metric. When a recovery has a sustained link but no immediate one, you may add ONE
+  interpretation claim describing what followed later in the move. Never call a sustained
+  link a linked shot, and never attach it to `metric_key`.
 - An interpretation must be ENTAILED BY THE METRICS ALONE. Safe forms are: restating a
   metric in words, naming which window the activity was concentrated in, and describing
   the sequence or location of events ("the shots came after recoveries in the attacking
   third"). Unsafe: any causal attribution, and any quantifier stronger than the metrics
   support. You MUST NOT write "each", "every", "all", "always" or "never" unless the
-  metric equals the full count you are generalising over."""
+  metric equals the full count you are generalising over.
+
+Worked example of the failure that gets caught. Facts: high_recoveries=3, linked_shots=2.
+  BAD  "The recoveries were followed by a pass and then a shot."      <- implies all 3
+  BAD  "Each recovery sequence ran recovery, then pass, then shot."   <- states all 3
+  GOOD "Two of the three high recoveries were followed by a shot within 15 seconds; the
+        third ended in a pass."                                        <- states 2 of 3
+If a count is smaller than the set it describes, say "two of the three". Never describe a
+pattern as uniform when the counts say it is not."""
 
 NARRATOR_SYSTEM = SHARED_RULES + """
 YOUR ROLE: narrator. You receive claims the analyst already produced and that code
@@ -51,7 +65,9 @@ Return exactly:
 - "casual": 1-2 short sentences, everyday words, no jargon, no event ids.
 - "analyst": 2-3 sentences, may name the metric definitions and the window.
 - Every number you write must appear in ALLOWED_NUMBERS.
-- Do not strengthen a claim. If a claim does not say "each", neither may you.
+- Do not strengthen a claim. If a claim says "two of the three", you may not write
+  "each", "every" or "all", and you may not describe the pattern as uniform. This is the
+  single most common reason a narrative is rejected.
 - Write in the requested LANGUAGE."""
 
 AUDITOR_SYSTEM = SHARED_RULES + """

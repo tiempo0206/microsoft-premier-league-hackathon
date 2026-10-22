@@ -15,6 +15,12 @@ METRIC_KEYS = ("high_recoveries", "linked_shots", "window_seconds",
 
 # The frozen heuristic in docs/02_contract.md: a linked shot arrives within 15s.
 LINKED_SHOT_HORIZON_SEC = 15
+# A second, LONGER horizon used only for evidence selection and prose, never as a new
+# frozen metric key. It exists because the 15s rule misses the only goal in the shipped
+# fixture: the 1640 recovery is followed by the 1680 goal, 40s later, so every card we
+# published ignored the goal. Reporting the sustained link as context fixes that without a
+# contract bump that would break Role B's metrics and Role A's rendering.
+SUSTAINED_HORIZON_SEC = 45
 
 # Phrases that assert a cause the event window does not contain. Case-insensitive.
 UNSUPPORTED_INFERENCE = (
@@ -57,6 +63,7 @@ def allowed_numbers(request):
     """
     values = {float(v) for v in request["metrics"].values()}
     values.add(float(LINKED_SHOT_HORIZON_SEC))
+    values.add(float(SUSTAINED_HORIZON_SEC))
     values.add(float(request["window"]["start_sec"]))
     values.add(float(request["window"]["end_sec"]))
     for event in request["events"]:
@@ -64,6 +71,13 @@ def allowed_numbers(request):
             if point:
                 values.add(float(point["x"]))
                 values.add(float(point["y"]))
+    # The sustained span is computed by code from the events, so a sentence such as "the
+    # goal came 40 seconds after the recovery" is a fact, not an invention. Individual
+    # event timestamps are deliberately NOT included: adding thirty numbers would blunt
+    # the stray-number check for very little benefit.
+    for chain in high_press_chains(request):
+        if chain["sustained_span_sec"] is not None:
+            values.add(float(chain["sustained_span_sec"]))
     return values
 
 
@@ -237,12 +251,18 @@ def insight_evidence(claims):
     return seen
 
 
-def high_press_chains(request):
+def high_press_chains(request, sustained_horizon=SUSTAINED_HORIZON_SEC):
     """The frozen high-press heuristic, recomputed from the handed-over events.
 
     The single implementation used both to pick evidence and to cross-check the metrics
     the backend supplied. Two implementations would eventually disagree, and the one
     that disagreed silently would be the one writing the explanation.
+
+    `linked_shots` stays strictly within LINKED_SHOT_HORIZON_SEC because it mirrors the
+    frozen metric. `sustained_shots` uses the wider horizon and is CONTEXT ONLY: it must
+    never be counted as `linked_shots`, and `consistency_issues` deliberately ignores it.
+    It exists because the 15s rule misses the only goal in the shipped fixture (the 1640
+    recovery precedes the 1680 goal by 40s), so every card we published ignored the goal.
     """
     team = request["team_id"]
     attacks_right = team == "HOME"          # frozen convention: HOME attacks right
@@ -257,12 +277,22 @@ def high_press_chains(request):
         following = [e for e in events
                      if e["team_id"] == team
                      and e.get("possession_id") == recovery.get("possession_id")
-                     and 0 < e["timestamp_sec"] - recovery["timestamp_sec"] <= LINKED_SHOT_HORIZON_SEC]
+                     and 0 < e["timestamp_sec"] - recovery["timestamp_sec"] <= sustained_horizon]
+        immediate = [e for e in following
+                     if e["timestamp_sec"] - recovery["timestamp_sec"] <= LINKED_SHOT_HORIZON_SEC]
+        sustained = [e for e in following if e["type"] in ("shot", "goal")]
         chains.append({
             "recovery_event_id": recovery["event_id"],
             "timestamp_sec": recovery["timestamp_sec"],
             "possession_id": recovery.get("possession_id"),
-            "linked_shots": [e["event_id"] for e in following if e["type"] == "shot"],
+            "attack_normalized_x": round(x, 2),
+            "linked_shots": [e["event_id"] for e in immediate if e["type"] == "shot"],
+            "sustained_shots": [e["event_id"] for e in sustained],
+            # Earliest shot/goal, not the latest: a goal is represented twice in the
+            # fixture (a shot with outcome goal, then a goal event one second later), and
+            # taking the maximum would report 41s for a move that paid off at 40s.
+            "sustained_span_sec": (min(e["timestamp_sec"] for e in sustained)
+                                   - recovery["timestamp_sec"]) if sustained else None,
             "evidence_event_ids": [recovery["event_id"], *[e["event_id"] for e in following]],
         })
     return chains

@@ -90,6 +90,20 @@ def rule_claims(request, chains, evidence):
         claims.append({"claim_id": "C%d" % index, "kind": kind, "text": text,
                        "metric_key": key, "metric_value": value,
                        "evidence_event_ids": list(dict.fromkeys(ids))})
+
+    # Say what the frozen 15-second metric cannot: a recovery that paid off later in the
+    # same move. Without this the card ignores the only goal in the shipped fixture. It is
+    # an interpretation claim, not a metric, and it states no invented number.
+    later = [c for c in chains if c["sustained_shots"] and not c["linked_shots"]]
+    if later:
+        chain = later[0]
+        text = ("其中一次夺回没有在 %d 秒内直接形成射门，但后续同一波进攻最终完成了射门或进球。"
+                % LINKED_SHOT_HORIZON_SEC if request["language"] == "zh" else
+                "One of those recoveries did not produce a shot within %d seconds, but the "
+                "same move did end in a shot or a goal later on." % LINKED_SHOT_HORIZON_SEC)
+        claims.append({"claim_id": "C%d" % (len(claims) + 1), "kind": "interpretation",
+                       "text": text, "metric_key": None, "metric_value": None,
+                       "evidence_event_ids": list(dict.fromkeys(chain["evidence_event_ids"]))})
     return claims
 
 

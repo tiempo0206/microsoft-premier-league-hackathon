@@ -160,6 +160,12 @@ async def _run_round(request, provider, config, deadline, traces, *, correction_
     traces.append(_trace(request, "auditor", "completed" if approved else "rejected",
                          started, note))
     if not approved:
+        # IMPORTANT: keep the auditor's refusals OUT of `rejected`. `rejected` means "the
+        # code gate refused these claims, so the facts themselves are wrong and the window
+        # needs re-analysis". An auditor refusal means the facts are fine and only the
+        # wording overreaches, which the cheap narration repair can fix. Mixing the two
+        # made the cheap repair unreachable and sent every auditor rejection through a
+        # second full analysis that then failed on the same sentence pattern.
         return _round(claims, narratives, audit_issues, rejected_ids,
                       audit_issues, auditor_rejected)
     return _round(claims, narratives, [], rejected_ids)
@@ -209,16 +215,28 @@ def _live_result(request, config, provider, claims, narratives):
     }
 
 
-def _select_orchestrator(config):
+def _select_orchestrator(config, provider=None):
     """Return (run_round, renarrate, label).
 
-    `framework` is opt-in and degrades to the direct path if the package is missing or
+    An injected provider that carries its own httpx transport means the caller has
+    explicitly decided where model traffic must go - a mock in tests, a proxy in
+    production. Agent Framework builds its own client and would bypass that transport, so
+    in that case the direct path is the only correct choice. Getting this wrong sends
+    tests to a real paid endpoint, which happened once and is why this guard exists.
+
+    `framework` is the default and degrades to the direct path if the package is missing or
     fails to import, so a deployment without Agent Framework still starts. The label goes
     into the trace, because claiming a framework was used when it was not is exactly the
     kind of dishonesty this project is built to avoid.
     """
+    if provider is not None and getattr(provider, "transport", None) is not None:
+        return _run_round, _renarrate, "direct (injected transport)"
     if getattr(config, "orchestrator", "direct") == "framework":
         try:
+            # Verify the package really imports before promising it. `ai.agents` imports
+            # agent_framework lazily inside Roles(), so importing ai.agents alone would
+            # always succeed and the "framework unavailable" label would be a lie.
+            import agent_framework  # noqa: F401
             from . import agents
             return agents.run_round, agents.renarrate, "agent_framework"
         except Exception:                       # noqa: BLE001 - degrade, never crash
@@ -271,7 +289,7 @@ async def analyze(request, *, config=None, provider=None):
         return rule_result(request, reason="no_model", traces=traces)
 
     provider = provider or ChatCompletionsProvider(config)
-    run_round, renarrate, orchestrator = _select_orchestrator(config)
+    run_round, renarrate, orchestrator = _select_orchestrator(config, provider)
     traces.append({"task_id": request["task_id"], "agent": "validator", "status": "started",
                    "duration_ms": 0, "note": "orchestrator=" + orchestrator})
 

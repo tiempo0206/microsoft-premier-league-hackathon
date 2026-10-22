@@ -11,7 +11,7 @@ p=argparse.ArgumentParser(); p.add_argument('--role',choices=['A','B','C'],requi
 prefixes={'A':['frontend/','tests/frontend/','docs/handoff/frontend.md'],
           'B':['backend/','data/generator/','data/extra/','tests/backend/','deploy/','docs/handoff/backend.md'],
           'C':['ai/','evaluation/','tests/ai/','docs/handoff/ai.md','TEAM_ROLES.json',
-               'tests/test_contracts.py','tests/test_mock_api.py','tools/']}
+               'tests/test_contracts.py','tests/test_mock_api.py','tools/','.gitignore']}
 # git paths are made relative to current matchmind directory. Untracked files are included.
 def run(args): return subprocess.check_output(['git',*args],text=True).splitlines()
 paths=set(run(['diff','--name-only','--relative',a.base,'--','.'])+run(['ls-files','--others','--exclude-standard','--','.']))

@@ -113,7 +113,9 @@ async def run_multi(request, config):
     # would understate a run as free.
     agent_calls = sum(1 for t in result["traces"]
                       if t["agent"] != "validator" and t["duration_ms"] > 0)
-    orchestrator = "direct"
+    # Default to "not reached" rather than "direct": a window refused before any agent ran
+    # must not look like it used the direct orchestrator.
+    orchestrator = "not reached"
     for trace in result["traces"]:
         if trace["agent"] == "validator" and trace.get("note", "").startswith("orchestrator="):
             orchestrator = trace["note"].split("=", 1)[1]
