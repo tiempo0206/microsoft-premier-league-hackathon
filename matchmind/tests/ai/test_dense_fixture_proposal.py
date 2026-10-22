@@ -12,7 +12,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from evaluation.dense_fixture_proposal import build_and_validate, generate, match_document
+from evaluation.dense_fixture_proposal import (build_and_validate, generate,
+                                               match_document, write)
 from evaluation.fixture_qualify import THRESHOLDS, qualify, recommend_windows
 
 
@@ -106,6 +107,32 @@ class EndToEndTests(unittest.TestCase):
             build_and_validate(Path(tmp), seed=11)
             self.assertTrue(qualify(Path(tmp))["summary"]["fixture_passes"])
             self.assertTrue(recommend_windows(Path(tmp)))
+
+    def test_a_45_minute_half_produces_enough_moves_for_a_threat_grid(self):
+        """Converts "expected threat needs a full match, not a clip" from a claim into a
+        demonstration: the same generator, a longer span, and the grid stops refusing."""
+        from ai.threat import rank_threat
+        from backend.data import Catalog
+        from backend.stats import window_events
+
+        with tempfile.TemporaryDirectory() as tmp:
+            events = generate(11, 1500, 4200)
+            self.assertGreater(len(events), 900)
+            write(Path(tmp), events, 11, 1500, 4200)
+            fixture = Catalog(Path(tmp)).fixtures["DENSE-01"]
+            loaded = window_events(fixture, 1500, 4200)
+            result = rank_threat(loaded)
+            self.assertTrue(result["available"], result.get("reason"))
+            self.assertEqual(result["report"]["grid"], {"x": 16, "y": 12},
+                             "a half supports the finest grid")
+            self.assertGreater(result["report"]["transitions"], 500)
+            self.assertIn("Not comparable to published xT", result["label"])
+
+    def test_the_half_fixture_still_passes_qualification(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = build_and_validate(Path(tmp), seed=11, minutes=45)
+            self.assertEqual(report["problems"], [])
+            self.assertTrue(report["qualification"]["fixture_passes"])
 
 
 if __name__ == "__main__":

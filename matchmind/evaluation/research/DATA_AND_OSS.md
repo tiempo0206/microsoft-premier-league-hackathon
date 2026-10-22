@@ -57,8 +57,17 @@ plain Python over our own event schema, and labelled as a heuristic with the for
 library itself expects real provider data and a pandas pipeline; adding it as a dependency for
 one grid would be heavier than the code it replaces.
 
-**What we must not do.** Claim our number is "xT" if we change the grid or the training data.
-Call it "threat added (heuristic, socceraction-style grid)" and cite the paper.
+**It is implemented, and the interesting result is that it refuses on a clip.**
+`ai/threat.py` resolves the grid resolution against the data (16×12, 12×8, 8×6, 6×4) and refuses
+when even the coarsest cannot reach four observations per cell. On the shipped 30-event fixture
+and on the 110-event dense proposal it refuses, because a five-minute clip has under 90 completed
+moves. Generated at 45 minutes instead, the same generator produces 1 015 events and 696
+transitions, and the grid runs at full 16×12 and converges. Its top-ranked pass is the scripted
+press pass that led to the goal (+0.40). That turns "expected threat needs a full match" from an
+opinion into something a test asserts.
+
+**What we must not do.** Claim our number is "xT" if we change the grid or the training data. Call
+it "threat added (heuristic, socceraction-style grid)" and cite the paper.
 
 ### 2.2 `kloppy` (BSD-3) — an adapter pattern, not a dependency
 

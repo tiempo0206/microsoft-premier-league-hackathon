@@ -77,15 +77,23 @@ def attacking_x(team, x):
     return x if team == "HOME" else (100.0 - x)
 
 
-def generate(seed=11):
+def generate(seed=11, clip_start=1500, clip_end=1800, presses=None):
+    """Scripted possession chains. `clip_end - clip_start` is the covered span.
+
+    A 300 s span produces roughly 110 events and clears every qualification threshold. A
+    2700 s span (a 45-minute half) additionally produces enough completed moves for the
+    expected-threat grid in `ai/threat.py` to converge, which is how the claim "this technique
+    needs a full match, not a clip" is demonstrated instead of asserted.
+    """
     b = Builder(seed)
-    t = 1501
-    presses = list(PRESSES)
+    t = clip_start + 1
+    presses = list(PRESSES if presses is None else presses)
     owner = "AWAY"                       # initial_possession_team
     press_index = 0
+    scoring_used = False
 
-    while t < 1795:
-        # A scripted press interrupts whatever was happening.
+    while t < clip_end - 5:
+        # A scripted press interrupts whatever was happening, but only inside the first clip.
         if press_index < len(presses) and t >= presses[press_index]["at"]:
             script = presses[press_index]
             press_index += 1
@@ -104,6 +112,7 @@ def generate(seed=11):
             if script.get("scoring"):
                 b.add(shot_t + 1, "goal", "HOME", b.player("HOME", 0), "goal",
                       (92, b.rng.uniform(40, 60)), possession=poss)
+                scoring_used = True
             owner, t = "HOME", shot_t + 2
             continue
 
@@ -126,7 +135,7 @@ def generate(seed=11):
             t += 2
             if not success:
                 break
-        if success and t < 1790 and b.rng.random() < 0.45:
+        if success and t < clip_end - 10 and b.rng.random() < 0.45:
             b.add(t, "shot", owner, b.player(owner),
                   "on_target" if b.rng.random() < 0.4 else "off_target",
                   (b.rng.uniform(78, 92) if owner == "HOME" else b.rng.uniform(8, 22),
@@ -143,27 +152,29 @@ def generate(seed=11):
     return b.events
 
 
-def match_document(event_count, seed=11):
+def match_document(event_count, seed=11, clip_start=1500, clip_end=1800, version="dense-proposal-1.0.0"):
     return {
         "match_id": "DENSE-01",
         "home": "Harbor FC",
         "away": "Mountain United",
         "synthetic": True,
-        "clip_start_sec": 1500,
-        "clip_end_sec": 1800,
+        "clip_start_sec": clip_start,
+        "clip_end_sec": clip_end,
         "period": 1,
         "home_attack_direction": "right",
         "initial_possession_team": "AWAY",
         "seed": seed,
-        "generator_version": "dense-proposal-1.0.0",
+        "generator_version": version,
     }
 
 
-def write(directory, events, seed=11):
+def write(directory, events, seed=11, clip_start=1500, clip_end=1800,
+          version="dense-proposal-1.0.0"):
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "demo.match.json").write_text(
-        json.dumps(match_document(len(events), seed), ensure_ascii=False, indent=2),
+        json.dumps(match_document(len(events), seed, clip_start, clip_end, version),
+                   ensure_ascii=False, indent=2),
         encoding="utf-8")
     (directory / "demo.events.jsonl").write_text(
         "\n".join(json.dumps(e, ensure_ascii=False, sort_keys=True) for e in events) + "\n",
@@ -203,10 +214,21 @@ def validate(directory):
     return report
 
 
-def build_and_validate(directory, seed=11):
-    """Generate, write and validate in one call. Returns the report dict."""
-    events = generate(seed)
-    path = write(directory, events, seed)
+def build_and_validate(directory, seed=11, minutes=None):
+    """Generate, write and validate in one call. Returns the report dict.
+
+    `minutes` extends the covered span. A 5-minute clip clears every qualification threshold;
+    a 45-minute half additionally produces enough completed moves for the expected-threat grid
+    in `ai/threat.py` to converge, which is a demonstration rather than a claim.
+    """
+    clip_start, clip_end = 1500, 1800
+    if minutes:
+        clip_end = clip_start + int(minutes * 60)
+    presses = PRESSES if not minutes else PRESSES
+    events = generate(seed, clip_start, clip_end, presses)
+    path = write(directory, events, seed, clip_start, clip_end,
+                 "dense-proposal-1.0.0" if not minutes else
+                 "dense-proposal-1.0.0-%dmin" % int(minutes))
     return validate(path)
 
 
@@ -214,8 +236,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Dense fixture proposal")
     parser.add_argument("--seed", type=int, default=11)
     parser.add_argument("--out", default=str(ROOT / ".artifacts" / "dense-fixture"))
+    parser.add_argument("--minutes", type=int, default=None,
+                        help="extend the covered span; 45 is a half and makes the "
+                             "expected-threat grid converge")
     args = parser.parse_args(argv)
-    report = build_and_validate(Path(args.out), seed=args.seed)
+    report = build_and_validate(Path(args.out), seed=args.seed, minutes=args.minutes)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     ok = (not report["problems"]
           and report.get("qualification", {}).get("fixture_passes")
