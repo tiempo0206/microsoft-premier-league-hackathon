@@ -7,13 +7,21 @@ deliberately left the default entry point un-injected. These tests prove three t
 2. `ai.app` DOES have one, wired to `ai.service.analyze`.
 3. The health payload reports the injected adapter honestly instead of B's constant.
 """
+import asyncio
+import copy
+import json
 import unittest
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from ai.app import build_app, health_payload, live_analyzer
 from ai.config import ModelConfig
 from ai.service import analyze
+
+ROOT = Path(__file__).resolve().parents[2]
+EXAMPLE_INSIGHT = json.loads(
+    (ROOT / "contracts/examples/analysis_result.json").read_text(encoding="utf-8"))["insight"]
 
 
 def offline_config(**overrides):
@@ -100,6 +108,95 @@ class HttpTests(unittest.TestCase):
             snapshot = client.get("/api/v1/replays/%s" % replay_id)
             self.assertEqual(snapshot.status_code, 200)
             self.assertEqual(snapshot.json()["insights"], [])
+
+    def test_agent_card_is_served_and_honest(self):
+        app = build_app(live_config())
+        with TestClient(app) as client:
+            response = client.get("/.well-known/agent-card.json")
+            self.assertEqual(response.status_code, 200)
+            card = response.json()
+            self.assertEqual(card["name"], "MatchMind")
+            self.assertTrue(card["x-matchmind"]["modelReady"])
+            from ai.a2a import validate_card
+            self.assertEqual(validate_card(card), [])
+
+    def test_agent_card_reports_not_ready_without_a_model(self):
+        app = build_app(offline_config())
+        with TestClient(app) as client:
+            card = client.get("/.well-known/agent-card.json").json()
+            self.assertFalse(card["x-matchmind"]["modelReady"])
+
+    def test_overlay_route_returns_404_for_an_unknown_replay(self):
+        app = build_app(offline_config())
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/v1/replays/NOPE/insights/INS-1/overlay")
+            self.assertEqual(response.status_code, 404)
+            self.assertEqual(response.json()["error"]["code"], "NOT_FOUND")
+
+    def test_overlay_route_serves_a_published_insight(self):
+        """Drives C's route logic against a stub replay store.
+
+        Going through B's real `analysis_request` requires the replay clock to have reached
+        the window, which would mean advancing 30 seconds of real time inside a unit test.
+        The stub keeps the test about C's code: route parsing, insight lookup, serialiser
+        wiring and the 404/409 branches.
+        """
+        from ai.app import _overlay_response
+
+        class StubReplays:
+            def __init__(self, snapshot):
+                self.snapshot = snapshot
+
+            async def get(self, replay_id):
+                if replay_id != "R-1":
+                    raise RuntimeError("not found")
+                return self.snapshot
+
+        insight = copy.deepcopy(EXAMPLE_INSIGHT)
+        insight["insight_id"] = "INS-OVERLAY"
+
+        class StubApp:
+            class State:
+                replays = StubReplays({"insights": [insight]})
+
+            state = State()
+
+        response = asyncio.run(_overlay_response(
+            StubApp(), "/api/v1/replays/R-1/insights/INS-OVERLAY/overlay"))
+        self.assertEqual(response.status_code, 200)
+        body = json.loads(response.body)
+        self.assertEqual(body["payload"]["schema"], "matchmind.overlay/1")
+        self.assertEqual(body["problems"], [])
+        self.assertEqual(body["payload"]["graphics"][0]["source"]["mode"], "rule_fallback")
+
+        missing = asyncio.run(_overlay_response(
+            StubApp(), "/api/v1/replays/R-1/insights/NOPE/overlay"))
+        self.assertEqual(missing.status_code, 404)
+
+        bad_replay = asyncio.run(_overlay_response(
+            StubApp(), "/api/v1/replays/R-404/insights/INS-OVERLAY/overlay"))
+        self.assertEqual(bad_replay.status_code, 404)
+
+    def test_overlay_route_refuses_an_unverified_insight(self):
+        from ai.app import _overlay_response
+
+        insight = copy.deepcopy(EXAMPLE_INSIGHT)
+        insight["insight_id"] = "INS-BAD"
+        insight["verification"]["status"] = "rejected"
+
+        class StubApp:
+            class State:
+                class replays:
+                    @staticmethod
+                    async def get(replay_id):
+                        return {"insights": [insight]}
+
+            state = State()
+
+        response = asyncio.run(_overlay_response(
+            StubApp(), "/api/v1/replays/R-1/insights/INS-BAD/overlay"))
+        self.assertEqual(response.status_code, 409)
 
 
 class AnalyzeSignatureTests(unittest.IsolatedAsyncioTestCase):

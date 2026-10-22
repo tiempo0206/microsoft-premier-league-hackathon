@@ -311,7 +311,7 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 ### 10.5 第二轮后的门禁状态
 
 ```
-python -m pytest tests -q                       → 170 passed, 33 subtests passed
+python -m pytest tests -q                       → 197 passed, 33 subtests passed
 python tools/check_frozen.py                    → Frozen contracts and fixtures unchanged
 python tools/check_scope.py --role C --base HEAD→ Role scope OK
 python -m evaluation.factcheck_bench            → catch 17/17, false alarms 0/4
@@ -319,3 +319,38 @@ python -m evaluation.benchmark                  → 6 published / 2 fallback / 4
 ```
 
 契约仍然是 **2.0.0**，仍然没有改任何冻结文件、`backend/`、`frontend/`。
+
+---
+
+## 十一、第三轮：广播 overlay、A2A、编排策略
+
+### 11.1 三个新交付（全部 C 自有，全部有测试）
+
+| 文件 | 内容 | 对应判据 |
+| --- | --- | --- |
+| `ai/overlay.py` | **广播 overlay 载荷**：下三分之一、数据条、证据锚点，每个图形都带时间轴和 `source.mode`。`python -m ai.overlay` | 官方 §4.1「machine-readable enough to be rendered as synchronized graphical overlays」**之前完全没有** |
+| `ai/a2a.py` | **A2A agent card**，`/.well-known/agent-card.json`，6 个 skill 与 MCP 工具一一对应，含 `x-matchmind` 诚实区块 | `Best Multi-Agent` 判据点名 A2A。三个头部竞品都有 |
+| `ai/storyline.py` | **编排策略**：去重、间隔限流、10 分钟硬上限、连续性（「同一模式第 N 次」「相较上一张变化了哪些指标」） | 对应 Touchline 公布的 StorylineKeeper / MomentScout 两个消融项 |
+
+`ai/app.py` 组合根新增两个接口（用 middleware 拦截，避不开 B 的 `/api/{unmatched}` JSON-404 兜底）：
+- `GET /api/v1/replays/{id}/insights/{insight_id}/overlay`
+- `GET /.well-known/agent-card.json`
+
+MCP 工具从 5 个增加到 6 个，新增 `build_overlay`。
+
+### 11.2 overlay 的三条诚实约束（都有测试）
+
+1. **未通过核验的 insight 拒绝出 overlay** —— overlay 是最可能被广播观众看到的东西，不能让它比工程师看到的更宽松。
+2. **每个图形都带 `source.mode`** —— 渲染方无法把 `rule_fallback` 当成实时模型输出播出去。
+3. **数值只复制不重算** —— `stat_line` 的 `metric_value` 直接取自 claim，而 claim 的数值已被代码证明等于后端计算值。
+
+### 11.3 storyline 的限流语义
+
+初版用「新卡窗口终点 vs 上一卡窗口终点」做间隔判断，被测试抓住：`1500–1650` 和 `1600–1700` 终点差 50 秒会被放行，但它们描述的是同一段比赛，等于同一波进攻上两张卡。
+改成**新卡窗口起点 vs 上一卡窗口终点**，重叠即拒。这是我这轮改的唯一一处设计缺陷，测试写对了。
+
+### 11.4 还没做的
+
+- **recap 角色**：官方 §4.1(iii) 明写 `automated match recaps`，契约 v0.1 有、2.0.0 砍了。这是我判断的下一块最高价值工作：它的输入粒度（整段 prefix）和 moment 角色（单窗口）不同，是多 Agent 不可合并的第二个天然战场。
+- **storyline 还没接进发布链路**：它是纯策略 + 测试，激活需要在契约 2.1.0 里加 `Insight.sequence` / `Insight.continues_from`，否则前端无法渲染连续性而不自己编。
+- **A2A 的 `/a2a` JSON-RPC 端点**：卡片有了，协议端点还没实现（那需要 HTTP 端点，落在 B 的 app 上，属于需要协调的部分）。

@@ -29,6 +29,7 @@ if str(ROOT) not in sys.path:
 from mcp.server.mcpserver import MCPServer           # noqa: E402
 
 from ai.config import from_env                       # noqa: E402
+from ai.overlay import overlay_payload, validate_payload   # noqa: E402
 from ai.service import analyze                       # noqa: E402
 from ai.tools import Toolbox                         # noqa: E402
 from ai.verify import consistency_issues, high_press_chains   # noqa: E402
@@ -157,8 +158,27 @@ async def explain_window(match_id: str, start_sec: int, end_sec: int,
                      else "deterministic rule fallback; no model was used or its output failed verification")}
 
 
+async def build_overlay(match_id: str, start_sec: int, end_sec: int,
+                        team_id: str = "HOME", language: str = "en") -> dict:
+    """Explain one window and return a timed broadcast overlay payload.
+
+    Official rules 4.1 ask for output a graphics renderer can consume. The payload carries
+    the source mode on every graphic, so a renderer cannot accidentally present a rule
+    fallback as live model output.
+    """
+    explained = await explain_window(match_id, start_sec, end_sec, team_id, language,
+                                     "MCP-OVERLAY")
+    insight = (explained.get("result") or {}).get("insight")
+    if not insight:
+        raise ValueError("no publishable insight for this window: "
+                         + str((explained.get("result") or {}).get("error")))
+    payload = overlay_payload(insight)
+    return {"overlay": payload, "problems": validate_payload(payload, insight),
+            "source_mode": insight["generation"]["mode"]}
+
+
 for _fn in (list_matches, get_metrics, get_event_window, get_candidate_moments,
-            explain_window):
+            explain_window, build_overlay):
     server.add_tool(_fn)
 
 

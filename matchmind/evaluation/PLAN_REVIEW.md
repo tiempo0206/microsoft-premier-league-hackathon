@@ -113,24 +113,31 @@ false-alarm test, not just a catch test.
 
 | Borrowed idea | From | Landed as |
 | --- | --- | --- |
-| MCP server surface | GamePulse, pshah208, Lasso | `ai/mcp_server.py`, 5 tools, 12 tests, reuses the same deterministic code |
+| MCP server surface | GamePulse, pshah208, Lasso | `ai/mcp_server.py`, 6 tools, tests, reuses the same deterministic code |
 | Catch-rate / false-alarm measurement | Touchline's 99.7% claim, soundpitch's honesty note | `evaluation/factcheck_bench.py` + pinned regression test |
-| Per-role ablation | Touchline's five-way ablation | `evaluation/ablation.py` |
-| "Never silently swap mock for real" | Rematch | already held by the labelled `rule_fallback`, now asserted in the MCP and app tests |
+| Per-role ablation | Touchline's five-way ablation | `evaluation/ablation.py` (published with an underpowered caveat) |
+| Broadcast overlay payload | GamePulse `/api/overlay`, Regista | `ai/overlay.py` + `/api/v1/replays/{id}/insights/{id}/overlay`, source mode on every graphic |
+| A2A agent card | pshah208, Touchline, Lasso | `ai/a2a.py` + `/.well-known/agent-card.json`, skills mapped 1:1 to MCP tools |
+| Storyline memory + editorial rate cap | Touchline's StorylineKeeper and MomentScout ablations | `ai/storyline.py`, as a tested policy; activation needs one contract field |
+| "Never silently swap mock for real" | Rematch | held by the labelled `rule_fallback`, now asserted in the app, MCP and overlay tests |
 | Documented honest limits | soundpitch's whole-section approach | this file plus §3 of it |
 
 ## 5. What is still worth doing, in order
 
-1. **Densify the fixture** (≥400 events, 3 fixtures: high press / fast break / quiet). Cheap,
-   and it fixes §3.1, §3.2 and §3.3 at once.
-2. **A2A agent card + endpoint.** Judges name it; it is a few hundred lines.
-3. **Overlay JSON export.** Official 4.1 names it; it is a serialiser over an existing
-   `Insight`.
-4. **Storyline memory + editorial rate cap.** Fixes gaps 7 and 8 for one combined cost.
-5. **`sustained` tier at 45 s** so the card stops ignoring the goal.
-6. **Recap endpoint** and a fourth role whose input granularity is different (whole prefix,
-   not one window), which also strengthens the multi-agent argument.
-7. **Player-focused mode** driven by the already-present `roster.json`.
+1. **Recap role.** Official 4.1(iii) asks for "automated match recaps"; contract v0.1 had the
+   endpoint and 2.0.0 dropped it. Its input granularity (the whole prefix) differs from the
+   moment role (one window), which makes it the second genuine argument for multi-agent.
+2. **Densify the fixture** (≥400 events, 3 fixtures: high press / fast break / quiet). Cheap,
+   and it fixes §3.1, §3.3 and the missing `fast_break` / `sustained_control` types at once.
+3. **Activate the storyline.** The policy and its tests exist; it needs
+   `Insight.sequence` / `Insight.continues_from` in a 2.1.0 bump, otherwise the frontend has
+   to invent continuity.
+4. **The A2A JSON-RPC endpoint.** The card exists at `/.well-known/agent-card.json`; the
+   `/a2a` transport needs an HTTP route on the backend app, which is a coordination item.
+5. **A sustained tier as a first-class metric.** The 45 s context tier exists in the tool
+   layer; promoting it to a metric needs the same 2.1.0 bump.
+6. **Player-focused mode** driven by the already-present `roster.json`.
+7. **Densify the ablation** to ≥3 repetitions per variant so it can be published.
 
 ## 6. What not to copy
 
