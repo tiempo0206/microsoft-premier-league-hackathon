@@ -151,7 +151,7 @@ def score_published(insight, request):
             "universal_quantifier": universal, "contract_valid": valid}
 
 
-async def run_variant(name, spec, base_config, limit):
+async def run_variant(name, spec, base_config, limit, repeats=1):
     saved = {}
     for attribute, value in (spec.get("patch") or {}).items():
         saved[attribute] = getattr(service_module, attribute)
@@ -162,32 +162,36 @@ async def run_variant(name, spec, base_config, limit):
         config = replace(base_config, **spec["config"])
     rows = []
     try:
-        for window in WINDOWS[:limit]:
-            label, start, end, team, language = window
-            request = build_request(label, start, end, team, language)
-            provider = ChatCompletionsProvider(config)
-            started = time.monotonic()
-            try:
-                result = await analyze(request, config=config, provider=provider)
-                elapsed = round((time.monotonic() - started) * 1000)
-                call_error = None
-            except Exception as error:                # noqa: BLE001 - a row, not a crash
-                result, elapsed = None, round((time.monotonic() - started) * 1000)
-                call_error = type(error).__name__ + ": " + str(error)[:120]
-            if result is None:
-                rows.append({"window": label, "status": "CRASH", "elapsed_ms": elapsed,
-                             "error": call_error, "score": score_published(None, request),
-                             "agent_calls": 0})
-                print("  %-12s %-4s CRASH %s" % (name, label, call_error), flush=True)
-                continue
-            score = score_published(result.get("insight"), request)
-            rows.append({"window": label, "status": result["status"], "elapsed_ms": elapsed,
+        for repeat in range(repeats):
+            for window in WINDOWS[:limit]:
+                label, start, end, team, language = window
+                request = build_request(label, start, end, team, language)
+                provider = ChatCompletionsProvider(config)
+                started = time.monotonic()
+                try:
+                    result = await analyze(request, config=config, provider=provider)
+                    elapsed = round((time.monotonic() - started) * 1000)
+                    call_error = None
+                except Exception as error:            # noqa: BLE001 - a row, not a crash
+                    result, elapsed = None, round((time.monotonic() - started) * 1000)
+                    call_error = type(error).__name__ + ": " + str(error)[:120]
+                if result is None:
+                    rows.append({"window": label, "repeat": repeat, "status": "CRASH",
+                                 "elapsed_ms": elapsed, "error": call_error,
+                                 "score": score_published(None, request),
+                                 "agent_calls": 0})
+                    print("  %-12s %-4s r%d CRASH %s" % (name, label, repeat, call_error),
+                          flush=True)
+                    continue
+                score = score_published(result.get("insight"), request)
+            rows.append({"window": label, "repeat": repeat, "status": result["status"],
+                         "elapsed_ms": elapsed,
                          "error": (result.get("error") or {}).get("code"),
                          "agent_calls": sum(1 for t in result["traces"]
                                             if t["agent"] != "validator" and t["duration_ms"] > 0),
                          "score": score})
-            print("  %-12s %-4s %-9s %6dms  published=%s bad_claims=%d narIssues=%d uni=%s"
-                  % (name, label, result["status"], elapsed, score["published"],
+            print("  %-12s %-4s r%d %-9s %6dms  published=%s bad=%d nar=%d uni=%s"
+                  % (name, label, repeat, result["status"], elapsed, score["published"],
                      len(score["code_rejected_claims"]), len(score["narrative_issues"]),
                      score["universal_quantifier"]), flush=True)
     finally:
@@ -196,21 +200,32 @@ async def run_variant(name, spec, base_config, limit):
     return rows
 
 
-def summarise(all_rows):
+def summarise(all_rows, repeats=1):
     summary = {}
     for name, rows in all_rows.items():
         published = [r for r in rows if r["score"]["published"]]
+        per_repeat = {}
+        for row in rows:
+            bucket = per_repeat.setdefault(row.get("repeat", 0), {"published": 0, "fallback": 0})
+            if row["score"]["published"]:
+                bucket["published"] += 1
+            if row["status"] == "fallback":
+                bucket["fallback"] += 1
         summary[name] = {
             "windows": len(rows),
+            "repeats": repeats,
             "published": len(published),
             "fallback": sum(1 for r in rows if r["status"] == "fallback"),
             "rejected": sum(1 for r in rows if r["status"] == "rejected"),
             "crashes": sum(1 for r in rows if r["status"] == "CRASH"),
             "agent_calls": sum(r["agent_calls"] for r in rows),
             "median_ms": sorted([r["elapsed_ms"] for r in rows])[len(rows) // 2] if rows else None,
-            # The two numbers that make an ablation worth reading: how many cards carried a
-            # number or citation the events contradict, and how many carried an
-            # unadjudicable universal claim.
+            # Per-repeat spread is the number that decides whether a difference is real.
+            "published_per_repeat": [per_repeat[k]["published"] for k in sorted(per_repeat)],
+            "fallback_per_repeat": [per_repeat[k]["fallback"] for k in sorted(per_repeat)],
+            "fallback_spread": (max(per_repeat[k]["fallback"] for k in per_repeat)
+                                - min(per_repeat[k]["fallback"] for k in per_repeat))
+            if per_repeat else None,
             "published_with_bad_claims": sum(1 for r in published
                                              if r["score"]["code_rejected_claims"]),
             "published_with_narrative_issues": sum(1 for r in published
@@ -237,12 +252,13 @@ def render(summary):
     return "\n".join(lines)
 
 
-async def main_async(config, limit):
+async def main_async(config, limit, repeats=1):
     all_rows = {}
     for name, spec in VARIANTS.items():
-        print("\n== %s: %s" % (name, spec["note"]), flush=True)
-        all_rows[name] = await run_variant(name, copy.deepcopy(spec), config, limit)
-    summary = summarise(all_rows)
+        print("\n== %s: %s (repeats=%d)" % (name, spec["note"], repeats), flush=True)
+        all_rows[name] = await run_variant(name, copy.deepcopy(spec), config, limit,
+                                           repeats=repeats)
+    summary = summarise(all_rows, repeats)
     OUT.mkdir(parents=True, exist_ok=True)
     # VARIANTS holds function objects for the monkeypatch; serialise only what describes it.
     described = {name: {"note": spec["note"],
@@ -255,27 +271,48 @@ async def main_async(config, limit):
     markdown = ("# Ablation\n\n" + CAVEATS + "\n## Numbers\n\n" + render(summary) + "\n")
     (OUT / "report.md").write_text(markdown, encoding="utf-8")
     print("\n" + render(summary))
-    print("\nNOTE: this table is underpowered on its own. See evaluation/README.md.")
+    if repeats < 3:
+        print("\nNOTE: fewer than 3 repeats; differences are inside model variance. "
+              "See evaluation/README.md.")
+    else:
+        print("\nrepeats=%d; compare fallback_spread before reading anything into a gap."
+              % repeats)
     return 0
 
 
 def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     parser = argparse.ArgumentParser(description="Role C ablation study")
     parser.add_argument("--windows", type=int, default=len(WINDOWS),
                         help="how many of the predefined windows to run per variant")
-    return asyncio.run(main_async(from_env(), max(1, min(args_windows(argv), len(WINDOWS)))))
+    parser.add_argument("--repeats", type=int, default=1,
+                        help="how many times to repeat every window; >=3 makes the "
+                             "differences interpretable")
+    args = parser.parse_args(argv)
+    # Parse through argparse AND through the raw list: the earlier version passed the raw
+    # `argv` (which is None under `python -m`) to the helper and silently ran one repeat.
+    repeats = max(1, min(args.repeats if args.repeats is not None
+                         else args_value(argv, "--repeats", 1), 6))
+    windows = max(1, min(args.windows if args.windows is not None
+                         else args_value(argv, "--windows", len(WINDOWS)), len(WINDOWS)))
+    return asyncio.run(main_async(from_env(), windows, repeats))
 
 
-def args_windows(argv):
+def args_value(argv, flag, default):
     if not argv:
-        return len(WINDOWS)
+        return default
     for index, item in enumerate(argv):
-        if item == "--windows" and index + 1 < len(argv):
+        if item == flag and index + 1 < len(argv):
             try:
                 return int(argv[index + 1])
             except ValueError:
-                return len(WINDOWS)
-    return len(WINDOWS)
+                return default
+    return default
+
+
+def args_windows(argv):
+    return args_value(argv, "--windows", len(WINDOWS))
 
 
 if __name__ == "__main__":

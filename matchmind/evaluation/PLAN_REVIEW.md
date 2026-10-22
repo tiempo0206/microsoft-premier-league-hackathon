@@ -66,21 +66,48 @@ demonstrates the capability; all are in `evaluation/research/readmes/`.
 
 ## 3. Where our own plan is weak, independent of rivals
 
-**3.1 The data is too thin to carry the demo.** 30 events over 300 seconds. Three of the
-fourteen positive-looking windows do not even fire the detector, so the evaluation cannot
-honestly report "4 positives" — see `evaluation/README.md`. A judge watching the pitch will
-see three dots. This is the single largest risk and it is cheap to fix.
+**3.1 The data is too thin to carry the demo — now with a working fix.**
+30 events over 300 seconds, one every 10 seconds, and only 8 and 9 distinct players per team.
+`evaluation/fixture_qualify.py` fails it on three checks and prints the thresholds, so "too
+thin" is a number rather than an opinion.
 
-**3.2 No card can see both the recovery and the goal — a window-boundary defect.**
-The third high recovery is at 1640 and the goal at 1680. In the shipped configuration the
-detector reads 1500–1650, which contains the recovery but not the goal; the next window,
-1650–1800, contains the goal but not the recovery, so its `high_recoveries` is 0. **No
-single card can connect them.** My first diagnosis blamed the 15-second linked-shot
-horizon; that was wrong, and a wider horizon fixes nothing because the goal is not even in
-the request. `ai/tools.py` now reports a 45-second context tier, which is useful when a
-window does contain both (proved by a test on 1500–1700), but the actual fix is B's: choose
-a window that contains the outcome it intends to explain, or give the detector a bounded
-look-back. Both are recorded in the handoff as recommendations, not made unilaterally.
+`evaluation/dense_fixture_proposal.py` proves the thresholds are reachable: a deterministic
+generator produces **110 events (one every 2.7 s), 11 players per side, zero contract
+violations, all 7 qualification checks passing, and 3 windows that fire the detector and
+contain the outcome it explains.** It writes to `.artifacts/` because `data/fixtures/` is
+Role B's; adopting it means B adds `PROVENANCE.json`, `expected.json` and the source hashes its
+audit requires. `tests/ai/test_dense_fixture_proposal.py` keeps that proof alive.
+
+**3.1b A contract-versus-implementation inconsistency.** `Event.type` in the frozen schema
+allows `foul`. `backend/data.py: Fixture.load` does not: its `allowed` map covers only `pass`,
+`recovery`, `shot` and `goal`, so a foul event is rejected before any metric sees it. Either the
+schema should drop `foul` or the loader should accept it with a defined outcome; right now the
+contract advertises an event type the product cannot ingest. Found while generating the dense
+fixture, and left unfixed because `backend/` is Role B's.
+
+**3.2 No card can see both the recovery and the goal — and the fix is one line in B.**
+The third high recovery is at 1640 and the goal at 1680. The shipped default analysis window
+is **1500–1650**, which contains the recovery but not the goal; the next window, 1650–1800,
+contains the goal but not the recovery, so its `high_recoveries` is 0. My first diagnosis
+blamed the 15-second linked-shot horizon. That was wrong: the goal is not even in the request,
+so no horizon change can help.
+
+`evaluation/fixture_qualify.py --recommend` scans every candidate window and reports:
+
+```
+Recommended demo window (fires the detector AND contains the outcome):
+  MM-DEMO-01 HOME 1540-1690  recoveries=3 linked_shots=2 goals=MM-DEMO-01-E023
+```
+
+So the fix is to move the demo window from 1500–1650 to **1540–1690** (or 1560–1710): same
+detector firing, same `high_recoveries`, same `linked_shots`, same 150-second length, and the
+goal is inside the window. Verified across five candidate windows; `1540–1690` is the earliest
+that works. This is B's call because `analysis_input` chooses the window — C's job was to
+measure it, not assume it.
+
+`ai/tools.py` additionally reports a 45-second context tier, which is useful once a window
+contains both (proved by a test on 1500–1700), and `ai/recap.py` covers the whole prefix so a
+viewer can always be told about the goal even before the window changes.
 
 **3.3 One moment type out of three reserved.** `Insight.type` allows `high_press`,
 `fast_break`, `sustained_control`. We implement one. That is a visible gap against our own
@@ -113,14 +140,16 @@ false-alarm test, not just a catch test.
 
 | Borrowed idea | From | Landed as |
 | --- | --- | --- |
-| MCP server surface | GamePulse, pshah208, Lasso | `ai/mcp_server.py`, 6 tools, tests, reuses the same deterministic code |
+| MCP server surface | GamePulse, pshah208, Lasso | `ai/mcp_server.py`, 7 tools, tests, reuses the same deterministic code |
 | Catch-rate / false-alarm measurement | Touchline's 99.7% claim, soundpitch's honesty note | `evaluation/factcheck_bench.py` + pinned regression test |
-| Per-role ablation | Touchline's five-way ablation | `evaluation/ablation.py` (published with an underpowered caveat) |
+| Per-role ablation | Touchline's five-way ablation | `evaluation/ablation.py`, now run with 3 repeats so the spread is visible |
 | Broadcast overlay payload | GamePulse `/api/overlay`, Regista | `ai/overlay.py` + `/api/v1/replays/{id}/insights/{id}/overlay`, source mode on every graphic |
 | A2A agent card | pshah208, Touchline, Lasso | `ai/a2a.py` + `/.well-known/agent-card.json`, skills mapped 1:1 to MCP tools |
 | Storyline memory + editorial rate cap | Touchline's StorylineKeeper and MomentScout ablations | `ai/storyline.py`, as a tested policy; activation needs one contract field |
-| "Never silently swap mock for real" | Rematch | held by the labelled `rule_fallback`, now asserted in the app, MCP and overlay tests |
+| Match recap as a distinct role | GamePulse's recap, official 4.1(iii) | `ai/recap.py`, 18 tests, the only role that can report the goal |
+| "Never silently swap mock for real" | Rematch | held by the labelled `rule_fallback`, asserted in the app, MCP, overlay and recap tests |
 | Documented honest limits | soundpitch's whole-section approach | this file plus §3 of it |
+| Validate the synthetic data against real football | GamePulse's realism tab | `evaluation/fixture_qualify.py` (thresholds as code) + `evaluation/dense_fixture_proposal.py` (proof they are reachable) |
 
 ## 5. What is still worth doing, in order
 
