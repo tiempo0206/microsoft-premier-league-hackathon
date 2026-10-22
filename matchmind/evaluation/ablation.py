@@ -184,16 +184,17 @@ async def run_variant(name, spec, base_config, limit, repeats=1):
                           flush=True)
                     continue
                 score = score_published(result.get("insight"), request)
-            rows.append({"window": label, "repeat": repeat, "status": result["status"],
-                         "elapsed_ms": elapsed,
-                         "error": (result.get("error") or {}).get("code"),
-                         "agent_calls": sum(1 for t in result["traces"]
-                                            if t["agent"] != "validator" and t["duration_ms"] > 0),
-                         "score": score})
-            print("  %-12s %-4s r%d %-9s %6dms  published=%s bad=%d nar=%d uni=%s"
-                  % (name, label, repeat, result["status"], elapsed, score["published"],
-                     len(score["code_rejected_claims"]), len(score["narrative_issues"]),
-                     score["universal_quantifier"]), flush=True)
+                rows.append({"window": label, "repeat": repeat, "status": result["status"],
+                             "elapsed_ms": elapsed,
+                             "error": (result.get("error") or {}).get("code"),
+                             "agent_calls": sum(1 for t in result["traces"]
+                                                if t["agent"] != "validator"
+                                                and t["duration_ms"] > 0),
+                             "score": score})
+                print("  %-12s %-4s r%d %-9s %6dms  published=%s bad=%d nar=%d uni=%s"
+                      % (name, label, repeat, result["status"], elapsed, score["published"],
+                         len(score["code_rejected_claims"]), len(score["narrative_issues"]),
+                         score["universal_quantifier"]), flush=True)
     finally:
         for attribute, value in saved.items():
             setattr(service_module, attribute, value)
