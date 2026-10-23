@@ -29,3 +29,10 @@ dist/
 build/
 coverage/
 *.log
+
+# The release image ships the frontend bundle, so this one dist is committed. deploy/Dockerfile.release
+# opens with "Integrator supplies reviewed C source and A's already built frontend/dist" and runs
+# `release_check --profile integrated` at build time, which fails without those files. Render builds
+# from git, so an ignored dist makes the release image unbuildable. Committing it also makes
+# staleness visible: after a frontend change, `git status` shows the rebuilt bundle instead of hiding it.
+!matchmind/frontend/dist/
