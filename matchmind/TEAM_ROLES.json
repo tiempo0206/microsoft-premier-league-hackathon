@@ -3,11 +3,14 @@
   "B_backend_data": "wunianze666-netizen",
   "C_ai_integrator": "Meng Yuxuan (farlyfeifei)",
   "submission_representative": "Tianbo Cao (tiempo0206)",
-  "baseline_sha": "f3111a223b823ed6684fee29aca5e73a5df6c78f",
-  "baseline_branch": "codex/backend-ab-mvp",
-  "baseline_pr": 8,
-  "baseline_recorded_utc8": "2026-10-23T12:06",
+  "baseline_sha": "03910f8889e846bc70215c3c0faf4bb63cd84977",
+  "baseline_branch": "main",
+  "baseline_pr": 9,
+  "baseline_recorded_utc8": "2026-10-23T12:21",
+  "baseline_first_integration": "f3111a223b823ed6684fee29aca5e73a5df6c78f (PR #8 squash into codex/backend-ab-mvp, which then merged to main as PR #9)",
   "baseline_contents": "starter v2.1 + A1 frontend + Role B backend/data + Role C verification pipeline, MCP/A2A surfaces and evaluation suite",
+  "baseline_verification": "422 passed / 62 subtests; check_frozen unchanged; deploy.adapter_check passed 12/12 with 3/3 tampered refused and 0 model calls",
+  "branch_of_record": "main is the branch to submit from; new work goes on feature branches and is merged by the integrator",
   "daily_sync_time_utc8": "21:00",
   "note": "请仅填姓名或 GitHub 用户名；不填密码、API Key、支付或证件信息。"
 }
