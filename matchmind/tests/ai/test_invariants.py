@@ -97,8 +97,14 @@ class ContractCouplingTests(unittest.TestCase):
                          "ai.verify.METRIC_KEYS drifted from the frozen schema")
 
     def test_outcome_enum_matches_what_the_loader_accepts(self):
-        """The schema allows `foul`; Role B's loader does not. This documents the gap as a
-        known inconsistency rather than letting either side move silently."""
+        """The schema and Role B's loader must agree on which event types exist.
+
+        This started as a canary for a known gap: the frozen schema declared `foul` and Role B's
+        loader refused it, so a foul event was dropped before any metric could see it. Role B has
+        since closed the gap, so the assertion is now the stronger one — the two sets are equal.
+        If either side drifts again this fails, and the message says which document to update with
+        it, because a one-sided change here silently changes what the metrics can observe.
+        """
         import ast
         import json
         schema = json.loads((ROOT / "contracts/contract.schema.json").read_text(encoding="utf-8"))
@@ -114,9 +120,14 @@ class ContractCouplingTests(unittest.TestCase):
                     and isinstance(node.value, ast.Dict)):
                 accepted = {k.value for k in node.value.keys if isinstance(k, ast.Constant)}
         self.assertTrue(accepted, "could not find Role B's allowed map")
-        self.assertEqual(declared - accepted, {"foul"},
-                         "the foul gap changed; update PLAN_REVIEW 3.1b and this test together")
-        self.assertTrue(accepted <= declared)
+        self.assertEqual(declared - accepted, set(),
+                         "the loader refused a type the frozen schema declares; update "
+                         "PLAN_REVIEW 3.1b and this test together")
+        self.assertEqual(accepted - declared, set(),
+                         "the loader accepts a type the frozen schema does not declare")
+        self.assertIn("foul", declared,
+                      "the foul gap was the case that motivated this test; if the schema dropped "
+                      "foul, PLAN_REVIEW 3.1b is stale")
 
 
 class NoSecretsTests(unittest.TestCase):

@@ -78,12 +78,16 @@ contain the outcome it explains.** It writes to `.artifacts/` because `data/fixt
 Role B's; adopting it means B adds `PROVENANCE.json`, `expected.json` and the source hashes its
 audit requires. `tests/ai/test_dense_fixture_proposal.py` keeps that proof alive.
 
-**3.1b A contract-versus-implementation inconsistency.** `Event.type` in the frozen schema
-allows `foul`. `backend/data.py: Fixture.load` does not: its `allowed` map covers only `pass`,
-`recovery`, `shot` and `goal`, so a foul event is rejected before any metric sees it. Either the
-schema should drop `foul` or the loader should accept it with a defined outcome; right now the
-contract advertises an event type the product cannot ingest. Found while generating the dense
-fixture, and left unfixed because `backend/` is Role B's.
+**3.1b A contract-versus-implementation inconsistency — CLOSED by Role B on 2026-10-23.**
+`Event.type` in the frozen schema allows `foul`; `backend/data.py: Fixture.load` used to accept only
+`pass`, `recovery`, `shot` and `goal`, so a foul event was rejected before any metric saw it. The
+contract advertised an event type the product could not ingest. **Role B has since accepted `foul`
+with a defined semantics** (`outcome=none`, `end_position=null`; the fouling actor is
+`team_id/player_id`; a foul does not transfer possession, so `possession_id` may reference the other
+team's segment) and said explicitly that it would not edit Role C's documents or tests, which is how
+this paragraph became stale for a day. `tests/ai/test_invariants.py` now asserts the two sets are
+**equal** rather than differing by exactly `{foul}`, so the next drift in either direction fails with
+a message naming this document.
 
 **3.2 No card can see both the recovery and the goal — and the fix is one line in B.**
 The third high recovery is at 1640 and the goal at 1680. The shipped default analysis window
@@ -108,6 +112,22 @@ measure it, not assume it.
 `ai/tools.py` additionally reports a 45-second context tier, which is useful once a window
 contains both (proved by a test on 1500–1700), and `ai/recap.py` covers the whole prefix so a
 viewer can always be told about the goal even before the window changes.
+
+**Role B answered this differently and better, so read this before acting on the recommendation.**
+B delivered three enhanced scenes under `data/extra/showcase/`, and in the `press` scene the goal
+already falls **inside** the default 1500–1650 window (score at 1650 is 1:0), so nothing needs to
+move if that scene is adopted. B's own words: "正例的进球已经在固定1500–1650窗口内，不改协议窗口即可演示".
+Measured by B: 128 events, 3 high recoveries, 2 linked shots inside the same window.
+
+Two consequences worth keeping straight:
+
+* The 1540–1690 recommendation still stands **for `validated-demo`**, which remains the default and
+  the release-image default. It is one line in `analysis_input` and it costs nothing.
+* The showcase scenes also make the third recovery's missing shot explicit: B requires that nobody
+  claims "three of three produced shots" or "three caused the goal". Our fallback already says
+  "one of those recoveries did not produce a shot within 15 seconds, but the same move did end in a
+  shot or a goal later on", which is exactly that distinction, and `ai/verify.py` refuses the
+  stronger phrasing.
 
 **3.3 One moment type out of three reserved.** `Insight.type` allows `high_press`,
 `fast_break`, `sustained_control`. We implement one. That is a visible gap against our own

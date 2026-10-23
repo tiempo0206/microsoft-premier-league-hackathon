@@ -3,7 +3,11 @@
   "B_backend_data": "wunianze666-netizen",
   "C_ai_integrator": "Meng Yuxuan (farlyfeifei)",
   "submission_representative": "Tianbo Cao (tiempo0206)",
-  "baseline_sha": "pending: codex/ai-verification merge commit",
+  "baseline_sha": "f3111a223b823ed6684fee29aca5e73a5df6c78f",
+  "baseline_branch": "codex/backend-ab-mvp",
+  "baseline_pr": 8,
+  "baseline_recorded_utc8": "2026-10-23T12:06",
+  "baseline_contents": "starter v2.1 + A1 frontend + Role B backend/data + Role C verification pipeline, MCP/A2A surfaces and evaluation suite",
   "daily_sync_time_utc8": "21:00",
   "note": "请仅填姓名或 GitHub 用户名；不填密码、API Key、支付或证件信息。"
 }

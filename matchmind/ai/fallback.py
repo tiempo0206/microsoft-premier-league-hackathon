@@ -44,6 +44,30 @@ def _evidence(request, chains):
     return list(dict.fromkeys(ordered))[:12]
 
 
+def card_evidence(evidence, claims):
+    """The card's evidence must be a superset of what its own retained claims cite.
+
+    The base selection above is capped at twelve ids to keep the payload small, which is fine as
+    long as no claim cites past the cap. On denser inputs one did: `rule_claims` picks recovery and
+    shot ids from *every* chain, so a fifth or sixth chain sat outside the first twelve and the
+    shared `check_result` correctly refused the card as a claim-evidence mismatch. Role B measured
+    the consequence on its showcase data: 4 of 12 normal inputs produced a fallback card the shared
+    validator rejects.
+
+    A cap that silently drops evidence a retained claim depends on is a defect in the card, not in
+    the validator, and the fix is not to weaken the validator. Order is preserved and the union
+    deduplicated, so a card whose claims already fit inside the cap is unchanged.
+    """
+    merged = list(evidence)
+    seen = set(merged)
+    for claim in claims:
+        for event_id in claim.get("evidence_event_ids") or []:
+            if event_id not in seen:
+                seen.add(event_id)
+                merged.append(event_id)
+    return merged
+
+
 def rule_claims(request, chains, evidence):
     metrics = request["metrics"]
     own_shots = metrics["home_shots"] if request["team_id"] == "HOME" else metrics["away_shots"]
@@ -163,6 +187,7 @@ def rule_result(request, *, reason="no_model", traces=None, rejected_claims=None
                          False, traces)
 
     claims = rule_claims(request, chains, evidence)
+    evidence = card_evidence(evidence, claims)
     narratives = rule_narratives(request, metrics)
     code, message, retryable = _FALLBACK_ERRORS.get(reason, _FALLBACK_ERRORS["no_model"])
     traces.append({"task_id": request["task_id"], "agent": "validator",

@@ -245,6 +245,8 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 | 威胁排序 | **已完成** | `ai/threat.py`，价值迭代算 xT 网格，样本薄时**拒绝出榜**而不是瞎排。见第 14.2 节 |
 | storyline 限流 | **已完成** | `ai/storyline.py`，45 秒最小间隔、10 分钟 8 张卡上限、重复窗口抑制 |
 | 会话/并发上限 | 沿用 B 的实现 | C 侧无独立限流，沿用 8 会话 / 30 次每小时 / 并发 1 |
+| 降级卡的证据截断 | **已修（B 报的 bug）** | `ai/fallback.py` 的 12 条上限会把保留主张引用的证据丢掉，共享 `check_result` 因此拒卡；B 在增强数据上量到 **12 个正常输入里 4 个**。修法：卡片证据 = 基础选择 ∪ 全部保留主张的引用。验收 `deploy.adapter_check` → **12/12 通过、3/3 篡改被拒、0 次模型调用**。见第十九节 |
+| foul 事件口径 | **B 已支持，我的文档已更正** | 冻结 schema 里的 `foul` 现在被 `backend/data.py` 接受（`outcome=none`、`end_position=null`，不转移持球）。`test_invariants.py` 从“两边差一个 foul”改成“两边必须相等”。见第十九节 |
 | 审核员校准 | **两个方向都测了** | 误报：15/15 诚实卡被批准（0.0%）。漏报：10 类软越权 × 5 次 = 50/50 全抓到，且 50/50 点名的就是被做手脚的那一条（0.0% 漏）。**但语料是我自己写的**，100% 只能说明“我列得出的越权它都抓得住”，不能当通用准确率。见第十七节 |
 | recap 跨窗口一致性 | **已做** | `ai/recap.py: recap_series_issues()` + `recap_from_insights_issues()`：累计计数不许倒退、同一个进球不许被两次记给不同球员、同窗口两份 recap 必须一致、卡片不许跨场次或漏卡 |
 | 契约 2.1.0 | **提案，未执行** | `evaluation/CONTRACT_2_1_PROPOSAL.md`。要动 `contracts/` 必须 A/B 都点头，C 不单独动 |
@@ -699,4 +701,60 @@ python -m ai.threat                              → available=false, "a five-mi
 | 共享契约的 mock 模式语义仍成立 | `tests/test_contracts.py`、`tests/test_mock_api.py`（B 的，C 只保证不破坏） |
 | 通用 fallback 遇错输入优先 reject，而不是用错数字讲一遍 | `::RefusalTests::test_metrics_that_contradict_events_are_rejected_not_narrated`、`::test_shot_count_that_contradicts_events_is_rejected` |
 
-**这张表的方法论**：角色卡写的每一项都要能被一个测试名字指出来；指不出来的，写进第七节“仍未完成”，而不是留一句“我做了”。唯一的空格是 `baseline_sha`，它不是技术问题，是合并顺序问题。
+**这张表的方法论**：角色卡写的每一项都要能被一个测试名字指出来；指不出来的，写进第七节“仍未完成”，而不是留一句“我做了”。
+
+---
+
+## 十九、第十轮：合并、B 报的一个真 bug、以及整合验收通过
+
+这一轮不再是“我自己的活”，而是整合人的活：把 PR #8 合进整合分支、跑共同检查、处理 B 交接里指向我的问题。
+
+### 19.1 合并
+
+PR **#8** 已 squash 合并进 `codex/backend-ab-mvp`，合并提交 **`f3111a2`**。squash 是仓库既有惯例（B 的 PR #6 也是 squash 进 main 的）。
+
+合并之后立刻在合并结果上跑全套检查，抓到两个失败，性质完全不同：
+
+| 失败 | 是谁的问题 | 处理 |
+| --- | --- | --- |
+| `test_invariants.py::test_outcome_enum_matches_what_the_loader_accepts` | **我的文档过期了** | B 已经支持 `foul`，我的断言还写着“两边差一个 foul”。改成断言两边**相等**，并把 `PLAN_REVIEW 3.1b` 从“未修”改成“B 已关闭” |
+| `tests/backend/test_reporting.py::test_export_refuses_shared_and_other_role_paths` | **不是 bug，是我验证环境的假阳性** | 那个守卫靠 `(ROOT.parent / ".git").exists()` 判断“仓库根”。我为了避开 `github.com:443` 把分支下成 zipball 解压验证，那个目录没有 `.git`，所以守卫退化。补一个 `.git` 目录后该测试通过——这也是我后来重新 fetch 成功、改回正常 git 工作区的理由 |
+
+### 19.2 B 报的真 bug：降级卡的证据被截断
+
+`backend/C_INTEGRATION_FINDINGS.md` 里 B 给我留了一条精确的报告，附复现命令，没有代我改代码：
+
+> `ai/fallback.py::_evidence` 最多返回 12 个 ID，而 `rule_claims` 会从**每一条**链条里挑夺回/射门 ID。于是某条主张可以引用一个合法事件，而这个事件不在 `Insight.evidence_event_ids` 里。共享 `check_result` 正确地抛 `claim evidence mismatch`。
+
+**这是真 bug，不是误报。** 我用自己的生成器独立复现了：6 条链条的窗口里，卡片证据被截到 12 条，主张引用了 13 条，缺 3 条，`check_result` 抛错。B 在它的增强数据上量到的影响面是 **12 个正常输入里 4 个**。小 fixture 太稀，永远碰不到这条边界。
+
+修法（`ai/fallback.py: card_evidence`）：卡片证据 = 基础选择 **∪ 全部保留主张的引用**，保序、去重、不设总上限。B 明确写了不许为了让门禁变绿去削弱 `check_result`、删掉第三次夺回、篡改指标或悄悄截断——一条都没做。
+
+顺手补了 10 个离线测试（`tests/ai/test_fallback_evidence.py`），其中一个专门钉住“这个窗口的引用确实超过 12 条”，否则测试会因为够不到上限而假绿；另一个钉住小 fixture 的卡片证据**没有被顺带撑大**。
+
+### 19.3 B 的验收门禁：通过
+
+B 准备的验收命令，在合并后的工作区跑：
+
+```
+python -m backend.showcase                              -> status passed, 12 valid, 3 tampered, 0 model calls
+python -m deploy.adapter_check --output ...             -> status passed, 12/12 valid, 3/3 refused,
+                                                           model_calls 0, network_connections blocked
+```
+
+**这意味着增强数据集（`data/extra/showcase/{press,delayed,quiet}`）对 C 来说已经解锁**——B 之前因为这个问题把组合运行的数据目录限定在 `validated-demo`。现在 B 的文档说“C 修复后由整合者运行 `deploy.adapter_check`”，这条已经执行并通过。
+
+### 19.4 B 的另外两条纠正，都对我
+
+1. **foul**：B 说得很直接——“C 原先‘B 不支持 foul’的说明已过期；B 不会代改 C 文档或测试”。这是对的：文档所有权在 C，漂移由 C 收。已改。
+2. **演示窗口**：我原来建议把窗口从 1500–1650 挪到 1540–1690。B 的回答更省事——`data/extra/showcase/press` 这一场的进球**本来就在 1500–1650 里**（1650 时刻比分 1:0），采用它就不需要动窗口。两条建议都写进 `PLAN_REVIEW` §3.2，并注明各自适用于哪个数据集。
+
+B 还有一条约束需要 C 一起守：**“第三次夺回没有关联射门，不得声称三次全部产生射门或三次导致了进球。”** 我们的 fallback 文案本来就是这么写的（“其中一次没有在 15 秒内形成射门，但同一波进攻后续完成了射门或进球”），`ai/verify.py` 也会拒绝更强的措辞，所以这一条不需要改代码，只需要不在材料里说过头。
+
+### 19.5 门禁状态（第十轮，在合并分支上）
+
+- `python -m pytest tests -q` → **422 passed, 62 subtests passed**（合并前的合并树是 411 passed + 2 failed）
+- `python -m deploy.adapter_check` → **passed**（12/12 + 3/3，0 次模型调用，网络被阻断）
+- `python tools/check_frozen.py` → 契约与 fixture 未改
+- `python tools/check_scope.py --role C` → 通过
+- 修改：`ai/fallback.py`、`tests/ai/test_invariants.py`、`evaluation/PLAN_REVIEW.md`、`docs/handoff/ai.md`、`TEAM_ROLES.json`；新增：`tests/ai/test_fallback_evidence.py`
