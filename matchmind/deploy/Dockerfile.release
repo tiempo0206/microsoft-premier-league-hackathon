@@ -1,0 +1,25 @@
+# Integrator supplies reviewed C source and A's already built frontend/dist.
+# No model keys or account resources are created during this build.
+FROM python:3.12-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=10000 \
+    MATCHMIND_SERVE_FRONTEND=1 MATCHMIND_MODEL_TIMEOUT_SEC=20 \
+    MATCHMIND_DATA_DIR=data/extra/validated-demo
+WORKDIR /app
+COPY deploy/requirements-release.lock /tmp/release.lock
+RUN pip install --no-cache-dir -r /tmp/release.lock \
+    && useradd --uid 10001 --create-home app
+COPY backend/*.py ./backend/
+COPY contracts/*.py contracts/*.json contracts/VERSION ./contracts/
+COPY data/fixtures ./data/fixtures
+COPY data/extra/validated-demo ./data/extra/validated-demo
+COPY data/extra/showcase ./data/extra/showcase
+COPY data/generator/*.py ./data/generator/
+COPY ai/*.py ./ai/
+COPY ai/requirements.txt ./ai/requirements.txt
+COPY frontend/dist ./frontend/dist
+COPY deploy/__init__.py deploy/preflight.py deploy/release_check.py deploy/release_run.py deploy/adapter_check.py ./deploy/
+USER app
+RUN python -m deploy.release_check --profile integrated
+EXPOSE 10000
+HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.getenv('PORT','10000')+'/api/v1/health',timeout=3)"
+CMD ["python", "-m", "deploy.release_run"]

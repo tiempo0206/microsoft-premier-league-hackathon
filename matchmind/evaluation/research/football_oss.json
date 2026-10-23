@@ -1,0 +1,198 @@
+{
+  "ML-KULeuven/socceraction": {
+    "why": "event data to SPADL actions, expected threat and VAEP",
+    "description": "Convert soccer event stream data to SPADL and value player actions using VAEP or xT",
+    "stars": 821,
+    "language": "Python",
+    "size_kb": 28266,
+    "licence": "MIT",
+    "licence_name": "MIT License",
+    "archived": false,
+    "pushed_at": "2026-10-18",
+    "topics": [
+      "soccer",
+      "soccer-analytics",
+      "soccer-data",
+      "sports-analytics"
+    ],
+    "html_url": "https://github.com/ML-KULeuven/socceraction"
+  },
+  "probberechts/soccerdata": {
+    "why": "scrapers for many public football data sources",
+    "description": "⛏⚽ Scrape soccer data from Club Elo, ESPN, FBref, Football-Data.co.uk, Sofascore, SoFIFA, Understat and WhoScored.",
+    "stars": 2119,
+    "language": "Python",
+    "size_kb": 23241,
+    "licence": "NOASSERTION",
+    "licence_name": "Other",
+    "archived": false,
+    "pushed_at": "2026-10-19",
+    "topics": [
+      "elo-rating",
+      "espn",
+      "fbref",
+      "fivethirtyeight",
+      "soccer",
+      "soccer-analytics",
+      "soccer-data",
+      "sofascore",
+      "sofifa",
+      "sports-data",
+      "understat",
+      "whoscored"
+    ],
+    "html_url": "https://github.com/probberechts/soccerdata"
+  },
+  "PySport/kloppy": {
+    "why": "one interface over event and tracking providers",
+    "description": "kloppy: standardizing soccer tracking- and event data",
+    "stars": 565,
+    "language": "Python",
+    "size_kb": 48473,
+    "licence": "BSD-3-Clause",
+    "licence_name": "BSD 3-Clause \"New\" or \"Revised\" License",
+    "archived": false,
+    "pushed_at": "2026-10-17",
+    "topics": [],
+    "html_url": "https://github.com/PySport/kloppy"
+  },
+  "andrewRowlinson/mplsoccer": {
+    "why": "pitch plotting, xG plots, radar charts",
+    "description": "Football pitch plotting library for matplotlib",
+    "stars": 550,
+    "language": "Python",
+    "size_kb": 96864,
+    "licence": "MIT",
+    "licence_name": "MIT License",
+    "archived": false,
+    "pushed_at": "2026-09-14",
+    "topics": [],
+    "html_url": "https://github.com/andrewRowlinson/mplsoccer"
+  },
+  "statsbomb/statsbombpy": {
+    "why": "StatsBomb open data client",
+    "description": "Easily stream StatsBomb data into Python",
+    "stars": 747,
+    "language": "Python",
+    "size_kb": 1587,
+    "licence": null,
+    "licence_name": null,
+    "archived": false,
+    "pushed_at": "2026-10-20",
+    "topics": [],
+    "html_url": "https://github.com/hudl/statsbombpy"
+  },
+  "statsbomb/open-data": {
+    "why": "StatsBomb open event data and its licence",
+    "description": "Free football data from StatsBomb",
+    "stars": 3723,
+    "language": null,
+    "size_kb": 7403076,
+    "licence": "NOASSERTION",
+    "licence_name": "Other",
+    "archived": false,
+    "pushed_at": "2026-09-07",
+    "topics": [
+      "football",
+      "football-data",
+      "open-data",
+      "soccer",
+      "sports-data",
+      "sports-stats"
+    ],
+    "html_url": "https://github.com/hudl/open-data"
+  },
+  "koenvoetbal/floodlight": {
+    "why": "unified event data model, successor to kloppy ideas",
+    "error": "HTTP 404"
+  },
+  "Alek050/databallpy": {
+    "why": "tracking and event data synchronisation",
+    "description": "Package to read, preprocess, vizualise, and synchronise soccer event and tracking data.",
+    "stars": 106,
+    "language": "Python",
+    "size_kb": 245544,
+    "licence": "MIT",
+    "licence_name": "MIT License",
+    "archived": false,
+    "pushed_at": "2026-10-22",
+    "topics": [],
+    "html_url": "https://github.com/Alek050/databallpy"
+  },
+  "eddwebster/football_analytics": {
+    "why": "curated list of football analytics sources",
+    "description": "📊⚽  A collection of football analytics projects, data, and analysis by Edd Webster (@eddwebster), including a curated list of publicly available resources published by the football analytics community.",
+    "stars": 2819,
+    "language": "Jupyter Notebook",
+    "size_kb": 1176278,
+    "licence": null,
+    "licence_name": null,
+    "archived": false,
+    "pushed_at": "2025-10-09",
+    "topics": [
+      "analytics",
+      "awesome",
+      "awesome-list",
+      "data-science",
+      "expected-goals",
+      "fbref",
+      "fifa",
+      "football",
+      "football-analytics",
+      "football-data",
+      "futbol",
+      "opta",
+      "soccer",
+      "soccer-analytics",
+      "soccer-data",
+      "sports-analytics",
+      "sports-stats",
+      "statsbomb",
+      "transfermarkt",
+      "xg"
+    ],
+    "html_url": "https://github.com/eddwebster/football_analytics"
+  },
+  "deepsport-analytics/deepsport": {
+    "why": "broadcast video tracking pipeline",
+    "error": "HTTP 404"
+  },
+  "UnravelSports/SoccerMap": {
+    "why": "pitch control and space valuation",
+    "error": "HTTP 404"
+  },
+  "karangandhi1/football-analytics": {
+    "why": "xT and pitch control notebooks",
+    "error": "HTTP 404"
+  },
+  "openfootball/football.json": {
+    "why": "plain-JSON results and fixtures",
+    "description": "Free open public domain football data in JSON incl. English Premier League, Bundesliga, Primera División, Serie A and more - No API key required ;-)",
+    "stars": 1044,
+    "language": null,
+    "size_kb": 4784,
+    "licence": "CC0-1.0",
+    "licence_name": "Creative Commons Zero v1.0 Universal",
+    "archived": false,
+    "pushed_at": "2026-09-22",
+    "topics": [
+      "bundesliga",
+      "football",
+      "json",
+      "opendata",
+      "premier-league",
+      "primera-division",
+      "publicdomain",
+      "serie-a"
+    ],
+    "html_url": "https://github.com/openfootball/football.json"
+  },
+  "mfyz/expected-goals": {
+    "why": "simple xG models",
+    "error": "HTTP 404"
+  },
+  "soccer-analytics/soccer-analytics": {
+    "why": "community reference implementations",
+    "error": "HTTP 404"
+  }
+}

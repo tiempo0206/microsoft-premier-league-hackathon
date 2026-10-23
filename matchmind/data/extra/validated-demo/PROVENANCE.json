@@ -1,0 +1,30 @@
+{
+  "artifact_sha256": {
+    "demo.events.jsonl": "6859ef151f97b07183c7bab8c8bdaca1a1d7afc2edd40ed7dc877c8b333e5e2c",
+    "demo.match.json": "8a8f97601dca27fbf5ad94d90c9f309dfa0cc7a1b69ee1b32160458cb226353b",
+    "expected.json": "c22f61afdb7e6abab1db53e4fdb2ba43b78939de59b92341fbaeda7483dd3f2f",
+    "roster.json": "cfa0d5a2056bf9dea813ff021589630a5a176f367a102120aed8eb07fe1a53d7"
+  },
+  "authoring_method": "deterministic correction of versioned hand-authored events; no model or random generator",
+  "clock_unit": "match_seconds",
+  "coordinates": "0..100; x right, y down; no continuous player tracking",
+  "dataset_version": "fixture-2.0.1",
+  "event_count": 30,
+  "kind": "derived_original_synthetic",
+  "license": "CC0-1.0",
+  "scope": "Five-minute excerpt with fictional teams, event positions only; no off-ball tracking.",
+  "seed": 21,
+  "source_directory": "data/fixtures",
+  "source_sha256": {
+    "PROVENANCE.json": "ecb953bf465084f2161ed464a057ec7e6d0000063b0b198e73d88c6b5d58eb19",
+    "demo.events.jsonl": "5d21524296dc75a6bdec11aa24842453c1504b6717ed3dbb55c374eed49c3dc0",
+    "demo.match.json": "3af5d5322b71a48ceaad5ae68926ab7bf21c1a2f6d8e794fa6909435ba2bf5a1"
+  },
+  "transformation": {
+    "after": "H01",
+    "before": "H02",
+    "event_id": "MM-DEMO-01-E023",
+    "field": "player_id",
+    "reason": "The goal confirmation must name the same scorer as its scoring shot."
+  }
+}

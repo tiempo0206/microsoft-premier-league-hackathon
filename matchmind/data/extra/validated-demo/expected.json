@@ -1,0 +1,94 @@
+{
+  "match_id": "MM-DEMO-01",
+  "metrics": {
+    "away_possession_seconds": 115,
+    "away_shots": 0,
+    "high_recoveries": 3,
+    "home_possession_seconds": 35,
+    "home_shots": 2,
+    "linked_shots": 2,
+    "window_seconds": 150
+  },
+  "states": [
+    {
+      "at_sec": 1500,
+      "completed_passes": {
+        "AWAY": 0,
+        "HOME": 0
+      },
+      "last_event_id": null,
+      "match_id": "MM-DEMO-01",
+      "passes": {
+        "AWAY": 0,
+        "HOME": 0
+      },
+      "possession_seconds": {
+        "AWAY": 0,
+        "HOME": 0
+      },
+      "score": {
+        "AWAY": 0,
+        "HOME": 0
+      },
+      "shots": {
+        "AWAY": 0,
+        "HOME": 0
+      }
+    },
+    {
+      "at_sec": 1650,
+      "completed_passes": {
+        "AWAY": 7,
+        "HOME": 3
+      },
+      "last_event_id": "MM-DEMO-01-E020",
+      "match_id": "MM-DEMO-01",
+      "passes": {
+        "AWAY": 10,
+        "HOME": 3
+      },
+      "possession_seconds": {
+        "AWAY": 115,
+        "HOME": 35
+      },
+      "score": {
+        "AWAY": 0,
+        "HOME": 0
+      },
+      "shots": {
+        "AWAY": 0,
+        "HOME": 2
+      }
+    },
+    {
+      "at_sec": 1800,
+      "completed_passes": {
+        "AWAY": 10,
+        "HOME": 5
+      },
+      "last_event_id": "MM-DEMO-01-E030",
+      "match_id": "MM-DEMO-01",
+      "passes": {
+        "AWAY": 13,
+        "HOME": 5
+      },
+      "possession_seconds": {
+        "AWAY": 190,
+        "HOME": 110
+      },
+      "score": {
+        "AWAY": 0,
+        "HOME": 1
+      },
+      "shots": {
+        "AWAY": 1,
+        "HOME": 3
+      }
+    }
+  ],
+  "version": 1,
+  "window": {
+    "end_sec": 1650,
+    "start_sec": 1500
+  }
+}
