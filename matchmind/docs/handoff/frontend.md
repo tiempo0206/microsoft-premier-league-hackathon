@@ -4,7 +4,7 @@
 - Date: 2026-10-23 (Asia/Shanghai).
 - Branch: `codex/frontend-public-acceptance`; task: #13.
 - Starting main SHA: `601256039a5485120d42376c329e347144893441`. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
-- Contract: `2.0.0`. This slice changes only `frontend/README.md`, `tests/frontend/public-probe.mjs` and this handoff. No shared contract, fixture, frontend runtime, built asset, B/C source or deployment file changed. No contract change is needed.
+- Contract: `2.0.0`. This slice changes only `frontend/{README,DATA_SOURCES}.md`, `tests/frontend/{public-probe,public-stream-probe,http-event-source,backend-probe}.mjs` and this handoff. No shared contract, fixture, frontend runtime, built asset, B/C source or deployment file changed. These acceptance/documentation changes need no contract change; real-data ingestion would require a separately reviewed contract update.
 
 ## Current public release
 
@@ -33,17 +33,38 @@ The ignored report is `.artifacts/frontend-public-acceptance/result.json`, statu
 
 Run the explicit command in `frontend/README.md` only for authorized manual acceptance. The script is excluded from ordinary tests and CI, exits before network access without `--origin ... --live-once`, bounds result observation, and does not retry a failed AI workflow. It does not simulate a real provider outage. Offline fallback, named model errors and malformed-message recovery remain covered by the existing checks below.
 
+### Follow-up: actual public frontend SSE consumer
+
+The next synchronization fetched origin with no newer main commit (`6012560`); PR #14 remained open with both CI jobs passed and the review requested from C. On 2026-10-23 at 13:08:35 UTC, `public-stream-probe.mjs --origin https://matchmind-backend-preview.onrender.com` passed using the actual frontend subscription and reducers:
+
+- Selected 1x on a separate replay. The first incremental progress message arrived 2284 ms after the play request began. The accepted frames included 1 `match_state`, 1 `match_event` and 6 snapshots across connection, controls, explicit reconnection and reset. This is one observed delivery time, not a latency guarantee or load test.
+- Paused at 1501 (25:01); the clock held. Explicitly closing and reopening the subscription produced a fresh snapshot with matching statistics and no duplicated recovered timeline events.
+- The active stream supplied a new-run snapshot after reset, without substituting the HTTP control response for that test. Run 2 was idle at 1500, with empty insights, traces and timeline.
+- No analysis window was reached and no insight or agent-status frame appeared; `model_job_requested` was false. The earlier live report was preserved and no additional live workflow was invoked.
+
+The ignored transport report is `.artifacts/frontend-public-transport/result.json`. The Node-only `http-event-source.mjs` adapter was extracted from the existing offline backend probe and is shared by the two stream probes. It parses the HTTP wire stream; browser production code still uses native EventSource. The check explicitly opens a new connection and does not claim browser automatic retry or a real provider outage.
+
 ## Browser boundary and remaining work
 
-The public page loaded and a screenshot showed the integrated page. Browser automation's DOM, accessibility and native scroll operations repeatedly timed out. Consequently this run does **not** establish public browser play/pause clicks, keyboard audience/evidence selection, mobile layout or live incremental SSE timing. The public consumer probe uses HTTP snapshots; B's public smoke separately establishes SSE snapshot reconnect. Neither replaces a full browser walkthrough.
+The public page loaded and a screenshot showed the integrated page. Browser automation's DOM, accessibility and native scroll operations repeatedly timed out, including a fresh retry during the follow-up. A native-app alternative was denied by the tool's safety restriction for the Codex app. Consequently this run does **not** establish public browser play/pause clicks, keyboard audience/evidence selection, mobile layout or browser-native EventSource retry timing. The live-model consumer probe uses HTTP snapshots; the separate stream probe above establishes public wire-level incremental delivery and explicit reconnect recovery. Neither replaces a full browser walkthrough.
 
 The earlier local A5 browser checks below remain valid local evidence. A/C still need the public keyboard/evidence/mode walkthrough and the final English video using C's revised `evaluation/DEMO_SCRIPT.md` from `6012560`. No final video has been recorded. C/integrator reviews and merges this acceptance PR; no automatic main merge is performed.
+
+## Data accuracy follow-up
+
+The representative asked for accurate data, team names and match information, then clarified the decision: prefer real data if it can support the platform; otherwise use synthetic data. The currently deployed fixture is still synthetic, with fictional Harbor FC / Mountain United. All public 3/2 analysis results above describe that fixture; `live_model` identifies AI execution, not a real football match.
+
+A completed a read-only source and consistency audit. The 30-event validated synthetic dataset passed B's audit and the fixture reference recomputed its declared metrics. An actual StatsBomb historical match/event file was inspected, but public-API/external-model rights have not been established under its license. A second CC BY 4.0 Wyscout candidate's original download/metadata access returned HTTP 403, so its actual files were not validated. Neither was adopted or combined with generated events. `frontend/DATA_SOURCES.md` records exact source scope, dates, evidence and remaining requirements.
+
+[Issue #15](https://github.com/tiempo0206/microsoft-premier-league-hackathon/issues/15) assigns B/C the source/mapping/contract review needed for real ingestion. Current `Match.synthetic: true`, provenance checks and initial-state assumptions prevent an honest data-only swap. The official synthetic-data requirement also needs a submission-scope decision. A can render new source/date/club metadata after the contract is agreed. Until then the working public dataset remains explicitly synthetic under the representative's fallback condition, with no claim that real integration is complete.
 
 ## Latest verification
 
 The integrated executable baseline passed `pnpm run typecheck`, all 27 frontend unit tests, frozen-file checks, and 434 Python tests plus 62 subtests. The first Python run could not bind loopback sockets inside the sandbox; rerunning the same suite with the required socket permission passed. That was an environment restriction, not a product failure. Main's subsequent demo-document-only commit did not change this executable baseline.
 
 For this slice, `pnpm run test` again passed all 27 tests and `pnpm run build` passed TypeScript and Vite with unchanged asset hashes. `node --check tests/frontend/public-probe.mjs`, `.venv/bin/python tools/check_frozen.py` and `.venv/bin/python tools/check_scope.py --role A --base 601256039a5485120d42376c329e347144893441` passed (run the latter three from `matchmind`). Running the public probe without arguments returned the expected exit code 2 and preserved the existing report. Routine tests remain offline. No public browser or video completion is inferred from these checks.
+
+After extracting the shared SSE adapter, `pnpm run test` still passed 27/27 and `pnpm run test:backend` passed against its real B/C child server, including all five normal message kinds, with zero model calls. The child server was stopped. The public stream script's syntax and no-argument guard also passed; without an explicit origin it returns exit 2 before network access.
 
 ## Previous A2/A3 delivery (merged PR #12)
 

@@ -2,6 +2,8 @@
 
 React/Vite match centre for the frozen 2.0.0 contract. The page connects to the real B/C application or the supplied local mock. It includes playback, server statistics, insight narratives, evidence inspection and actual analysis traces. All assets are local; model credentials stay on the server.
 
+The current public match is a synthetic fallback with fictional teams, not an actual Premier League fixture. The representative prefers real data when a usable, permitted source can support the platform. See [data-source accuracy and adoption status](DATA_SOURCES.md) for the inspected real-data candidates, verified synthetic calculations and requirements before switching. Live-model labels describe AI generation, separately from match-data authenticity.
+
 ## Run with the integrated backend
 
 Prepare the project's Python environment using `docs/01_cn_setup.md`. The integrated app requires B's backend dependencies and C's AI dependencies, including MCP; install their pinned requirements in `.venv`. From `matchmind/` on macOS/Linux:
@@ -44,7 +46,20 @@ pnpm run test:backend
 
 `test:backend` requires the integrated Python dependencies. It launches its own real B/C server on a random loopback port, uses an explicitly offline model and an accelerated 5x server test clock, exercises the actual frontend HTTP/SSE consumer, and stops its child server. It tests controls, pause, insight/evidence payloads, statistics, isolation, snapshot reconnect, idempotent reset and stale-run rejection. `MATCHMIND_PYTHON` can select a different project interpreter. It does not test the browser layout or Render.
 
-### Manual public acceptance (explicit live opt-in)
+### Manual public stream acceptance
+
+From `frontend`, run:
+
+```sh
+node --experimental-strip-types ../tests/frontend/public-stream-probe.mjs \
+  --origin https://matchmind-backend-preview.onrender.com
+```
+
+This manual check creates its own replay, selects 1x, observes early `match_state` and `match_event` frames, pauses, explicitly reconnects, and observes the reset generation over SSE. It stops before the first AI window at 1650 and verifies that no insights or analysis traces appeared. It saves message counts, the first progress arrival time and reset state in `matchmind/.artifacts/frontend-public-transport/result.json`. Each wait is bounded, and the script attempts to pause its own replay on failure.
+
+The Node-only `http-event-source.mjs` adapter reads the wire stream and feeds the actual `subscribeToReplay` consumer. It is also used by the offline backend probe. It does not implement browser automatic reconnect: this check explicitly closes and opens a subscription, verifies snapshot recovery without duplicate timeline entries, and leaves the replay reset to idle. Browser clicks, native EventSource retry behavior and a sustained latency/load benchmark remain separate checks. Neither public probe runs in ordinary tests or CI.
+
+### Manual public live acceptance (explicit live opt-in)
 
 The integrated application is currently available at [the Render match centre](https://matchmind-backend-preview.onrender.com). For an authorized manual live check, run this from `frontend`:
 
@@ -55,7 +70,7 @@ node --experimental-strip-types ../tests/frontend/public-probe.mjs \
 
 This command can incur model usage on the configured server. It is excluded from `pnpm run test`, `test:backend` and CI; without both arguments it exits before any network request. It creates its own baseline replay, plays through the first analysis window, pauses, observes the result for a bounded period, and resets that replay. It never retries a failed AI workflow. One analysis window can involve several provider calls, including correction and review; this command does not impose a provider-call quota.
 
-The probe uses the actual frontend HTTP consumer and reducers, verifies the public JS/CSS against this checkout's built files, checks statistics and evidence references, and exercises reset retry and old-run rejection. It writes a report to `matchmind/.artifacts/frontend-public-acceptance/result.json`. `passed_live` requires `live_model`, `agent_and_code` and verification status `passed`; fallback is recorded separately and returns a nonzero exit status. This checks API integration, not browser clicks, SSE delivery timing, layout or prose correctness. Public SSE reconnect is covered separately by B's smoke probe. See `docs/handoff/frontend.md` for the observed run and remaining browser/video work.
+The probe uses the actual frontend HTTP consumer and reducers, verifies the public JS/CSS against this checkout's built files, checks statistics and evidence references, and exercises reset retry and old-run rejection. It writes a report to `matchmind/.artifacts/frontend-public-acceptance/result.json`. `passed_live` requires `live_model`, `agent_and_code` and verification status `passed`; fallback is recorded separately and returns a nonzero exit status. This checks API integration, not browser clicks, SSE delivery timing, layout or prose correctness. Public stream acceptance is a separate command above. See `docs/handoff/frontend.md` for the observed runs and remaining browser/video work.
 
 Common Python checks run from `matchmind`:
 
