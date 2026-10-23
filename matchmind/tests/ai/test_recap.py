@@ -8,7 +8,8 @@ a longer card.
 import unittest
 
 from ai.recap import (RECAP_SCHEMA, build_recap, recap_facts, recap_from_insights,
-                      recap_narrative, validate_recap)
+                      recap_from_insights_issues, recap_narrative, recap_series_issues,
+                      validate_recap)
 
 
 class FactsTests(unittest.TestCase):
@@ -145,6 +146,133 @@ class RecapFromInsightsTests(unittest.TestCase):
         recap = recap_from_insights([self.insight("INS-1", 1500, 1650, 3),
                                      self.insight("INS-2", 1700, 1780, 4, mode="live_model")])
         self.assertEqual(recap["source_modes"], ["live_model", "rule_fallback"])
+
+
+class SeriesConsistencyTests(unittest.TestCase):
+    """Each recap can be perfect and the series still contradict itself."""
+
+    def series(self):
+        return [build_recap("MM-DEMO-01", 1500, 1550),
+                build_recap("MM-DEMO-01", 1500, 1600),
+                build_recap("MM-DEMO-01", 1500, 1650),
+                build_recap("MM-DEMO-01", 1500, 1700),
+                build_recap("MM-DEMO-01", 1500, 1800)]
+
+    def test_an_honest_series_is_consistent(self):
+        self.assertEqual(recap_series_issues(self.series()), [])
+
+    def test_input_order_does_not_matter(self):
+        series = self.series()
+        shuffled = [series[3], series[0], series[4], series[2], series[1]]
+        self.assertEqual(recap_series_issues(shuffled), [])
+
+    def test_one_recap_alone_has_nothing_to_contradict(self):
+        self.assertEqual(recap_series_issues([build_recap("MM-DEMO-01", 1500, 1650)]), [])
+
+    def test_a_counter_going_backwards_is_caught(self):
+        # The realistic corruption: the 1700 recap reads only 1650-1700 instead of the whole
+        # prefix, so its cumulative possession is smaller than the 1600 recap's.
+        series = self.series()
+        self.assertEqual(series[3]["facts"]["possession_seconds"]["HOME"], 70)
+        series[3]["facts"]["possession_seconds"]["HOME"] = 5
+        problems = recap_series_issues(series)
+        self.assertTrue(any("possession_seconds.HOME went down" in p for p in problems), problems)
+
+    def test_a_counter_that_only_grows_is_not_flagged(self):
+        series = self.series()
+        series[3]["facts"]["possession_seconds"]["HOME"] = 36
+        self.assertEqual(recap_series_issues(series), [])
+
+    def test_a_score_going_backwards_is_caught(self):
+        series = self.series()
+        series[4]["facts"]["score_after"]["HOME"] = 0
+        self.assertTrue(any("score_after.HOME went down" in p
+                            for p in recap_series_issues(series)))
+
+    def test_the_same_goal_credited_to_two_players_is_caught(self):
+        series = self.series()
+        self.assertEqual(len(series[4]["facts"]["goals"]), 1)
+        series[4]["facts"]["goals"][0] = dict(series[4]["facts"]["goals"][0],
+                                             player_id="H99")
+        series[4]["facts"]["goals"][0]["player_id"] = "H99"
+        problems = recap_series_issues(series)
+        self.assertTrue(any("credited to" in p for p in problems), problems)
+
+    def test_two_recaps_of_the_same_window_must_agree(self):
+        first = build_recap("MM-DEMO-01", 1500, 1650)
+        second = build_recap("MM-DEMO-01", 1500, 1650)
+        second["facts"]["shots"]["HOME"] += 1
+        problems = recap_series_issues([first, second])
+        self.assertTrue(any("same window but disagree on shots" in p for p in problems), problems)
+
+    def test_same_cutoff_different_start_is_caught(self):
+        first = build_recap("MM-DEMO-01", 1500, 1650)
+        second = build_recap("MM-DEMO-01", 1550, 1650)
+        problems = recap_series_issues([first, second])
+        self.assertTrue(any("share cutoff 1650 but start at" in p for p in problems), problems)
+
+    def test_mixed_matches_are_caught(self):
+        series = self.series()
+        series[2]["match_id"] = "MM-OTHER"
+        self.assertTrue(any("mixes match ids" in p for p in recap_series_issues(series)))
+
+    def test_a_broken_payload_is_reported_once_not_fatal(self):
+        series = self.series()
+        series[1]["narrative"]["analyst"] = ""
+        problems = recap_series_issues(series)
+        self.assertTrue(any("both audiences" in p for p in problems))
+        self.assertEqual(recap_series_issues([{}, {"schema": "x"}]) != [], True)
+        self.assertEqual(recap_series_issues("not a list"), ["recap series must be a list"])
+
+    def test_a_single_goal_stays_credited_the_same_way_across_the_series(self):
+        series = self.series()
+        credited = {(g["event_id"], g["team_id"], g["player_id"])
+                    for recap in series for g in recap["facts"]["goals"]}
+        self.assertEqual(credited, {("MM-DEMO-01-E023", "HOME", "H01")})
+
+
+class CardBasedRecapConsistencyTests(unittest.TestCase):
+    def insight(self, insight_id, start, end, match_id="MM-DEMO-01"):
+        return {"insight_id": insight_id, "match_id": match_id, "type": "high_press",
+                "window": {"start_sec": start, "end_sec": end},
+                "claims": [{"claim_id": "C1", "kind": "metric",
+                            "metric_key": "high_recoveries", "metric_value": 3}],
+                "generation": {"mode": "rule_fallback"},
+                "evidence_event_ids": ["MM-DEMO-01-E007"]}
+
+    def test_a_clean_card_recap_has_no_problems(self):
+        cards = [self.insight("INS-1", 1500, 1650), self.insight("INS-2", 1650, 1800)]
+        recap = recap_from_insights(cards)
+        self.assertEqual(recap_from_insights_issues(recap, cards), [])
+
+    def test_overlapping_cards_are_caught(self):
+        cards = [self.insight("INS-1", 1500, 1650), self.insight("INS-2", 1600, 1700)]
+        recap = recap_from_insights(cards)
+        problems = recap_from_insights_issues(recap, cards)
+        self.assertTrue(any("starts at 1600, before card" in p for p in problems), problems)
+
+    def test_cards_from_two_matches_are_caught(self):
+        cards = [self.insight("INS-1", 1500, 1650), self.insight("INS-2", 1700, 1780, "MM-OTHER")]
+        recap = recap_from_insights(cards)
+        self.assertTrue(any("mixes match ids" in p
+                            for p in recap_from_insights_issues(recap, cards)))
+
+    def test_a_card_past_the_cutoff_is_caught(self):
+        cards = [self.insight("INS-1", 1500, 1650), self.insight("INS-2", 1700, 1780)]
+        recap = recap_from_insights(cards)
+        recap["cutoff_sec"] = 1700
+        problems = recap_from_insights_issues(recap, cards)
+        self.assertTrue(any("past the recap cutoff" in p for p in problems), problems)
+
+    def test_a_dropped_card_is_caught(self):
+        cards = [self.insight("INS-1", 1500, 1650), self.insight("INS-2", 1700, 1780)]
+        recap = recap_from_insights(cards)
+        recap["cards"] = recap["cards"][:1]
+        self.assertTrue(any("left out aired cards" in p
+                            for p in recap_from_insights_issues(recap, cards)))
+
+    def test_no_cards_is_reported_not_crashed(self):
+        self.assertEqual(recap_from_insights_issues({"cutoff_sec": 1}, []), ["no cards"])
 
 
 if __name__ == "__main__":

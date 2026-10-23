@@ -8,7 +8,7 @@ disabled, prompt `c3-1.1.0`. Reproduce any of them; none require Azure or Foundr
 | --- | --- | --- |
 | `benchmark.py` | does the pipeline publish correct cards, and how does one agent compare with three? `--auto-cases` derives the sample from any fixture | billable |
 | `factcheck_bench.py` | how many known-bad explanations does the code verifier catch, and how many good ones does it wrongly reject? | free |
-| `auditor_calibration.py` | how often does the *semantic* auditor reject a card that is actually fine? | billable |
+| `auditor_calibration.py` | both halves of the auditor: does it reject honest cards, and does it catch overreach the code gate cannot see? `--plan` runs the corpus against the gate with no model calls | billable (`--plan` free) |
 | `ablation.py` | what breaks when each specialist is switched off? (`--repeats 3` for an interpretable run) | billable |
 | `live_smoke.py` | one real end-to-end run with the raw output of every agent | billable |
 | `fixture_qualify.py` | is the synthetic data dense and complete enough to carry a demo? (`--recommend` finds a window that can explain an outcome) | free |
@@ -77,12 +77,56 @@ figure shows the checks work, not how accurate a model is.
 
 ---
 
-## 1a. The semantic auditor's false-alarm rate
+## 1a. The semantic auditor, measured in both directions
 
-The code verifier is measured by §1 at zero cost. The auditor is a model, so its false-alarm rate
-needs real calls: `python -m evaluation.auditor_calibration --runs 5` feeds it claim sets the code
-gate already accepted, containing only supplied numbers and no causal claim, and reports how often
-it rejects them anyway.
+The code verifier is measured by §1 at zero cost. The auditor is a model, so it needs real calls.
+One number is not enough, because a model that rejects everything scores perfectly on one half:
+
+| corpus (all pass the code gate unchanged) | cases | runs | result |
+| --- | --- | --- | --- |
+| honest cards — only supplied numbers, no causal claim | 3 | 15 | **15/15 approved → 0.0% false alarms** |
+| rigged cards — right arithmetic, wrong claim | 10 | 50 | **50/50 caught → 0.0% misses** |
+| — of which the rejection **named the planted claim** | 10 | 50 | **50/50 → 0.0% caught for the wrong reason** |
+| combined correct decisions | 13 | 65 | **100.0%** |
+
+The ten rigged cards are the classes the arithmetic layer cannot see at all. Every one of them
+passes `check_claims` and `check_narratives` untouched — that is asserted by
+`tests/ai/test_auditor_calibration.py`, so if the gate ever starts catching one, the corpus has to
+be re-drawn rather than silently counted as an auditor win:
+
+| class | example |
+| --- | --- |
+| contradicts data | "HOME controlled the ball for most of the window" (35 s to 115 s) |
+| correct value, wrong team | `home_shots = 2` stated as "AWAY took 2 shots" |
+| universal negative | "AWAY never won the ball back" (they did, twice) |
+| quantifier overreach | "each of those recoveries turned into a shot" (two of three) |
+| superlative needing the whole match | "the most intense pressing spell of the match" |
+| player-level claim, no player data | "the AWAY right-back kept getting caught out of position" |
+| mechanism nobody measured | "the press worked because AWAY's midfield stopped tracking runners" |
+| prediction | "that pattern will decide the rest of the match" |
+| counterfactual | "had AWAY turned that possession into a shot, the game would look different" |
+| overreach in the prose, not the claims | narrative says "AWAY's shape collapsed once the press arrived" |
+
+**The caveat that must travel with 100%.** The corpus is mine, written from the classes I could
+think of, and each case was written to be decidably wrong. A perfect score here means the auditor
+catches the overreach I named, on the window I used, on this model — it does **not** bound the
+classes I did not think of, and it is not a general accuracy figure. The value of the measurement is
+the comparison, not the number: **the code gate catches 21/21 of the corruptions in §1 and 0/10 of
+these.** That is the whole argument for a second agent.
+
+Reproduce the corpus check for free (no key, no calls):
+
+```
+python -m evaluation.auditor_calibration --plan
+```
+
+and the scored run:
+
+```
+python -m evaluation.auditor_calibration --runs 5
+```
+
+### History: why the previous number was 33.3%
 
 | prompt version | runs | false alarms |
 | --- | --- | --- |
@@ -101,6 +145,33 @@ contradiction, because the code gate already verified every number on the card.
 This matters beyond tidiness: a constant rejection made the visible correction look staged, and it
 cost an extra model call on every card. After the fix, 8 of 11 dense-fixture cards resolve in three
 calls and the 3 corrections that do occur name a specific claim.
+
+---
+
+## 1b. Recap consistency across a series — the failure mode no single payload can show
+
+A replay does not publish one recap, it publishes one every few minutes, and the viewer sees the
+series. Every payload can pass its own validator and the series can still contradict itself:
+
+* a cumulative counter **goes down** as the clip advances, which can only mean a recap read the
+  wrong slice of events or a stale fixture;
+* the **same goal is credited to a different player** in two recaps;
+* the clock goes backwards, or two recaps cover the same window and disagree about it;
+* a card-based recap includes a card from another match, or drops one that aired.
+
+`ai.recap.recap_series_issues()` sorts the payloads by cutoff itself, validates each one, then
+compares. It is deterministic and free — the same class of check as the code gate, applied to two
+payloads at once instead of one. `recap_from_insights_issues()` does the same for the card-based
+path, which previously derived its own cutoff from the cards and therefore could not notice that a
+card belonged to another match or that two cards overlapped.
+
+```
+python -m ai.recap --series 1550 1650 1800
+```
+
+Pinned by `tests/ai/test_recap.py::SeriesConsistencyTests` and
+`::CardBasedRecapConsistencyTests`, including the negative direction: a counter that only grows
+must **not** be flagged, or the check would be useless noise.
 
 ---
 

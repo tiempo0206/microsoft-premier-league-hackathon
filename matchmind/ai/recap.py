@@ -252,6 +252,166 @@ def validate_recap(payload):
     return problems
 
 
+# --- consistency across recaps ---------------------------------------------------------------
+#
+# One recap can be internally perfect and still contradict the one before it. A replay emits a
+# recap every few minutes, so the viewer sees a *series*, and a series has failure modes that no
+# single payload can reveal:
+#
+# * the score, shot count or possession goes **down** as the clip advances, which can only happen
+#   if a recap read the wrong slice of events or a stale fixture;
+# * the same goal is credited to a different player or team in two recaps;
+# * the clock goes backwards;
+# * two recaps cover the same window and disagree about what happened in it.
+#
+# These are deterministic comparisons on numbers that were already computed, so they cost nothing
+# and need no model. They are exactly the class of bug a code gate is good at — but only if
+# something looks at two payloads at once, which nothing did before this.
+
+# Cumulative counters: they may only grow as the cutoff advances.
+MONOTONIC_FACTS = ("event_count", "possession_segments")
+MONOTONIC_SIDED = ("shots", "possession_seconds", "passes", "completed_passes")
+MONOTONIC_SCORE = ("score_after",)
+
+
+def _moment_key(goal):
+    return (goal.get("event_id"), goal.get("team_id"), goal.get("player_id"))
+
+
+def _flat_facts(recap):
+    """The subset of facts two recaps must agree on when they cover the same window."""
+    facts = recap.get("facts") or {}
+    return {
+        "score_after": facts.get("score_after"),
+        "shots": facts.get("shots"),
+        "possession_seconds": facts.get("possession_seconds"),
+        "passes": facts.get("passes"),
+        "completed_passes": facts.get("completed_passes"),
+        "event_count": facts.get("event_count"),
+        "possession_segments": facts.get("possession_segments"),
+        "goals": [_moment_key(g) for g in facts.get("goals") or []],
+    }
+
+
+def _window_of(recap):
+    window = recap.get("window") or {}
+    return (window.get("start_sec"), window.get("end_sec"))
+
+
+def recap_series_issues(recaps):
+    """Problems that only exist across a series of recaps. Empty list means consistent.
+
+    Input is the sequence a replay would emit, in any order: the check sorts by cutoff itself and
+    never trusts the caller's ordering. Each recap is also validated on its own first, so a broken
+    payload is reported once rather than crashing the comparison.
+    """
+    problems = []
+    if not isinstance(recaps, (list, tuple)):
+        return ["recap series must be a list"]
+    usable = []
+    for index, recap in enumerate(recaps):
+        if not isinstance(recap, dict):
+            problems.append("recap %d is not an object" % index)
+            continue
+        own = validate_recap(recap)
+        problems.extend("recap %d: %s" % (index, problem) for problem in own)
+        if own or recap.get("cutoff_sec") is None:
+            continue
+        usable.append((index, recap))
+    if len(usable) < 2:
+        return problems
+
+    usable.sort(key=lambda pair: (pair[1]["cutoff_sec"], pair[0]))
+    matches = {recap.get("match_id") for _, recap in usable}
+    if len(matches) > 1:
+        problems.append("series mixes match ids: %s" % sorted(str(m) for m in matches))
+
+    for (i, earlier), (j, later) in zip(usable, usable[1:]):
+        a, b = earlier["cutoff_sec"], later["cutoff_sec"]
+        if b < a:
+            problems.append("recap %d ends at %s but recap %d ended earlier at %s"
+                            % (j, b, i, a))
+        if b == a:
+            start_a, start_b = _window_of(earlier)[0], _window_of(later)[0]
+            if start_a != start_b:
+                problems.append("two recaps share cutoff %s but start at %s and %s"
+                                % (b, start_a, start_b))
+            else:
+                left, right = _flat_facts(earlier), _flat_facts(later)
+                for key in left:
+                    if left[key] != right[key]:
+                        problems.append(
+                            "recap %d and %d cover the same window but disagree on %s: %r vs %r"
+                            % (i, j, key, left[key], right[key]))
+            continue
+        fa, fb = earlier.get("facts") or {}, later.get("facts") or {}
+        for key in MONOTONIC_FACTS:
+            before, after = fa.get(key), fb.get(key)
+            if isinstance(before, int) and isinstance(after, int) and after < before:
+                problems.append("%s went down from %d at %s to %d at %s"
+                                % (key, before, a, after, b))
+        for key in MONOTONIC_SIDED + MONOTONIC_SCORE:
+            before, after = fa.get(key) or {}, fb.get(key) or {}
+            for side in ("HOME", "AWAY"):
+                if side in before and side in after and after[side] < before[side]:
+                    problems.append("%s.%s went down from %s at %s to %s at %s"
+                                    % (key, side, before[side], a, after[side], b))
+
+    # One goal, one credit. A later recap may see more goals, never a different story about an
+    # earlier one.
+    credited = {}
+    for index, recap in usable:
+        for goal in (recap.get("facts") or {}).get("goals") or []:
+            event_id = goal.get("event_id")
+            if not event_id:
+                continue
+            signature = (goal.get("team_id"), goal.get("player_id"))
+            if event_id in credited and credited[event_id][0] != signature:
+                problems.append("goal %s is credited to %s in recap %d but to %s in recap %d"
+                                % (event_id, credited[event_id][0], credited[event_id][1],
+                                   signature, index))
+            credited.setdefault(event_id, (signature, index))
+    return problems
+
+
+def recap_from_insights_issues(payload, insights):
+    """Does a card-based recap describe only what actually aired, in order?
+
+    `recap_from_insights` derives its window from the cards themselves, so it cannot leak the
+    future — but it never checked that the cards belong to one match, that their windows move
+    forward, or that the recap's own cutoff covers them. Those are silent failures: the payload
+    still validates and still reads well.
+    """
+    problems = []
+    cards = [i for i in (insights or []) if isinstance(i, dict)]
+    if not cards:
+        return ["no cards"]
+    match_ids = {card.get("match_id") for card in cards}
+    if len(match_ids) > 1:
+        problems.append("recap mixes match ids: %s" % sorted(str(m) for m in match_ids))
+    cutoff = payload.get("cutoff_sec")
+    for card in cards:
+        window = card.get("window") or {}
+        if window.get("end_sec") is None:
+            problems.append("card %r has no window end" % card.get("insight_id"))
+        elif cutoff is not None and window["end_sec"] > cutoff:
+            problems.append("card %r ends at %s, past the recap cutoff %s"
+                            % (card.get("insight_id"), window["end_sec"], cutoff))
+    ordered = sorted(cards, key=lambda c: ((c.get("window") or {}).get("start_sec", 0),
+                                          (c.get("window") or {}).get("end_sec", 0)))
+    for earlier, later in zip(ordered, ordered[1:]):
+        end = (earlier.get("window") or {}).get("end_sec")
+        start = (later.get("window") or {}).get("start_sec")
+        if end is not None and start is not None and start < end:
+            problems.append("card %r starts at %s, before card %r ends at %s"
+                            % (later.get("insight_id"), start, earlier.get("insight_id"), end))
+    listed = [card.get("insight_id") for card in payload.get("cards") or []]
+    missing = [c.get("insight_id") for c in cards if c.get("insight_id") not in listed]
+    if missing:
+        problems.append("recap left out aired cards: %s" % missing)
+    return problems
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="MatchMind recap")
     parser.add_argument("--match", default="MM-DEMO-01")
@@ -259,7 +419,19 @@ def main(argv=None):
     parser.add_argument("--end", type=int, default=1800)
     parser.add_argument("--team", default="HOME", choices=["HOME", "AWAY"])
     parser.add_argument("--language", default="en", choices=["en", "zh"])
+    parser.add_argument("--series", type=int, nargs="*", default=None,
+                        help="cutoffs to recap as a series, e.g. --series 1550 1650 1800; "
+                             "prints only the cross-recap consistency result")
     args = parser.parse_args(argv)
+    if args.series:
+        recaps = [build_recap(args.match, args.start, end, team_id=args.team,
+                              language=args.language) for end in sorted(args.series)]
+        problems = recap_series_issues(recaps)
+        print(json.dumps({"match_id": args.match, "start_sec": args.start,
+                          "cutoffs": sorted(args.series),
+                          "consistent": not problems, "problems": problems},
+                         ensure_ascii=False, indent=2))
+        return 0 if not problems else 1
     payload = build_recap(args.match, args.start, args.end, team_id=args.team,
                           language=args.language)
     print(json.dumps(payload, ensure_ascii=False, indent=2))

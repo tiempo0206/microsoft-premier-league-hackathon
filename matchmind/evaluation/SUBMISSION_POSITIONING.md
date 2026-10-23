@@ -20,8 +20,10 @@ technologies, code structure.
 | The synthetic dataset is *qualified*, not merely generated | `evaluation/fixture_qualify.py` — 7 checks with thresholds and reasons; the shipped fixture fails 3 and we publish that |
 | We proved the thresholds are reachable | `evaluation/dense_fixture_proposal.py` — 110 events, 1 per 2.7 s, 11 players a side, 0 contract violations, all 7 checks green |
 | One deterministic implementation per concept | the recovery chain exists once, in `ai/verify.high_press_chains`, and the tools, the fallback and the recap all call it |
-| The verifier is measured | `evaluation/factcheck_bench.py` — 17/17 corruptions caught, 0/4 false alarms, pinned by a regression test |
-| 236 tests, offline, across three roles | `python -m pytest tests -q` |
+| The verifier is measured | `evaluation/factcheck_bench.py` — 21/21 corruptions caught, 0/4 false alarms, pinned by a regression test |
+| The *semantic* layer is measured in both directions | `evaluation/auditor_calibration.py` — 0/15 honest cards wrongly rejected, 50/50 rigged cards caught and correctly attributed; and the corpus is asserted to be invisible to the code gate, so the 100% is not counting the gate's work |
+| Consistency is checked across payloads, not just inside them | `ai.recap.recap_series_issues()` — cumulative counters may not go down, one goal may not be credited twice to different players; `tests/ai/test_recap.py` |
+| 395 tests, offline, across three roles | `python -m pytest tests -q` |
 | Frozen interface discipline | contract 2.0.0 untouched; `tools/check_frozen.py` and `tools/check_scope.py` gate every change |
 
 **We cannot claim** a simulator validated against real football (a rival did that against 1,446
@@ -42,8 +44,8 @@ novelty.
 | Microsoft Agent Framework is the default orchestrator | `MATCHMIND_ORCHESTRATOR=framework`; trace records which orchestrator actually ran |
 | The contract itself forbids a self-reviewed pass | `check_result` requires `agent_and_code` for any `live_model` card — a structural argument, not a sample |
 | Failures are visible, not hidden | every degradation is labelled `rule_fallback` with an `error.code`; the auditor's refusals land in `verification.rejected_claims` |
-| The semantic auditor is calibrated, not trusted | `evaluation/auditor_calibration.py`: false-alarm rate 33.3% → 0.0% after removing a flag the model could contradict |
-| The code verifier is measured | `evaluation/factcheck_bench.py`: 21/21 corruptions caught, 0/4 false alarms |
+| The semantic auditor is calibrated, not trusted | `evaluation/auditor_calibration.py`: false-alarm rate 33.3% → 0.0% after removing a flag the model could contradict; then measured in both directions — 0% false alarms on honest cards and 0% misses on 10 classes of overreach the code gate cannot see |
+| The code verifier is measured | `evaluation/factcheck_bench.py`: 21/21 corruptions caught, 0/4 false alarms. The two layers are measured on disjoint corpora, which is why both exist |
 
 **We cannot claim** a full A2A implementation (the transport is one method), a component-ablation
 result that separates most variants (only the repair round is separated from noise), or that
