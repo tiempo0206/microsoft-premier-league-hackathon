@@ -1,21 +1,64 @@
-# Frontend handoff — A2/A3 integration
+# Frontend handoff — A4 public integration acceptance
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
 - Date: 2026-10-23 (Asia/Shanghai).
-- Branch: `codex/frontend-integration`; task: #10.
-- Starting main SHA: `bcaed0e`; synchronized main through `31b2c56` before rebuilding the release bundle. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
-- Contract: `2.0.0`. Only A-owned frontend, frontend tests and this handoff changed. No shared contract, fixture, B/C source or deployment file changed.
+- Branch: `codex/frontend-public-acceptance`; task: #13.
+- Starting main SHA: `601256039a5485120d42376c329e347144893441`. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. This slice changes only `frontend/README.md`, `tests/frontend/public-probe.mjs` and this handoff. No shared contract, fixture, frontend runtime, built asset, B/C source or deployment file changed. No contract change is needed.
 
-## Delivered
+## Current public release
 
-A1 is already on main (PR #3). This branch completes the next frontend slices:
+The [public match centre](https://matchmind-backend-preview.onrender.com) serves the integrated application, despite retaining its earlier backend-preview service name. The backend handoff's API-only description is historical.
+
+- Existing Render service: `srv-dbdegcnavr4c739pockg`, free plan, Singapore, one instance; repository main, Docker root `matchmind`, release Dockerfile `deploy/Dockerfile.release`.
+- Management API inspection found live deployment `dep-dbdhuvd9fdbs73b6pqv0`, source `36790b58ac0eee1884c59456397d593a8965f793`, finished at 2026-10-23 08:49:41 UTC.
+- Current main `6012560` differs only in C's `evaluation/DEMO_SCRIPT.md`; it adds no runtime changes. No redundant deployment, resource creation, secret/config change or plan upgrade was performed during this acceptance.
+- Public health returned HTTP 200, contract `2.0.0`, mode `production`, `model_ready: true`. The root returned HTTP 200 and the A2/A3 bundle. Health alone is not live-model proof; the actual workflow below supplies that evidence.
+- The temporary management-credential process was closed after inspection. No credential is included in source, reports or this handoff.
+
+## Public acceptance observed
+
+On 2026-10-23, B's existing `deploy.smoke_backend.probe` passed against the public host: health, data, stats, retry, play/pause, reset, old-run protection, invalid input and SSE snapshot reconnect. It requested no model job and left its own temporary replay idle for TTL cleanup. HTTPS verification remained enabled, using the project's certifi CA bundle.
+
+The new manual `tests/frontend/public-probe.mjs` then passed one explicitly opted-in live analysis window (report start: 12:50:54 UTC). It uses the actual frontend HTTP consumer and reducers, rather than a second implementation of the API. The observed result was:
+
+- Public JS and CSS were byte-identical to this checkout's reviewed assets: `index-BVwS-ZmQ.js` (SHA-256 `e256d4e8340f48066d167d4fdb510d0d8d8165037b9ced3abe4831cb45fdee13`) and `index-5U3MrlGQ.css` (`66417b321c10d9b4da63ca5490c49e3305705a452e7074cbbb43bb6ab694bef3`).
+- Baseline match `MM-DEMO-01`, analysis window 1500–1650. Playback paused at 1710 while the workflow finished; the paused clock held. Snapshot statistics matched the public stats endpoint.
+- Generation was `live_model`, provider `deepseek`, model `deepseek-flash`; verification was `passed` with method `agent_and_code`. This establishes actual cloud-to-model connectivity for this run, not a long-term reliability rate.
+- The published metrics were 3 high recoveries, 2 linked shots, a 150-second window, possession 35/115 seconds and shots 2/0 (HOME/AWAY). Both distinct audience narratives belonged to the same insight; all 14 evidence references resolved to recorded events within that window.
+- Nine actual trace records included validator, analyst, narrator and auditor activity, with two analyst attempts. The rejection text identified `draft 1 C5` and its unsupported numeric interpretation; it did not ambiguously reject a final published claim number. These traces do not prove every sentence or tactical causal claim correct.
+- Retrying reset with the same key advanced the run exactly once to run 2, returned to 1500, and cleared insights/traces. A subsequent snapshot stayed empty. The frontend reducer rejected an injected late insight from the prior run.
+
+The ignored report is `.artifacts/frontend-public-acceptance/result.json`, status `passed_live`. It records the actual generation, verification, narratives, metrics, trace durations and checks. No API key is required by the script or stored in the report. One window can entail several model calls; this is not a claim of one provider request. No second live window was run to improve the result.
+
+Run the explicit command in `frontend/README.md` only for authorized manual acceptance. The script is excluded from ordinary tests and CI, exits before network access without `--origin ... --live-once`, bounds result observation, and does not retry a failed AI workflow. It does not simulate a real provider outage. Offline fallback, named model errors and malformed-message recovery remain covered by the existing checks below.
+
+## Browser boundary and remaining work
+
+The public page loaded and a screenshot showed the integrated page. Browser automation's DOM, accessibility and native scroll operations repeatedly timed out. Consequently this run does **not** establish public browser play/pause clicks, keyboard audience/evidence selection, mobile layout or live incremental SSE timing. The public consumer probe uses HTTP snapshots; B's public smoke separately establishes SSE snapshot reconnect. Neither replaces a full browser walkthrough.
+
+The earlier local A5 browser checks below remain valid local evidence. A/C still need the public keyboard/evidence/mode walkthrough and the final English video using C's revised `evaluation/DEMO_SCRIPT.md` from `6012560`. No final video has been recorded. C/integrator reviews and merges this acceptance PR; no automatic main merge is performed.
+
+## Latest verification
+
+The integrated executable baseline passed `pnpm run typecheck`, all 27 frontend unit tests, frozen-file checks, and 434 Python tests plus 62 subtests. The first Python run could not bind loopback sockets inside the sandbox; rerunning the same suite with the required socket permission passed. That was an environment restriction, not a product failure. Main's subsequent demo-document-only commit did not change this executable baseline.
+
+For this slice, `pnpm run test` again passed all 27 tests and `pnpm run build` passed TypeScript and Vite with unchanged asset hashes. `node --check tests/frontend/public-probe.mjs`, `.venv/bin/python tools/check_frozen.py` and `.venv/bin/python tools/check_scope.py --role A --base 601256039a5485120d42376c329e347144893441` passed (run the latter three from `matchmind`). Running the public probe without arguments returned the expected exit code 2 and preserved the existing report. Routine tests remain offline. No public browser or video completion is inferred from these checks.
+
+## Previous A2/A3 delivery (merged PR #12)
+
+The preceding frontend branch was `codex/frontend-integration`, task #10, starting at `bcaed0e` and synchronized through `31b2c56`. C merged it as `fb2c4b61fb325406c46f1d8630dfd6f1cd90ba32` on 2026-10-23. The following local validation describes that earlier delivery.
+
+### Delivered
+
+A1 is already on main (PR #3). PR #12 completed:
 
 - A2: play/pause/reset and 1/2/5/10 speeds; all six named SSE kinds; complete snapshot replacement, authoritative match-state statistics, event timeline, real analysis traces and separate business/transport errors.
 - A2 recovery: stable UUIDs for create/command retries, expected-run headers, abort/cleanup, sync after an unconfirmed control, old-run/duplicate/foreign-session guards. Reset clears insights, traces, events and selected evidence atomically. Repeated real narrator steps are preserved.
 - A3: insight cards, local Casual/Analyst switching, metrics and claims, generation/verification labels, expandable evidence, selected event details, timeline highlighting and recorded pitch geometry. Selecting evidence does not seek. Future event details are not rendered before the replay clock reaches them.
 - A4/A5 local coverage: real combined B/C app with offline C fallback, HTTP/SSE consumer integration, keyboard controls and evidence selection, 1280x720 desktop and 390px mobile checks. No horizontal overflow was observed at those sizes.
 
-## Validation
+### Local validation of PR #12
 
 From `frontend`:
 
@@ -51,17 +94,12 @@ Screenshots are local ignored artifacts under `.artifacts/frontend-integration/`
 
 Environment: Node 24.11.1, pnpm 11.25.0, TypeScript 7.0.2; local Python 3.13.9. Backend/AI pinned requirements were installed into the existing project `.venv`. Python 3.12 remains the team's target and was not tested on this machine.
 
-## Startup and production handoff
+### Startup and production handoff
 
 Use `frontend/README.md` for the exact commands. Development proxy target: `MATCHMIND_BACKEND_URL=http://127.0.0.1:8000`. The integrated process is `ai.app:app`, with provider explicitly `mock` for free offline verification. The dense press dataset was exercised locally; no default dataset was changed.
 
-`pnpm run build` supplies `frontend/dist`, which B's existing `deploy/Dockerfile.release` expects. C's latest main now tracks that directory for Git-based Render builds, so this branch includes the rebuilt A2/A3 bundle and removes the old A1 hashed assets. Current entry assets are `index-BVwS-ZmQ.js` and `index-5U3MrlGQ.css`. The backend-only Render Blueprint remains API-only.
+`pnpm run build` supplies `frontend/dist`, which B's existing `deploy/Dockerfile.release` expects. C's main tracks that directory for Git-based Render builds, so PR #12 included the rebuilt A2/A3 bundle and removed the old A1 hashed assets. Current entry assets are `index-BVwS-ZmQ.js` and `index-5U3MrlGQ.css`. The backend-only Blueprint template remains separate from the integrated release now running on the public service.
 
 `MATCHMIND_SERVE_FRONTEND=1 MATCHMIND_MODEL_PROVIDER=mock .venv/bin/python -m deploy.release_check --profile integrated` passed all five assembly checks, with 0 model calls. The resulting same-origin production build was also opened through the real backend locally; this is separate from public Render acceptance.
 
-## Remaining joint acceptance
-
-- C/integrator reviews and merges this PR. No automatic main merge, repo visibility change or Render deployment is performed here.
-- B/C verify the combined release on the actual public Render host, including SSE timing and cloud-to-model connectivity. Local success does not establish these.
-- C/representative supplies the authorized live model configuration and runs the real workflow; Live model/agent review labels are supported by the page but were not produced in this offline frontend QA.
-- A6: record and approve the final English video with actual live-model/verified failure-injection footage. This branch supplies working playback, evidence and audience-mode interactions; it does not claim the video exists.
+The earlier offline frontend QA produced only rule-fallback labels. The separate public live workflow above supersedes that limitation for cloud/model connectivity, while retaining the outstanding public browser and video checks.

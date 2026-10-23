@@ -44,6 +44,19 @@ pnpm run test:backend
 
 `test:backend` requires the integrated Python dependencies. It launches its own real B/C server on a random loopback port, uses an explicitly offline model and an accelerated 5x server test clock, exercises the actual frontend HTTP/SSE consumer, and stops its child server. It tests controls, pause, insight/evidence payloads, statistics, isolation, snapshot reconnect, idempotent reset and stale-run rejection. `MATCHMIND_PYTHON` can select a different project interpreter. It does not test the browser layout or Render.
 
+### Manual public acceptance (explicit live opt-in)
+
+The integrated application is currently available at [the Render match centre](https://matchmind-backend-preview.onrender.com). For an authorized manual live check, run this from `frontend`:
+
+```sh
+node --experimental-strip-types ../tests/frontend/public-probe.mjs \
+  --origin https://matchmind-backend-preview.onrender.com --live-once
+```
+
+This command can incur model usage on the configured server. It is excluded from `pnpm run test`, `test:backend` and CI; without both arguments it exits before any network request. It creates its own baseline replay, plays through the first analysis window, pauses, observes the result for a bounded period, and resets that replay. It never retries a failed AI workflow. One analysis window can involve several provider calls, including correction and review; this command does not impose a provider-call quota.
+
+The probe uses the actual frontend HTTP consumer and reducers, verifies the public JS/CSS against this checkout's built files, checks statistics and evidence references, and exercises reset retry and old-run rejection. It writes a report to `matchmind/.artifacts/frontend-public-acceptance/result.json`. `passed_live` requires `live_model`, `agent_and_code` and verification status `passed`; fallback is recorded separately and returns a nonzero exit status. This checks API integration, not browser clicks, SSE delivery timing, layout or prose correctness. Public SSE reconnect is covered separately by B's smoke probe. See `docs/handoff/frontend.md` for the observed run and remaining browser/video work.
+
 Common Python checks run from `matchmind`:
 
 ```sh
@@ -62,4 +75,6 @@ Common Python checks run from `matchmind`:
 
 ## Production handoff
 
-The team now commits `frontend/dist` for Git-based Render builds. Rebuild and commit its updated hashed assets alongside frontend source changes. Run `pnpm run build` before packaging B's integrated release image: `deploy/Dockerfile.release` copies the resulting `frontend/dist`. Production uses one origin and one worker/instance; the backend serves these assets and `/api`. The backend-only Render preview is API-only. Public release, live-model verification and the final video remain joint B/C/representative work; this frontend change creates no cloud resources.
+The team now commits `frontend/dist` for Git-based Render builds. Rebuild and commit its updated hashed assets alongside frontend source changes. Run `pnpm run build` before packaging B's integrated release image: `deploy/Dockerfile.release` copies the resulting `frontend/dist`. Production uses one origin and one worker/instance; the backend serves these assets and `/api`.
+
+The Render service retains its original `backend-preview` name but now runs the integrated release, including the frontend and live model. Historical backend-only handoff notes describe an earlier deployment. Its deployed executable commit is `36790b5`; main `6012560` adds only C's revised demo script. Public API/live acceptance has passed; public browser interaction checks and the final video remain joint A/C/representative work. This frontend acceptance change creates no cloud resources and requires no runtime redeployment.
