@@ -348,3 +348,33 @@ test("event recovery rejects cross-match evidence", async () => {
     /expected format/,
   );
 });
+
+test("real repeated narrator steps survive snapshot replacement and incremental updates", () => {
+  const snapshot = structuredClone(example);
+  const trace = {
+    task_id: "CORRECTION",
+    agent: "narrator",
+    status: "completed",
+    duration_ms: 10,
+    note: "First narration",
+  };
+  snapshot.traces = [
+    trace,
+    { ...trace, duration_ms: 20, note: "Corrected narration" },
+  ];
+  let view = replaceSnapshot(null, snapshot);
+  assert.equal(view.snapshot.traces.length, 2);
+  view = applyStreamMessage(
+    view,
+    msg("agent_status", {
+      ...trace,
+      duration_ms: 30,
+      note: "Another reported completion",
+    }),
+  );
+  assert.equal(view.snapshot.traces.length, 3);
+  assert.deepEqual(
+    view.snapshot.traces.map((t) => t.duration_ms),
+    [10, 20, 30],
+  );
+});

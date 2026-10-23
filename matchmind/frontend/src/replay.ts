@@ -308,15 +308,8 @@ const uniqueInsights = (items: Insight[]) =>
   [...new Map(items.map((item) => [item.insight_id, item])).values()].slice(
     -20,
   );
-const uniqueTraces = (items: Trace[]) =>
-  [
-    ...new Map(
-      items.map((item) => [
-        `${item.task_id}:${item.agent}:${item.status}`,
-        item,
-      ]),
-    ).values(),
-  ].slice(-50);
+// Repeated role/status records can be real correction attempts. Preserve them.
+const recentTraces = (items: Trace[]) => items.slice(-50);
 
 export function mergeEvents(items: Event[]): Event[] {
   return [...new Map(items.map((item) => [item.event_id, item])).values()].sort(
@@ -355,7 +348,7 @@ export function replaceSnapshot(
     snapshot: {
       ...snapshot,
       insights: uniqueInsights(snapshot.insights),
-      traces: uniqueTraces(snapshot.traces),
+      traces: recentTraces(snapshot.traces),
     },
     events: sameRun
       ? current.events.filter(
@@ -415,7 +408,7 @@ export function applyStreamMessage(
         ...current,
         snapshot: {
           ...snapshot,
-          traces: uniqueTraces([...snapshot.traces, message.payload]),
+          traces: recentTraces([...snapshot.traces, message.payload]),
         },
       };
     case "error":

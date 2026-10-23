@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { formatClock, passAccuracy } from "./replay";
 import { useReplay } from "./useReplay";
+import { MatchIntelligence } from "./MatchIntelligence";
 
 function Mark() {
   return (
@@ -536,6 +537,18 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        {snapshot && match && (
+          <MatchIntelligence
+            key={`${snapshot.replay.replay_id}:${snapshot.replay.run_id}`}
+            match={match}
+            snapshot={snapshot}
+            events={replay.events}
+            eventError={replay.eventError}
+            analysisError={replay.analysisError}
+            retryEvents={replay.retryEvents}
+          />
+        )}
 
         <section className="details" aria-label="About this replay">
           <Detail number="01" title="Synthetic by design">
