@@ -13,8 +13,9 @@ Each child is a standalone audited dataset; do not combine their JSON metadata.
 
 Set `MATCHMIND_DATA_DIR=data/extra/showcase/press` for B-only replay. The default
 remains `data/extra/validated-demo`. The integrated C path must pass
-`python -m deploy.adapter_check` before enhanced data is adopted; C commit
-02228b8 has an evidence-union defect recorded in `backend/C_INTEGRATION_FINDINGS.md`.
+`python -m deploy.adapter_check` before enhanced data is adopted.
+The defect measured at C commit 02228b8 is fixed on main; the recorded gate is
+12/12 normal requests plus 3/3 corruptions refused. The findings file is historical.
 
 These are original CC0-1.0 scripted excerpts with seeded coordinate variation,
 connected pass points, consistent scoring and independent expected states. They
