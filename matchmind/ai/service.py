@@ -291,6 +291,33 @@ def _select_orchestrator(config, provider=None):
     return _run_round, _renarrate, "direct"
 
 
+def _describe_rejections(claim_ids, issues, draft, source=None):
+    """Turn bare claim ids into something a viewer can act on without being misled.
+
+    Two problems with emitting just `C5`. First, an id alone says nothing about what was removed.
+    Second and worse, the ids collide: after a repair round the published card restarts its
+    numbering at C1, so a card could carry `rejected_claims: ["C5"]` sitting next to a surviving
+    claim that is also called C5. The viewer then reads "we removed C5" beside a C5 and cannot tell
+    whether the removal happened, which claim it refers to, or whether the card is contradicting
+    itself — on the one field that is supposed to prove the card is trustworthy.
+
+    Naming the draft and the reason removes both problems and cannot collide, because no published
+    claim id contains the prefix.
+    """
+    described = []
+    for claim_id in claim_ids:
+        reason = ""
+        for issue in issues or []:
+            if issue.startswith(claim_id + ":"):
+                reason = issue.split(":", 1)[1].strip()
+                break
+        note = draft + " " + claim_id
+        if source:
+            note += " (" + source + ")"
+        described.append(note + ": " + (reason or "removed by verification"))
+    return described
+
+
 async def analyze(request, *, config=None, provider=None):
     """Frozen entry point: `await analyze(request)`.
 
@@ -357,7 +384,10 @@ async def analyze(request, *, config=None, provider=None):
                                + " (" + str(getattr(error, "kind", "?")) + ")"})
         return rule_result(request, reason=_reason_for(error), traces=traces)
 
-    rejected_ids = list(dict.fromkeys(state["rejected"] + state["auditor_rejected"]))
+    rejected_ids = _describe_rejections(state["rejected"], state["issues"], "draft 1")
+    rejected_ids += _describe_rejections(state["auditor_rejected"], state["issues"],
+                                         "draft 1", "auditor")
+    rejected_ids = list(dict.fromkeys(rejected_ids))
     repair = None
 
     if state["issues"]:
@@ -403,7 +433,8 @@ async def analyze(request, *, config=None, provider=None):
                            "status": "fallback", "duration_ms": 0,
                            "note": "analysis repair failed: " + type(error).__name__})
         if again is not None and not again["issues"] and again["narratives"]:
-            rejected_ids = list(dict.fromkeys(rejected_ids + again["rejected"]))
+            rejected_ids = list(dict.fromkeys(
+                rejected_ids + _describe_rejections(again["rejected"], again["issues"], "draft 2")))
             state = again
             state["repaired"] = True
 
