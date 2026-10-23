@@ -857,4 +857,19 @@ B 还有一条约束需要 C 一起守：**“第三次夺回没有关联射门�
 ### 20.5 本轮修改文件
 
 - 新增：`.github/workflows/ci.yml`、`.github/CODEOWNERS`
-- 修改：`docs/handoff/ai.md`（顶部"本轮交付"表 + 本节）
+- 新增：`evaluation/evidence/README.md`、`evaluation/evidence/live-run-2026-10-23-framework.json`、`tests/ai/test_live_evidence.py`
+- 修改：`evaluation/live_smoke.py`（`--record` + 两处诚实化）、`evaluation/README.md`、`docs/handoff/ai.md`
+
+### 20.6 CI 不是"写好了"，是"在 GitHub 上绿了"
+
+写完 YAML 就宣布"有 CI"是我一贯要挑的毛病，所以这一条实际验证过。推送 `dc24f0b` 到 `main` 后，workflow 自己触发并跑完：
+
+```
+gh run view 39903517201
+  contracts and offline suite          completed / success
+  frontend typecheck, build and test   completed / success
+```
+
+两个 job 都真绿：Python 侧装的是 `requirements-dev.txt` 里钉死的版本、跑 `check_frozen`、重生成 `types.ts`/`openapi.json` 并 `git diff --exit-code`、再跑全套 pytest；前端侧用 `pnpm install --frozen-lockfile` 走 `frontend/.npmrc` 里钉的 npmmirror 源，然后 `typecheck` / `build` / `pnpm test`。
+
+这一条顺带解决了一个我之前没意识到的问题：**从第九轮起 CI 是空的，意味着我的所有检查只在我这台机器上发生过**。现在别人提 PR 也会被同样检查一遍。
