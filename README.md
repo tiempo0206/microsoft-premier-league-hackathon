@@ -71,10 +71,28 @@ Open <http://127.0.0.1:8000>. **With no model key the app still runs** and every
 Check your own copy against the same gates CI runs:
 
 ```sh
-python -m pytest tests -q        # 433 tests, offline, no network calls
+python -m pytest tests -q        # 434 tests, offline, no network calls
 python tools/check_frozen.py     # contract and fixtures untouched
 python -m deploy.verify_backend  # Role B's full acceptance; spawns a loopback server
 ```
+
+## Verify the claims yourself
+
+Every headline claim in this file maps to one command and an expected result. Run them in `matchmind/`
+with the `.venv` from above; the billed ones are marked and cost fractions of a cent.
+
+| Claim | Command | You should see |
+| --- | --- | --- |
+| The arithmetic verifier catches controlled corruption | `python -m evaluation.factcheck_bench` | `catch 21/21`, `false alarms 0/4` |
+| The semantic auditor is calibrated in both directions, and the corpus is invisible to the code gate | `python -m evaluation.auditor_calibration --plan` | `13/13` cases usable as auditor tests, `code_gate_blocked_whole_card: false` for every rigged one |
+| Role B's data and replay layer is correct under load | `python -m deploy.verify_backend` | `status: passed`, 512 normal + 72 invalid cases, `false_triggers 0`, `missed_triggers 0` |
+| The frontend really talks to the backend | `cd frontend && pnpm run test:backend` | `status: passed`, `model_calls: 0`, 8 named checks |
+| A real model produced a verified card | see `evaluation/evidence/` | `live_model`, `agent_and_code`, `passed` |
+| The whole thing degrades when the model is gone | `MATCHMIND_MODEL_PROVIDER=mock MATCHMIND_SERVE_FRONTEND=1 python -m deploy.release_run` | cards labelled `Rule fallback`; the clock keeps running |
+| The cross-recap check rejects a series that contradicts itself | `python -m ai.recap --series 1550 1650 1800` | `consistent: true` |
+
+Two of these are deliberately **not** in the test suite because they are slow or billable; that is why
+they are one-liners you can run yourself.
 
 ## Deployment
 

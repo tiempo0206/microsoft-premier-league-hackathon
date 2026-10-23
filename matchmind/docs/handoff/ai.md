@@ -875,6 +875,8 @@ gh run view 39903517201
 
 这一条顺带解决了一个我之前没意识到的问题：**从第九轮起 CI 是空的，意味着我的所有检查只在我这台机器上发生过**。现在别人提 PR 也会被同样检查一遍。
 
+**后续又补了第三个 job（第十四轮）**：`frontend consumer against a real B/C application`。前两个 job 各测一边——Python 测试摸不到前端，前端 job 不起服务——**所以 A 的消费端和 B 的接口哪天不说话了，CI 也不会红**。`tests/frontend/backend-probe.mjs` 本来就干这件事（在回环端口起组合应用、5 倍时钟、`MATCHMIND_MODEL_PROVIDER=mock`，跑暂停冻结 / 两会话隔离 / 快照重连 / 旧 run 拒绝），只是没接进 CI。现在三个 job 全绿：`39967587069`。
+
 ---
 
 ## 二十一、第十二轮：B 的全套验收在 `main` 上通过，以及一个中文数字的真 bug
