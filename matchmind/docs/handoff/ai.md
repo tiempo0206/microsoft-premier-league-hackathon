@@ -1059,3 +1059,71 @@ auditor    completed 1338ms
 - 本地 `python -m pytest tests -q` → 433 passed（本轮只改文档与 `.gitignore` + 新增 dist）
 - `tools/check_frozen.py` → unchanged；`tools/check_scope.py --role C` → OK
 - 新增：`frontend/dist/`（4 个文件）；修改：`.gitignore`、`matchmind/.gitignore`、本文件、`evaluation/SUBMISSION_POSITIONING.md`
+
+---
+
+## 二十三、整合人对账：A 和 B 的角色卡
+
+我是整合人，所以"他们说自己做完了"不能当证据。这一节把 `roles/A_FRONTEND.md` 和
+`roles/B_BACKEND.md` 的每个工作块对到**跑过的东西**上，并明确标出哪几条我只核对了代码、没有能力亲自验证
+（我没有浏览器）。这份对账单是给提交代表用的：被问到"某块谁做的、证据在哪"，照这张表念。
+
+### 23.1 我实际跑了什么
+
+| 命令 | 结果 | 覆盖谁的卡 |
+| --- | --- | --- |
+| `pytest tests/ai -q` | **330 passed** | C |
+| `pytest tests/backend -q` | **85 passed, 62 subtests** | B |
+| `pytest tests/test_contracts.py tests/test_mock_api.py -q` | **15 + 4 = 19 passed** | 共同基线 |
+| `pnpm test`（前端单元） | **27 passed** | A |
+| `pnpm run test:backend`（前端消费端 × 真实 B/C 进程） | **passed**，见 23.2 | A × B × C |
+| `python -m deploy.verify_backend` | **passed**，512 正常 / 72 异常 / 0 失败 | B |
+| `python -m deploy.adapter_check` | **passed**，12/12 合法 + 3/3 篡改被拒，0 次模型调用 | C × B |
+| 公网 health / `/` / replays | `model_ready: true`、200 HTML、`live_model` 卡 | 全部 |
+
+合计 Python **434**、前端 **27**，与 PR 里报的数一致——**数对得上，不是各报各的**。
+
+### 23.2 A 的六个工作块
+
+| 块 | 状态 | 证据（我核过的那部分） |
+| --- | --- | --- |
+| A1 比赛中心、从 mock snapshot 到真实 API | 完成 | 公网 `/` 返回 A 的 dist；`GET /api/v1/matches` 的内容渲染在页面上；`backend-probe` 的 `catalogue and event recovery` 通过 |
+| A2 播放/暂停/重置/倍速、六种 SSE 逐类处理、reset 后按 run_id 丢弃旧消息 | 完成 | `pnpm run test:backend` 实测 8 项全过，其中 `controls and pause freeze`、`two-session isolation`、`snapshot reconnect without duplicates`、`idempotent reset and stale-run rejection` 直接对应 A2；观测到的 stream kinds = snapshot / match_event / match_state / agent_status / insight（`error` 没被触发所以没出现，不算缺失） |
+| A3 Insight 卡、Casual/Analyst 切换、证据展开、来源标签 | 完成 | 公网卡片上读到 `Live model` 标签、`Evidence checked`、`rejected_claims` 文案、"Where it happened"、"Event timeline"；探针的 `same-insight audience texts and event references` 通过；`MatchIntelligence.tsx` 切换语态只读同一 Insight 的两段文本，不触发模型调用 |
+| A4 接真实 API 时不改页面字段、不私造字段 | 完成 | `frontend/src/contract.ts` **只有 re-export**，指向生成的 `../../contracts/types`，没有任何本地重定义；`check_frozen` 通过，契约仍是 2.0.0 |
+| A5 1280×720 与 390 像素宽、键盘可操作、语义文字、前端无 Key、不加载海外字体/CDN/远程图 | **代码层面通过，浏览器层面我没验** | 源码与构建产物里 **0 个 `http(s)://` 外链**；CSS 断点在 1440 / 1000 / 900 / 700 / 600；15 处 `onKeyDown/tabIndex/aria-*`；`NoSecretsTests` 通过、tracked 树 `sk-` 零命中。**但"390 像素下真的不塌"要人眼看**——A 的 PR 里报了浏览器验证，我这里只标注"A 报告、我未复核" |
+| A6 与 C 排练 110 秒演示、视频只展示已实现能力、故障注入有标签、更新 handoff | **未完成（只差录屏）** | `evaluation/DEMO_SCRIPT.md` 已由我按现在的产品重写（原来还写着"UI 未建，禁止拍界面"）；`docs/handoff/frontend.md` A 已更新。**录像需要人。** |
+
+### 23.3 B 的六个工作块
+
+| 块 | 状态 | 证据 |
+| --- | --- | --- |
+| B1 版本化数据、基础接口、统一统计 | 完成 | 验收的分析导出与 301 项逻辑秒不变量通过；公网 `matches`、`stats` 正常 |
+| B2 独立会话、服务端时钟、播放/暂停/倍速/重置、run_id | 完成 | 验收含 `play_pause`、`reset`、`old_run`；`test_play_pause_speed_and_two_session_isolation`、`test_create_and_reset_idempotency_and_old_run_guard` 通过 |
+| B3 六种冻结 SSE、独立队列、快照恢复、不补发日志 | 完成 | 契约 `StreamMessage` 的 const 集合 = `agent_status, error, insight, match_event, match_state, snapshot`，正好六个；`test_sse_begins_with_snapshot_even_with_last_event_id`、`test_subscribers_receive_independently_and_reconnect_is_snapshot`、`test_slow_subscriber_is_disconnected_without_blocking_other` 通过 |
+| B4 高位夺回检测、窗口提取、有界后台调用、同窗口只调一次、只发布双校验通过的结果 | 完成 | 验收的 `retry` / `invalid_input` 项通过；`test_budget_deduplication_and_queue_bounds`、`test_queue_wait_is_part_of_total_deadline`、`test_queue_capacity_rejection_does_not_consume_budget` 通过 |
+| B5 会话容量、空闲回收、次数限制、请求体上限、同域单 worker、`/api` 不被 SPA 吞 | 完成 | 公网单进程同源：`/` 200 HTML，`/api/v1/does-not-exist` 返回 **JSON 404**（没被 SPA 回退吞掉）。**注意**：深层路径 `/some/deep/link` 也是 JSON 404——A1 没有客户端路由，这是正确行为，但写材料时别说"支持任意深链" |
+| B6 公网匿名验收 + 记录版本/URL/费用/保活 | **公网验收完成，费用口径要代表落一句** | 见第二十二节：公网已跑通真实模型调用。费用与保活口径：团队账号、**free 计划、空闲会休眠、无固定保活到期日**。必须写进材料，不能承诺"一直在" |
+
+### 23.4 B 的"本角色检查"逐项
+
+| 检查项 | 结果 |
+| --- | --- |
+| 共同契约测试、`tests/backend/`、与 A 的真实端到端 | 19 + 85 + `test:backend` 探针全过 |
+| 比分不双计 | 验收 0 失败，`tests/backend` 有对应用例 |
+| 窗口边界 / 坏 ID | 通过（越界窗口与坏 ID 被拒） |
+| pause / reset | 探针 `controls and pause freeze` + 验收 `reset` |
+| 两个订阅者不抢消息 | `test_subscribers_receive_independently...` |
+| 重连快照 | `snapshot reconnect without duplicates` |
+| 旧 run 结果 | `idempotent reset and stale-run rejection` |
+| 模型失败统计仍更新 | 公网 + 本地 fallback 实测：出现 `rule_fallback` 卡时时钟仍在走 |
+| 不把 Mock 当正式后端 | 公网跑的是真实模型路径；探针显式 `MATCHMIND_MODEL_PROVIDER=mock` 并报 `model_calls: 0` |
+
+### 23.5 结论：现在谁卡着谁
+
+- **A**：代码层面六块全完成，只差**录屏**这一件人做的事。
+- **B**：六块全完成，`foul` 语义已闭环；只剩"费用/保活"一句话要代表落进材料。
+- **C（我）**：单方可做的已清空，见第七节与 19.7。
+- **只在负责人手上**：仓库改 public（规则 §4.4，需要 admin）、分支保护（admin）、视频（人）。
+
+**方法论**：能跑的都跑了，跑不了的说"我没验"，而不是"应该没问题"。A5 的浏览器观感和 B6 的费用口径，是两处明确的"不由我背书"。
