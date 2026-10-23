@@ -1,0 +1,4 @@
+-r requirements-contracts.txt
+-r backend/requirements.txt
+-r ai/requirements.txt
+pytest==9.1.1

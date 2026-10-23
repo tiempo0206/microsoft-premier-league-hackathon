@@ -1,0 +1,13 @@
+{
+  "match_id": "MM-DEMO-01",
+  "home": "Harbor FC",
+  "away": "Mountain United",
+  "synthetic": true,
+  "clip_start_sec": 1500,
+  "clip_end_sec": 1800,
+  "period": 1,
+  "home_attack_direction": "right",
+  "initial_possession_team": "AWAY",
+  "seed": 21,
+  "generator_version": "fixture-2.0.0"
+}

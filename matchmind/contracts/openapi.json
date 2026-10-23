@@ -1,0 +1,1846 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MatchMind API",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/matches": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Match"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/matches/{match_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Match"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/matches/{match_id}/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from_sec",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "to_sec",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/matches/{match_id}/stats": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "match_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "at_sec",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/replays": {
+      "post": {
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaySnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReplay"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{replay_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaySnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/replays/{replay_id}/control": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplaySnapshot"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlReplay"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/replays/{replay_id}/stream": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "SSE stream; reconnect via snapshot",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/replays/{replay_id}/insights/{insight_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Insight"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Capacity limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "insight_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Point": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "y": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "additionalProperties": false
+      },
+      "Window": {
+        "type": "object",
+        "properties": {
+          "start_sec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_sec": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "start_sec",
+          "end_sec"
+        ],
+        "additionalProperties": false
+      },
+      "Counts": {
+        "type": "object",
+        "properties": {
+          "HOME": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "AWAY": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "HOME",
+          "AWAY"
+        ],
+        "additionalProperties": false
+      },
+      "Match": {
+        "type": "object",
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "home": {
+            "type": "string",
+            "minLength": 1
+          },
+          "away": {
+            "type": "string",
+            "minLength": 1
+          },
+          "synthetic": {
+            "const": true
+          },
+          "clip_start_sec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "clip_end_sec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "period": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "home_attack_direction": {
+            "type": "string",
+            "enum": [
+              "right",
+              "left"
+            ]
+          },
+          "initial_possession_team": {
+            "type": "string",
+            "enum": [
+              "HOME",
+              "AWAY"
+            ]
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "generator_version": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "match_id",
+          "home",
+          "away",
+          "synthetic",
+          "clip_start_sec",
+          "clip_end_sec",
+          "period",
+          "home_attack_direction",
+          "initial_possession_team",
+          "seed",
+          "generator_version"
+        ],
+        "additionalProperties": false
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timestamp_sec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "period": {
+            "type": "integer",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "pass",
+              "recovery",
+              "shot",
+              "goal",
+              "foul"
+            ]
+          },
+          "team_id": {
+            "type": "string",
+            "enum": [
+              "HOME",
+              "AWAY"
+            ]
+          },
+          "player_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "position": {
+            "$ref": "#/components/schemas/Point"
+          },
+          "end_position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Point"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "successful",
+              "failed",
+              "on_target",
+              "off_target",
+              "goal",
+              "none"
+            ]
+          },
+          "possession_id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "event_id",
+          "match_id",
+          "timestamp_sec",
+          "period",
+          "type",
+          "team_id",
+          "player_id",
+          "position",
+          "end_position",
+          "outcome",
+          "possession_id"
+        ],
+        "additionalProperties": false
+      },
+      "MatchState": {
+        "type": "object",
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "at_sec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "score": {
+            "$ref": "#/components/schemas/Counts"
+          },
+          "shots": {
+            "$ref": "#/components/schemas/Counts"
+          },
+          "passes": {
+            "$ref": "#/components/schemas/Counts"
+          },
+          "completed_passes": {
+            "$ref": "#/components/schemas/Counts"
+          },
+          "possession_seconds": {
+            "$ref": "#/components/schemas/Counts"
+          },
+          "last_event_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "match_id",
+          "at_sec",
+          "score",
+          "shots",
+          "passes",
+          "completed_passes",
+          "possession_seconds",
+          "last_event_id"
+        ],
+        "additionalProperties": false
+      },
+      "Metrics": {
+        "type": "object",
+        "properties": {
+          "high_recoveries": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "linked_shots": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "window_seconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "home_possession_seconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "away_possession_seconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "home_shots": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "away_shots": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "high_recoveries",
+          "linked_shots",
+          "window_seconds",
+          "home_possession_seconds",
+          "away_possession_seconds",
+          "home_shots",
+          "away_shots"
+        ],
+        "additionalProperties": false
+      },
+      "Replay": {
+        "type": "object",
+        "properties": {
+          "replay_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "run_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "clock_sec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "speed": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              5,
+              10
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "playing",
+              "paused",
+              "ended"
+            ]
+          },
+          "last_seq": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "replay_id",
+          "run_id",
+          "match_id",
+          "clock_sec",
+          "speed",
+          "status",
+          "last_seq"
+        ],
+        "additionalProperties": false
+      },
+      "CreateReplay": {
+        "type": "object",
+        "properties": {
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "speed": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              5,
+              10
+            ]
+          }
+        },
+        "required": [
+          "match_id",
+          "speed"
+        ],
+        "additionalProperties": false
+      },
+      "ControlReplay": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "play",
+                  "pause",
+                  "reset"
+                ]
+              }
+            },
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "const": "set_speed"
+              },
+              "speed": {
+                "type": "integer",
+                "enum": [
+                  1,
+                  2,
+                  5,
+                  10
+                ]
+              }
+            },
+            "required": [
+              "action",
+              "speed"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Trace": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "agent": {
+            "type": "string",
+            "enum": [
+              "analyst",
+              "narrator",
+              "auditor",
+              "validator"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "started",
+              "completed",
+              "rejected",
+              "failed",
+              "fallback"
+            ]
+          },
+          "duration_ms": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "task_id",
+          "agent",
+          "status",
+          "duration_ms",
+          "note"
+        ],
+        "additionalProperties": false
+      },
+      "Claim": {
+        "type": "object",
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "metric",
+              "interpretation"
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "metric_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "high_recoveries",
+                  "linked_shots",
+                  "window_seconds",
+                  "home_possession_seconds",
+                  "away_possession_seconds",
+                  "home_shots",
+                  "away_shots"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metric_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_event_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "claim_id",
+          "kind",
+          "text",
+          "metric_key",
+          "metric_value",
+          "evidence_event_ids"
+        ],
+        "additionalProperties": false
+      },
+      "Insight": {
+        "type": "object",
+        "properties": {
+          "insight_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "window": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "high_press",
+              "fast_break",
+              "sustained_control"
+            ]
+          },
+          "team_id": {
+            "type": "string",
+            "enum": [
+              "HOME",
+              "AWAY"
+            ]
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/Metrics"
+          },
+          "evidence_event_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "claims": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "minItems": 1
+          },
+          "narratives": {
+            "type": "object",
+            "properties": {
+              "casual": {
+                "type": "string",
+                "minLength": 1
+              },
+              "analyst": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "casual",
+              "analyst"
+            ],
+            "additionalProperties": false
+          },
+          "verification": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "passed",
+                  "fallback"
+                ]
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "agent_and_code",
+                  "code_only"
+                ]
+              },
+              "rejected_claims": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "status",
+              "method",
+              "rejected_claims"
+            ],
+            "additionalProperties": false
+          },
+          "generation": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "live_model",
+                  "rule_fallback",
+                  "precomputed"
+                ]
+              },
+              "provider": {
+                "type": "string",
+                "minLength": 1
+              },
+              "model": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "mode",
+              "provider",
+              "model"
+            ],
+            "additionalProperties": false
+          },
+          "display": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3
+              }
+            },
+            "required": [
+              "title",
+              "priority"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "insight_id",
+          "match_id",
+          "window",
+          "type",
+          "team_id",
+          "metrics",
+          "evidence_event_ids",
+          "claims",
+          "narratives",
+          "verification",
+          "generation",
+          "display"
+        ],
+        "additionalProperties": false
+      },
+      "AnalysisRequest": {
+        "type": "object",
+        "properties": {
+          "contract_version": {
+            "const": "2.0.0"
+          },
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "replay_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "run_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "match_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "window": {
+            "$ref": "#/components/schemas/Window"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "high_press",
+              "fast_break",
+              "sustained_control"
+            ]
+          },
+          "team_id": {
+            "type": "string",
+            "enum": [
+              "HOME",
+              "AWAY"
+            ]
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            },
+            "minItems": 1
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/Metrics"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ]
+          }
+        },
+        "required": [
+          "contract_version",
+          "task_id",
+          "replay_id",
+          "run_id",
+          "match_id",
+          "window",
+          "type",
+          "team_id",
+          "events",
+          "metrics",
+          "language"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorInfo": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_REQUEST",
+              "NOT_FOUND",
+              "STATE_CONFLICT",
+              "CAPACITY_LIMIT",
+              "MODEL_UNAVAILABLE",
+              "MODEL_INVALID_OUTPUT",
+              "TIMEOUT"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "retryable"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorInfo"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "degraded"
+            ]
+          },
+          "contract_version": {
+            "const": "2.0.0"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "mock",
+              "development",
+              "production"
+            ]
+          },
+          "model_ready": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "contract_version",
+          "mode",
+          "model_ready"
+        ],
+        "additionalProperties": false
+      },
+      "AnalysisResult": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "replay_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "run_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "fallback",
+              "rejected"
+            ]
+          },
+          "insight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Insight"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "traces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Trace"
+            }
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "task_id",
+          "replay_id",
+          "run_id",
+          "status",
+          "insight",
+          "traces",
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "ReplaySnapshot": {
+        "type": "object",
+        "properties": {
+          "replay": {
+            "$ref": "#/components/schemas/Replay"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MatchState"
+          },
+          "insights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Insight"
+            }
+          },
+          "traces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Trace"
+            }
+          }
+        },
+        "required": [
+          "replay",
+          "state",
+          "insights",
+          "traces"
+        ],
+        "additionalProperties": false
+      },
+      "StreamMessage": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "replay_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "const": "snapshot"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/ReplaySnapshot"
+              }
+            },
+            "required": [
+              "replay_id",
+              "run_id",
+              "seq",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "replay_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "const": "match_event"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/Event"
+              }
+            },
+            "required": [
+              "replay_id",
+              "run_id",
+              "seq",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "replay_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "const": "match_state"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/MatchState"
+              }
+            },
+            "required": [
+              "replay_id",
+              "run_id",
+              "seq",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "replay_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "const": "insight"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/Insight"
+              }
+            },
+            "required": [
+              "replay_id",
+              "run_id",
+              "seq",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "replay_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "const": "agent_status"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/Trace"
+              }
+            },
+            "required": [
+              "replay_id",
+              "run_id",
+              "seq",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "replay_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "run_id": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "seq": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "kind": {
+                "const": "error"
+              },
+              "payload": {
+                "$ref": "#/components/schemas/ErrorInfo"
+              }
+            },
+            "required": [
+              "replay_id",
+              "run_id",
+              "seq",
+              "kind",
+              "payload"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  }
+}

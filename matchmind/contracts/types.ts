@@ -1,0 +1,21 @@
+// GENERATED from contract.schema.json. Edit through a reviewed contract change only.
+export type Point = { x: number; y: number };
+export type Window = { start_sec: number; end_sec: number };
+export type Counts = { HOME: number; AWAY: number };
+export type Match = { match_id: string; home: string; away: string; synthetic: true; clip_start_sec: number; clip_end_sec: number; period: 1 | 2; home_attack_direction: "right" | "left"; initial_possession_team: "HOME" | "AWAY"; seed: number; generator_version: string };
+export type Event = { event_id: string; match_id: string; timestamp_sec: number; period: 1 | 2; type: "pass" | "recovery" | "shot" | "goal" | "foul"; team_id: "HOME" | "AWAY"; player_id: string; position: Point; end_position: (Point | null); outcome: "successful" | "failed" | "on_target" | "off_target" | "goal" | "none"; possession_id: string };
+export type MatchState = { match_id: string; at_sec: number; score: Counts; shots: Counts; passes: Counts; completed_passes: Counts; possession_seconds: Counts; last_event_id: (string | null) };
+export type Metrics = { high_recoveries: number; linked_shots: number; window_seconds: number; home_possession_seconds: number; away_possession_seconds: number; home_shots: number; away_shots: number };
+export type Replay = { replay_id: string; run_id: number; match_id: string; clock_sec: number; speed: 1 | 2 | 5 | 10; status: "idle" | "playing" | "paused" | "ended"; last_seq: number };
+export type CreateReplay = { match_id: string; speed: 1 | 2 | 5 | 10 };
+export type ControlReplay = ({ action: "play" | "pause" | "reset" } | { action: "set_speed"; speed: 1 | 2 | 5 | 10 });
+export type Trace = { task_id: string; agent: "analyst" | "narrator" | "auditor" | "validator"; status: "started" | "completed" | "rejected" | "failed" | "fallback"; duration_ms: number; note: string };
+export type Claim = { claim_id: string; kind: "metric" | "interpretation"; text: string; metric_key: ("high_recoveries" | "linked_shots" | "window_seconds" | "home_possession_seconds" | "away_possession_seconds" | "home_shots" | "away_shots" | null); metric_value: (number | null); evidence_event_ids: Array<string> };
+export type Insight = { insight_id: string; match_id: string; window: Window; type: "high_press" | "fast_break" | "sustained_control"; team_id: "HOME" | "AWAY"; metrics: Metrics; evidence_event_ids: Array<string>; claims: Array<Claim>; narratives: { casual: string; analyst: string }; verification: { status: "passed" | "fallback"; method: "agent_and_code" | "code_only"; rejected_claims: Array<string> }; generation: { mode: "live_model" | "rule_fallback" | "precomputed"; provider: string; model: (string | null) }; display: { title: string; priority: number } };
+export type AnalysisRequest = { contract_version: "2.0.0"; task_id: string; replay_id: string; run_id: number; match_id: string; window: Window; type: "high_press" | "fast_break" | "sustained_control"; team_id: "HOME" | "AWAY"; events: Array<Event>; metrics: Metrics; language: "en" | "zh" };
+export type ErrorInfo = { code: "INVALID_REQUEST" | "NOT_FOUND" | "STATE_CONFLICT" | "CAPACITY_LIMIT" | "MODEL_UNAVAILABLE" | "MODEL_INVALID_OUTPUT" | "TIMEOUT"; message: string; retryable: boolean };
+export type ErrorResponse = { error: ErrorInfo };
+export type Health = { status: "ok" | "degraded"; contract_version: "2.0.0"; mode: "mock" | "development" | "production"; model_ready: boolean };
+export type AnalysisResult = { task_id: string; replay_id: string; run_id: number; status: "passed" | "fallback" | "rejected"; insight: (Insight | null); traces: Array<Trace>; error: (ErrorInfo | null) };
+export type ReplaySnapshot = { replay: Replay; state: MatchState; insights: Array<Insight>; traces: Array<Trace> };
+export type StreamMessage = ({ replay_id: string; run_id: number; seq: number; kind: "snapshot"; payload: ReplaySnapshot } | { replay_id: string; run_id: number; seq: number; kind: "match_event"; payload: Event } | { replay_id: string; run_id: number; seq: number; kind: "match_state"; payload: MatchState } | { replay_id: string; run_id: number; seq: number; kind: "insight"; payload: Insight } | { replay_id: string; run_id: number; seq: number; kind: "agent_status"; payload: Trace } | { replay_id: string; run_id: number; seq: number; kind: "error"; payload: ErrorInfo });

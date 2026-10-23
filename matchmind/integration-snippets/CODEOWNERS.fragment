@@ -1,0 +1,8 @@
+# Replace these example handles with real GitHub usernames before use.
+# Review repository-root CODEOWNERS first; this is not an installed permission rule.
+/matchmind/frontend/ @REPLACE_FRONTEND
+/matchmind/backend/ @REPLACE_BACKEND
+/matchmind/deploy/ @REPLACE_BACKEND
+/matchmind/ai/ @REPLACE_AI
+/matchmind/contracts/ @REPLACE_INTEGRATOR
+/matchmind/data/fixtures/ @REPLACE_INTEGRATOR
