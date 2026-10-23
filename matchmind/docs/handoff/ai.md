@@ -267,7 +267,7 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 | 契约 2.1.0 | **提案，未执行** | `evaluation/CONTRACT_2_1_PROPOSAL.md`。要动 `contracts/` 必须 A/B 都点头，C 不单独动 |
 | 演示视频 | **未做** | 脚本在 `evaluation/DEMO_SCRIPT.md`，录屏需要人来做 |
 | possession 口径自检 | **刻意不做** | `AnalysisRequest` 不带 `Match.initial_possession_team`，无法在 C 侧重算；已在 `consistency_issues` 的 docstring 里写明这是刻意的空白，不猜 |
-| 中文数字校验 | 部分覆盖 | 只认 `十 / X十 / 十Y / X十Y` 形态，其它写法靠 auditor 兜；已在 docstring 里写明限制 |
+| 中文数字校验 | **覆盖十/百/千三级，单个数字仍刻意不认** | `chinese_numeral()` 解析 `十五 / 三十五 / 一百一十五 / 两百 / 一千二百`；`百分之三十七` 的 `百` 不会被当成 100。**刻意的空白**：孤立的 `一 / 二 / 三` 不当数字（`一次都没射门`、`进攻三区`），这类靠 auditor 兜。见第二十一节 |
 | 视频 / 部署 | 不属本轮 | 见 B 的 handoff 与 `docs/05_acceptance.md` |
 | 前端消费端 | **阻塞在 A 方** | A3 的 Insight 卡 / 证据高亮 / 双档切换还没写，C 的产出目前只能在 API 与快照里看到 |
 
@@ -873,3 +873,83 @@ gh run view 39903517201
 两个 job 都真绿：Python 侧装的是 `requirements-dev.txt` 里钉死的版本、跑 `check_frozen`、重生成 `types.ts`/`openapi.json` 并 `git diff --exit-code`、再跑全套 pytest；前端侧用 `pnpm install --frozen-lockfile` 走 `frontend/.npmrc` 里钉的 npmmirror 源，然后 `typecheck` / `build` / `pnpm test`。
 
 这一条顺带解决了一个我之前没意识到的问题：**从第九轮起 CI 是空的，意味着我的所有检查只在我这台机器上发生过**。现在别人提 PR 也会被同样检查一遍。
+
+---
+
+## 二十一、第十二轮：B 的全套验收在 `main` 上通过，以及一个中文数字的真 bug
+
+### 21.1 共同检查：B 的一条命令验收
+
+`C6` 要求"每日合并小PR并跑共同检查和已有角色测试"。前几轮我跑的都是我自己那部分；这一轮在 `main` 上跑了 B 的整套验收（`python -m deploy.verify_backend`，包含数据审计、确定性分析、584 个合成回测、真实 HTTP/SSE 检查、回收进程）：
+
+```
+status: passed
+synthetic_backtest: normal 512 / invalid 72 / failed 0
+                    false_triggers 0 / missed_triggers 0
+                    logical_seconds_checked 154112 / snapshot_comparisons 1536
+http_and_sse:      stats, retry, play_pause, reset, old_run, invalid_input,
+                   SSE_snapshot_reconnect  —— 数据集含 quiet（不该触发的那套）
+tests:             backend 85 passed, common 19 passed
+model_ready:       false（该进程没配 Key，如实报告，不是失败）
+```
+
+这是整条集成链第一次被 B 自己的标准验过：A1 前端、B 的后端/数据、C 的管线在同一个提交上一起通过。**零模型调用**，因为 `model_job_requested: false`。
+
+### 21.2 中文数字：一个会冤枉模型的 bug
+
+上一版只认 `十 / X十 / 十Y / X十Y`，文档里写着"部分覆盖"。查了一遍发现它不是覆盖面小的问题，是**读错**：
+
+- `一百一十五` 会被匹配到里面的 `十五`，读成 **15**。于是一个正确写出 115 的模型，会被判成"陈述了未提供的数字 15"——**报错信息本身都是错的**。
+- `states_value("持球一百一十五秒", 115)` 返回 `False`，所以中文输出只要把数字写全，指标主张就会被丢掉。
+
+改法：新增 `chinese_numeral()`，按位解析 `十五 / 三十五 / 一百一十五 / 两百 / 一千二百`（"两百"→200，"一千二百"→1200），并且：
+
+- `numbers_in` 改成扫描**连续数字串**而不是搜 `十` 的组合。`三十五个` 现在整串读 35，不再被拆成 15。
+- `百分之三十七` 里的 `百` **不算 100**（那是百分比前缀，不是数量）。不做这一步的话，任何中文百分比句子都会被判成伪造了 100。
+- **孤立的单个数字仍然不认**。`一次都没射门`、`进攻三区` 继续是零命中——这是刻意的取舍，写进 docstring。
+
+4 个新测试钉住：百位整串读取、正确的中文百位指标被接受、百分比前缀不误读、孤立单字继续不识别。
+
+### 21.3 发布门：`release_check --profile integrated` 从 2 项阻塞到全绿
+
+B 的 `deploy/release_check.py` 是"整合者接手时才跑到"的那道门，之前没人跑过。第一次跑的结果：
+
+```
+blocking: ["A_bundled_frontend_artifact", "same_origin_frontend_enabled"]
+```
+
+两条都不难，但都要有人真的做：前端 `dist/` 没构建过，同源托管开关没打开。做完（`pnpm run build` + `MATCHMIND_SERVE_FRONTEND=1`）再跑：
+
+```
+blocking: []
+  audited_reproducible_data        passed
+  C_composition_source             passed
+  C_pinned_dependencies_installed  passed
+  A_bundled_frontend_artifact      passed
+  same_origin_frontend_enabled     passed
+model_calls: 0
+model_endpoint_verified: false      ← 如实：这一步不验模型
+frontend_browser_verified: false    ← 如实：这一步不验浏览器
+```
+
+### 21.4 组合入口真的能把三块东西一起端出来
+
+门禁过了不等于能跑，所以顺手起了 `deploy.release_run`（B 的发布入口，固定单 worker，指向 C 的组合根 `ai.app:app`），用 `curl` 打了三个点：
+
+```
+GET /api/v1/health   -> {"status":"ok","contract_version":"2.0.0","mode":"production","model_ready":true}
+GET /                -> 200 text/html 677B        （A 的 dist，和 API 同源）
+GET /api/v1/matches  -> [{"match_id":...,"home":"Harbor FC",...}]
+GET /.well-known/agent-card.json -> {"schemaVersion":".../agent-card.json","name":"MatchMind",...}
+GET /api/v1/replays/NOPE/insights/NOPE/overlay -> 404
+```
+
+`model_ready: true` 是因为本机 `.env` 有 Key；**这不是云端已验证**，`docs/03_resources.md` 和 `AI_RULES.md` 都要求从真实宿主再测一次，那一步没做。服务验完已关闭，端口回收。
+
+### 21.5 门禁状态（第十二轮）
+
+- `python -m pytest tests -q` → **433 passed, 62 subtests passed**（上一轮 429，+4）
+- `python -m deploy.verify_backend` → **passed**（21.1）
+- `python tools/check_frozen.py` → unchanged
+- `python tools/check_scope.py --role C` → OK
+- 修改：`ai/verify.py`、`tests/ai/test_service.py`、`docs/handoff/ai.md`
