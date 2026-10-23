@@ -3,7 +3,7 @@
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
 - Date: 2026-10-23 (Asia/Shanghai).
 - Branch: `codex/frontend-integration`; task: #10.
-- Starting main SHA: `bcaed0e`; shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Starting main SHA: `bcaed0e`; synchronized main through `31b2c56` before rebuilding the release bundle. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
 - Contract: `2.0.0`. Only A-owned frontend, frontend tests and this handoff changed. No shared contract, fixture, B/C source or deployment file changed.
 
 ## Delivered
@@ -31,10 +31,10 @@ From `matchmind`:
 ```sh
 MATCHMIND_MODEL_PROVIDER=mock .venv/bin/python -m pytest tests -q
 .venv/bin/python tools/check_frozen.py
-.venv/bin/python tools/check_scope.py --role A --base bcaed0e
+.venv/bin/python tools/check_scope.py --role A --base 31b2c56
 ```
 
-Results: TypeScript/build passed; 27 frontend unit tests passed; 422 Python tests and 62 subtests passed; frozen-file and role-scope checks passed. The additional frontend backend probe passed with 0 model calls. It launches a real B/C app with a 5x accelerated test clock, checks actual consumer requests/messages, and stops its own child.
+Results: TypeScript/build passed; 27 frontend unit tests passed; 433 Python tests and 62 subtests passed; frozen-file and role-scope checks passed. The additional frontend backend probe passed with 0 model calls. It launches a real B/C app with a 5x accelerated test clock, checks actual consumer requests/messages, and stops its own child.
 
 The probe covers catalogue/event recovery, play/pause/speed, a frozen pause clock, the real rule fallback (3 high recoveries / 2 linked shots), both narrative fields and evidence IDs, comparison with server statistics, second-session isolation, fresh snapshot after reconnect, reset retry with the same operation key, and stale-run rejection. Named model/business errors and malformed stream recovery are covered by frontend unit tests; the probe does not claim a real provider outage or network-location test.
 
@@ -55,7 +55,9 @@ Environment: Node 24.11.1, pnpm 11.25.0, TypeScript 7.0.2; local Python 3.13.9. 
 
 Use `frontend/README.md` for the exact commands. Development proxy target: `MATCHMIND_BACKEND_URL=http://127.0.0.1:8000`. The integrated process is `ai.app:app`, with provider explicitly `mock` for free offline verification. The dense press dataset was exercised locally; no default dataset was changed.
 
-`pnpm run build` supplies `frontend/dist`, which B's existing `deploy/Dockerfile.release` expects. The dist directory stays ignored. B/C should build it from this reviewed source revision in the release environment before packaging; the backend-only Render Blueprint remains API-only.
+`pnpm run build` supplies `frontend/dist`, which B's existing `deploy/Dockerfile.release` expects. C's latest main now tracks that directory for Git-based Render builds, so this branch includes the rebuilt A2/A3 bundle and removes the old A1 hashed assets. Current entry assets are `index-BVwS-ZmQ.js` and `index-5U3MrlGQ.css`. The backend-only Render Blueprint remains API-only.
+
+`MATCHMIND_SERVE_FRONTEND=1 MATCHMIND_MODEL_PROVIDER=mock .venv/bin/python -m deploy.release_check --profile integrated` passed all five assembly checks, with 0 model calls. The resulting same-origin production build was also opened through the real backend locally; this is separate from public Render acceptance.
 
 ## Remaining joint acceptance
 

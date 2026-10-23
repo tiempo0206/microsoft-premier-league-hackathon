@@ -62,4 +62,4 @@ Common Python checks run from `matchmind`:
 
 ## Production handoff
 
-Run `pnpm run build` before packaging B's integrated release image: `deploy/Dockerfile.release` copies the resulting `frontend/dist`. Production uses one origin and one worker/instance; the backend serves these assets and `/api`. The backend-only Render preview is API-only. Public release, live-model verification and the final video remain joint B/C/representative work; this frontend change creates no cloud resources.
+The team now commits `frontend/dist` for Git-based Render builds. Rebuild and commit its updated hashed assets alongside frontend source changes. Run `pnpm run build` before packaging B's integrated release image: `deploy/Dockerfile.release` copies the resulting `frontend/dist`. Production uses one origin and one worker/instance; the backend serves these assets and `/api`. The backend-only Render preview is API-only. Public release, live-model verification and the final video remain joint B/C/representative work; this frontend change creates no cloud resources.
