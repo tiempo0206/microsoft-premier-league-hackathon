@@ -848,7 +848,7 @@ B 还有一条约束需要 C 一起守：**“第三次夺回没有关联射门�
 | --- | --- |
 | 依赖镜像走 `docs/01_cn_setup.md`；包版本不变；镜像缺包不私自降级或重建锁文件 | 遵守：本轮**没有动过任何锁文件**。CI 里 `pnpm install` 保留 `frontend/.npmrc` 的 npmmirror 配置，不让它悄悄回落到默认源 |
 | 前端不用海外字体/脚本 CDN/远程比赛样本；生产同源、单进程、密钥在后端 | 属 A/B；C 侧只在 CI 里跑 `typecheck`/`build`，不引入任何远程资源 |
-| **云上再次验证国内 API，不能从开发机成功推断云上成功** | 未做，且**材料里没有一处这么说**。`SUBMISSION_POSITIONING.md` 写的是"真实调用过 DeepSeek，未在云端复测" |
+| **云上再次验证国内 API，不能从开发机成功推断云上成功** | **已做（第二十二节）**：Render 新加坡主机上的真实请求打到了 `api.deepseek.com`，产出 `live_model` + `agent_and_code` + `passed` 的卡。这条以前是"未做"，现在是"做过，证据在公网 URL 上" |
 | 集成人负责跨模块依赖整合、CI 与代码归属 | 本轮补齐 CI 与 CODEOWNERS（20.1） |
 
 ### 20.4 一个我要说明的守卫盲区
@@ -945,7 +945,7 @@ GET /.well-known/agent-card.json -> {"schemaVersion":".../agent-card.json","name
 GET /api/v1/replays/NOPE/insights/NOPE/overlay -> 404
 ```
 
-`model_ready: true` 是因为本机 `.env` 有 Key；**这不是云端已验证**，`docs/03_resources.md` 和 `AI_RULES.md` 都要求从真实宿主再测一次，那一步没做。服务验完已关闭，端口回收。
+`model_ready: true` 是因为本机 `.env` 有 Key；本机跑通**不等于**云端跑通——`docs/03_resources.md` 和 `AI_RULES.md` 都明确要求从真实宿主再测一次。那一步在第二十二节完成了。
 
 ### 21.5 门禁状态（第十二轮）
 
@@ -954,3 +954,108 @@ GET /api/v1/replays/NOPE/insights/NOPE/overlay -> 404
 - `python tools/check_frozen.py` → unchanged
 - `python tools/check_scope.py --role C` → OK
 - 修改：`ai/verify.py`、`tests/ai/test_service.py`、`docs/handoff/ai.md`
+
+---
+
+## 二十二、公网部署：Render 上的真实一次
+
+负责人给了 Render 的管理密钥、服务 ID 和仓库信息，要求直接部署。做完的结果先写在最前面：
+
+**线上地址 `https://matchmind-backend-preview.onrender.com`，跑的是组合镜像（C 的组合根 + A 的前端 + B 的数据），一次真实的 `live_model` 卡已经在公网上产出。**
+
+### 22.1 服务原来配的是错的镜像
+
+`GET /v1/services/srv-dbdegcnavr4c739pockg` 读出来的配置：
+
+```
+rootDir:        matchmind/
+branch:         main
+dockerfilePath: deploy/Dockerfile          ← 这是 B 的"纯后端"镜像
+SERVE_FRONTEND: 0
+MODEL_TIMEOUT:  12
+```
+
+`deploy/Dockerfile` 里没有 `ai/`，也没有前端。也就是说按原配置部署出来的服务**永远不会有 AI 卡片**——这正是 B 在 `INTEGRATOR_HANDOFF_CN.md` §7 里警告的那件事：
+
+> **不要只在 Render 填 Key，却继续启动 B-only 镜像。**
+
+改成 B 指定的组合镜像：
+
+| 项 | 改成 |
+| --- | --- |
+| `dockerfilePath` | `deploy/Dockerfile.release` |
+| `MATCHMIND_SERVE_FRONTEND` | `1`（同源托管 A 的 dist） |
+| `MATCHMIND_MODEL_TIMEOUT_SEC` | `20`（B 的 12 秒装不下一次纠正） |
+| `MATCHMIND_MODEL_PROVIDER / BASE_URL / NAME` | `deepseek` / `https://api.deepseek.com` / `deepseek-flash` |
+| `MATCHMIND_ORCHESTRATOR` | `framework` |
+| `MATCHMIND_THINKING` | `disabled` |
+| `MATCHMIND_MODEL_API_KEY` | 由负责人在平台上填，不进仓库、不进镜像 |
+
+其余限额项（8 会话 / 30 次每小时 / 并发 1）保持不动。
+
+### 22.2 一个真实的部署阻塞：`dist` 被 gitignore 了
+
+第一次触发部署会必然失败，原因在组合镜像第 19 行：
+
+```dockerfile
+COPY frontend/dist ./frontend/dist
+```
+
+`frontend/dist` 在**两个** `.gitignore` 里都被忽略（项目级一条、仓库根一条 `dist/`，深的那个赢），而 Render 是从 git 构建的。于是 `release_check --profile integrated` 在构建期就会因为没有 `A_bundled_frontend_artifact` 而失败。
+
+处理：把 `dist` 纳入版本控制（4 个文件 / 249 KB），根 `.gitignore` 加 `!matchmind/frontend/dist/` 并写明理由。**选择跟踪而不是 `git add -f`**，是为了让"前端改了但 dist 没重构建"这件事在 `git status` 里看得见，而不是被 ignore 规则藏起来。
+
+同一张构建期门禁也在提醒：`deploy/Dockerfile.release` 的第 1 行原本就写着 "Integrator supplies … A's already built frontend/dist"——**它一直假设整合者会把 dist 放进去，而没人做过**。
+
+### 22.3 部署与验证
+
+```
+POST /v1/services/{id}/deploys
+  -> dep-dbdgonui0phs739oipb0  build_in_progress -> update_in_progress -> live
+```
+
+公网实测（全部是真实请求，不是本地）：
+
+```
+GET /api/v1/health   -> {"status":"ok","contract_version":"2.0.0","mode":"production","model_ready":true}
+GET /                -> 200 text/html 677B          （A 的 dist，与 API 同源）
+GET /api/v1/matches  -> MM-DEMO-01
+POST /api/v1/replays -> R-80b456f0...（speed 5）
+POST .../control {"action":"play"}  -> 1755 秒时比分 1:0
+GET /api/v1/replays/{id} -> insights[0] =
+      window 1500-1650, high_recoveries 3, linked_shots 2
+      generation   = {mode: live_model, provider: deepseek, model: deepseek-flash}
+      verification = {status: passed, method: agent_and_code, rejected_claims: ["C5"]}
+GET .../insights/{id}/overlay -> {"schema":"matchmind.overlay/1", ...}
+GET /.well-known/agent-card.json -> {"name":"MatchMind", ...}
+```
+
+**这一条最有价值**：`rejected_claims: ["C5"]` 说明在公网上、用真模型，确实有一条主张被审核员砍掉，卡片仍然 `passed` 发布出来了。这是整个产品卖点在公网上的第一次实证。
+
+trace 也来自这次真实执行：
+
+```
+validator  started   orchestrator=agent_framework
+analyst    completed 4549ms  framework claims=4 rejected=1 tools=get_metrics,get_candidate_moments
+analyst    completed 2912ms  framework claims=5 rejected=0 tools=none
+narrator   rejected  1462ms  issues=1
+narrator   completed 1661ms  agent_framework; code-check retry (issues=0)
+auditor    completed 1338ms
+```
+
+注意 `narrator rejected -> code-check retry -> completed`：**代码门在公网上真的拦了一次并修好了**，不是排练。
+
+### 22.4 这一节要写清楚的边界
+
+- 免费的 Render 实例**空闲后会休眠**，冷启动首请求要等几十秒。演示前先手动打开一次预热，或者负责人评估常驻实例的费用。**不要声称"随时秒开"。**
+- 服务名仍是 `matchmind-backend-preview`（当初 B 建的名字），URL 也带着 `preview`。改名会换域名，提交前动它没有收益，所以留着。
+- 只有**一次**真实调用被公网验证。它证明"这条链路在云上能通"，**不证明**稳定性、并发或费用。`SUBMISSION_POSITIONING.md` 的措辞规则继续有效。
+- 模型 Key 只存在于 Render 的环境变量里，仓库、镜像、日志里都没有。部署脚本手里那份 token 是负责人的管理密钥，用完应当轮换。
+- 这一轮改了 `deploy/` 之外的镜像选择与平台配置，**没有改 B 的 Dockerfile、也没有改任何 `backend/` 代码**。
+
+### 22.5 门禁状态（第十三轮）
+
+- 公网 `deploy.release_check --profile integrated` 的构建期检查在镜像里跑过并通过（镜像因此才起得来）
+- 本地 `python -m pytest tests -q` → 433 passed（本轮只改文档与 `.gitignore` + 新增 dist）
+- `tools/check_frozen.py` → unchanged；`tools/check_scope.py --role C` → OK
+- 新增：`frontend/dist/`（4 个文件）；修改：`.gitignore`、`matchmind/.gitignore`、本文件、`evaluation/SUBMISSION_POSITIONING.md`
