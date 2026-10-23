@@ -1,0 +1,167 @@
+{
+  "args": {
+    "debug": false,
+    "end": 1650,
+    "language": "en",
+    "out": null,
+    "start": 1500,
+    "task_id": "TASK-LIVE-01",
+    "team": "HOME"
+  },
+  "config": {
+    "base_url_configured": true,
+    "configured": true,
+    "key_present": true,
+    "model": "deepseek-flash",
+    "orchestrator": "framework",
+    "provider": "deepseek",
+    "thinking": "disabled"
+  },
+  "contract": "contract_valid",
+  "elapsed_ms": 6860,
+  "model_calls_direct_provider": 0,
+  "model_calls_note": "Counter on the direct Chat Completions provider. The Agent Framework orchestrator calls the model through its own client, so this reads 0 on a framework run; use result.agent_invocations there.",
+  "note": "A single real run, kept as evidence that a live model produced a card through the three-agent pipeline and the code gate. It is not a benchmark, not a reliability figure, and it is not a substitute for running the harnesses in evaluation/.",
+  "provenance": {
+    "contract_version": "2.0.0",
+    "git_head": "bcaed0e",
+    "prompt_version": "c3-1.3.0",
+    "recorded_utc": "2026-10-23T04:55:19Z",
+    "synthetic_data": true
+  },
+  "publishable": true,
+  "request": {
+    "events": 20,
+    "language": "en",
+    "match_id": "MM-DEMO-01",
+    "metrics": {
+      "away_possession_seconds": 115,
+      "away_shots": 0,
+      "high_recoveries": 3,
+      "home_possession_seconds": 35,
+      "home_shots": 2,
+      "linked_shots": 2,
+      "window_seconds": 150
+    },
+    "team": "HOME",
+    "window": {
+      "end_sec": 1650,
+      "start_sec": 1500
+    }
+  },
+  "result": {
+    "agent_invocations": 3,
+    "claims": [
+      {
+        "evidence": 3,
+        "id": "C1",
+        "kind": "metric",
+        "metric": "high_recoveries",
+        "value": 3
+      },
+      {
+        "evidence": 4,
+        "id": "C2",
+        "kind": "metric",
+        "metric": "linked_shots",
+        "value": 2
+      },
+      {
+        "evidence": 2,
+        "id": "C3",
+        "kind": "metric",
+        "metric": "home_shots",
+        "value": 2
+      },
+      {
+        "evidence": 3,
+        "id": "C4",
+        "kind": "metric",
+        "metric": "away_shots",
+        "value": 0
+      },
+      {
+        "evidence": 8,
+        "id": "C5",
+        "kind": "interpretation",
+        "metric": null,
+        "value": null
+      }
+    ],
+    "error": null,
+    "evidence_event_ids": [
+      "MM-DEMO-01-E007",
+      "MM-DEMO-01-E013",
+      "MM-DEMO-01-E019",
+      "MM-DEMO-01-E009",
+      "MM-DEMO-01-E015",
+      "MM-DEMO-01-E001",
+      "MM-DEMO-01-E011",
+      "MM-DEMO-01-E017",
+      "MM-DEMO-01-E008",
+      "MM-DEMO-01-E014",
+      "MM-DEMO-01-E020"
+    ],
+    "generation": {
+      "mode": "live_model",
+      "model": "deepseek-flash",
+      "provider": "deepseek"
+    },
+    "narratives": {
+      "analyst": "In the 150-second window, HOME recorded 3 high recoveries (recoveries with attack-normalised x >= 66.67) and 2 linked shots, meaning 2 of the 3 recoveries were followed within 15 seconds by a HOME shot in the same possession. HOME's 2 shots in the window both followed a high recovery, while AWAY recorded 0 shots.",
+      "casual": "Home won the ball back high up the pitch three times in this spell, and two of those quickly turned into shots. Away never got a shot away in that time."
+    },
+    "status": "passed",
+    "traces": [
+      {
+        "agent": "validator",
+        "ms": 0,
+        "note": "orchestrator=agent_framework",
+        "status": "started"
+      },
+      {
+        "agent": "analyst",
+        "ms": 0,
+        "note": "agent_framework; prompt c3-1.3.0",
+        "status": "started"
+      },
+      {
+        "agent": "analyst",
+        "ms": 3047,
+        "note": "framework claims=5 rejected=0 tools=get_metrics,get_candidate_moments",
+        "status": "completed"
+      },
+      {
+        "agent": "narrator",
+        "ms": 0,
+        "note": "agent_framework; prompt c3-1.3.0",
+        "status": "started"
+      },
+      {
+        "agent": "narrator",
+        "ms": 1359,
+        "note": "agent_framework; prompt c3-1.3.0 issues=0",
+        "status": "completed"
+      },
+      {
+        "agent": "auditor",
+        "ms": 0,
+        "note": "agent_framework; prompt c3-1.3.0",
+        "status": "started"
+      },
+      {
+        "agent": "auditor",
+        "ms": 1266,
+        "note": "framework issues=0",
+        "status": "completed"
+      }
+    ],
+    "verification": {
+      "method": "agent_and_code",
+      "rejected_claims": [],
+      "status": "passed"
+    }
+  },
+  "usage": null,
+  "usage_line": "not measured on this path: the Agent Framework client owns the HTTP call, so the provider ledger is empty by construction"
+}

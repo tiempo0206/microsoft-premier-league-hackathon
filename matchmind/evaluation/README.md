@@ -23,6 +23,8 @@ Two documents sit alongside them for the submission:
   the sentences the submission must not contain.
 * [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md) — a 110-second shot list built only from things that exist.
 * [`CONTRACT_2_1_PROPOSAL.md`](CONTRACT_2_1_PROPOSAL.md) — the one reviewable contract bump.
+* [`evidence/`](evidence/README.md) — a committed, credential-free record of one real model run, for
+  acceptance criterion 5. Evidence that the live path works, not a benchmark: n = 1.
 
 The critical assessment of the whole plan, including the borrowed ideas and the gaps,
 is in [`PLAN_REVIEW.md`](PLAN_REVIEW.md).
