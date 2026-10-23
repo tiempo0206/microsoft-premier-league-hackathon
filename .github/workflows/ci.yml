@@ -80,3 +80,39 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run build
       - run: pnpm test
+
+  integration:
+    name: frontend consumer against a real B/C application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: matchmind/requirements-dev.txt
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: pnpm
+          cache-dependency-path: matchmind/frontend/pnpm-lock.yaml
+      - name: install python dependencies
+        working-directory: matchmind
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: install frontend dependencies
+        working-directory: matchmind/frontend
+        run: pnpm install --frozen-lockfile
+      # This is the only check that crosses every role: Role A's real consumer driving Role B's
+      # API and Role C's composition root in one process. It spawns its own loopback server with an
+      # accelerated clock and MATCHMIND_MODEL_PROVIDER=mock, so it costs nothing and needs no key.
+      # Nothing else in CI would notice a frontend/backend contract break.
+      - name: end-to-end probe
+        working-directory: matchmind/frontend
+        env:
+          MATCHMIND_PYTHON: python
+        run: pnpm run test:backend
