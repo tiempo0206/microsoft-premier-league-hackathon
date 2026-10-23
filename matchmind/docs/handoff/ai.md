@@ -758,3 +758,29 @@ B 还有一条约束需要 C 一起守：**“第三次夺回没有关联射门�
 - `python tools/check_frozen.py` → 契约与 fixture 未改
 - `python tools/check_scope.py --role C` → 通过
 - 修改：`ai/fallback.py`、`tests/ai/test_invariants.py`、`evaluation/PLAN_REVIEW.md`、`docs/handoff/ai.md`、`TEAM_ROLES.json`；新增：`tests/ai/test_fallback_evidence.py`
+
+### 19.6 `main` 第一次拿到了完整的基线
+
+这一节是给队友看的**当前状态**，前面所有小节的 SHA 都只是历史。
+
+| 分支 | 现在是什么 | 时间 |
+| --- | --- | --- |
+| **`main`** | **`8e740e5`，全队要提交的就是它**：starter v2.1 + A1 前端 + B 的后端/数据 + C 的 AI 管线与评测 | 2026-10-23 12:21 UTC+8 |
+| `codex/backend-ab-mvp` | `37b023b`，已完成使命，被 `main` 吸收 | — |
+| `codex/ai-verification` | 已合并（PR #8 squash 成 `f3111a2`），不要再往上开发 | — |
+
+`main` 上实测：**422 passed / 62 subtests**、`check_frozen` 未改、`check_scope --role C` 通过、`deploy.adapter_check` **12/12 通过 + 3/3 篡改被拒 + 0 次模型调用**。
+
+合并顺序有一个坑，值得记住：A1 的分支（PR #3）当初把整个 starter 包也一起提交了，所以它 squash 进 `main` 之后，`matchmind/` 下的文件在 `main` 和整合分支两边都成了“新增”，git 报的是 **add/add 冲突**而不是内容冲突。解法是把 `main` 合进整合分支，冲突文件一律取整合分支那一版（内容本来就更新），得到的合并提交 `37b023b` 的树与合并前**逐字节相同**——那次合并只补了祖先关系，没有改任何内容。
+
+两个 PR 的状态要说明，免得后面有人误合：
+
+- **#5（B 的开发包）已关闭**。它把整个包存成 `docs/development-pack-v2.1/package/starter-overlay/matchmind/…` 的嵌套副本，235 个文件；`main` 现在已有 `matchmind/` 下的同一份内容，合并会变成两份。
+- **#1（开发计划文档）仍是 draft**。`main` 的 `docs/` 目前只有 `docs/hackathon.md`，这个 PR 会补上 `docs/contracts.md` 与 `docs/development-plan.md`（290 行）。它是 draft，我没有替作者标成 ready 并合并。
+
+### 19.7 下一步（按紧急度）
+
+1. **代表**：把 #1 标 ready 并合并，`main` 的文档就完整了；然后录 110 秒视频（`evaluation/DEMO_SCRIPT.md`），公开仓库，正式提交。
+2. **B**：决定演示用哪套数据。`validated-demo` + 窗口 1540–1690，或者直接用已经通过门禁的 `data/extra/showcase/press`（进球本来就在 1500–1650 里）。两条都写进 `PLAN_REVIEW` §3.2。
+3. **A**：A2/A3 的卡片渲染。C 的产出目前只能在 API、overlay 快照和 MCP 里看到，视频里不能假装界面已经能显示。
+4. **C（我）**：契约 2.1.0 要 A/B 点头才能动；除此之外 C 侧已无单方可做的项。
