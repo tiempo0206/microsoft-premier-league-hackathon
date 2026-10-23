@@ -1,45 +1,88 @@
-# Demo script — 110 seconds, only what exists
+# Demo script — 110 seconds, filmed against the deployed service
 
-Written by Role C. The plan's `docs/05_acceptance.md` describes an aspirational video that
-assumes the frontend exists. It does not yet. This version is constrained to artefacts that
-exist today and can be reproduced by a judge.
+Written by Role C, rewritten after the UI landed and the service went public. The earlier version of
+this file forbade showing the interface because A2/A3 did not exist; they exist now, and the product
+is live at **https://matchmind-backend-preview.onrender.com**. A judge who clicks that URL sees
+exactly what the video shows.
 
-**Rule for this video: if it is not in the repository, it is not in the film.** A judge who
-clones the repo and finds nothing behind a shot has been misled, and that is worse than a
-shorter demo.
+**The rule that has not changed: if it is not in the repository or on the public URL, it is not in the
+film.** A judge who cannot reproduce a shot has been misled, and that is worse than a shorter demo.
+
+See `docs/05_acceptance.md` for the official expectations (under two minutes, English or English
+translation, synthetic data disclosed early).
 
 ---
 
+## Pre-flight — do this before recording, not during
+
+1. **Warm the service.** It runs on a free instance and sleeps when idle; the first request after a
+   quiet spell waits tens of seconds. Open the URL in the recording browser and wait for the match
+   centre to render *before* you start the take.
+2. Open the second terminal you will need for the honesty shot (`Rule fallback`, below).
+3. Set the browser to 1280×720, one window, no bookmarks bar, no other tabs.
+4. Do not record the clock in the corner if it shows a date before the submission.
+
 ## Shot list
 
-| time | what is on screen | what it proves | reproduce |
+| time | on screen | what it proves | how |
 | --- | --- | --- | --- |
-| 0–10 s | One sentence: "A viewer cannot check why a moment mattered. We make the check possible." Then a single verified card with `rejected_claims` visible. | The problem, and that we remove claims rather than defend them | any run of `evaluation.live_smoke` |
-| 10–25 s | `python -m ai.recap` running, printing score, shots, possession, `Goals: H01 for HOME`, and "the most recent recovery paid off 40 seconds later" | The recap role, and the thing no moment card can say | `python -m ai.recap` |
-| 25–45 s | A live analysis: `python -m evaluation.live_smoke --debug`, showing analyst → narrator → auditor(rejected) → narrator(repair), ending `status=passed`, `rejected_claims=[C4,C5]` | The three roles, the one repair round, and the honest record of what was refused | same command |
-| 45–60 s | The overlay payload: `python -m ai.overlay`, scrolling to show `lower_third`, `stat_line`, `evidence_pin`, and `source.mode` on each | A graphics renderer can consume it, and cannot present a fallback as live | `python -m ai.overlay` |
-| 60–72 s | `python -m evaluation.factcheck_bench` printing 17 corruptions all caught and 0 false alarms | The verifier is measured, not asserted | same command |
-| 72–85 s | A tampered window refused: `python -m evaluation.fixture_qualify` is not this shot — instead show the benchmark line `T1 multi "rejected" calls=0` | The gate runs before the model, so it is free | `python -m evaluation.benchmark --cases tampered` |
-| 85–100 s | The MCP server answering: `python -m ai.mcp_server` plus one tool call, and the A2A card at `/.well-known/agent-card.json` | Interoperability that exists today | both commands |
-| 100–110 s | Text card: what we did not build (frontend, Foundry, Azure, video tracking) and the measured numbers with their sample size | Honesty as the closing argument | — |
+| 0–8 s | The live page, synthetic badge visible. One sentence over it: *"A viewer cannot check why a moment mattered. We make the check possible."* | The product is deployed and the data is declared synthetic | the public URL |
+| 8–20 s | `MATCH OVERVIEW`, then press **Play** at 5×. The clock runs, statistics update, events appear. | A real replay with a server-side clock, not a video | Play, then "Playback speed" → 5× |
+| 20–35 s | At ~1650 the insight card appears on its own. Hold on it: the mode label reads **Live model**, and **Evidence checked** is present. | Analysis fires from the data; the card states whether a model wrote it and who checked it | wait, do not click |
+| 35–50 s | Expand **Explore evidence**. Events highlight; **Where it happened** shows the points on the pitch; the **Event timeline** marks the cited events. | Every claim is traceable to specific events — the claim is checkable, not just readable | click the evidence control |
+| 50–62 s | Toggle the audience control **Casual → Analyst**. The prose changes; the claims and evidence below it do not. | Two audiences from one verified fact set, no second model call | click the toggle |
+| 62–75 s | Scroll the card to the verification line. If this run rejected anything it is listed here as `draft 1 C4: …` — say what it means. If nothing was rejected, say that instead: *"this run needed no correction; here is a recorded run that did"* and show `evaluation/evidence/`. | The correction is real and attributable, not decoration | read it off the card |
+| 75–90 s | **Honesty shot.** A second terminal: stop the local server, start it with `MATCHMIND_MODEL_PROVIDER=mock`, play to the same window. The card appears labelled **Rule fallback** and the match keeps playing. | The system degrades instead of failing, and labels itself | local run, provider set to `mock` |
+| 90–100 s | `python -m evaluation.factcheck_bench` → `catch 21/21, false alarms 0/4`; then `python -m ai.recap --series 1550 1650 1800` → `consistent: true` | The verifier and the cross-recap check are measured, not asserted | both commands |
+| 100–110 s | Closing text card: what we did **not** build, and the sample sizes behind the numbers that were quoted. | Honesty as the closing argument | — |
+
+Total 110 s. The hard limit is 120 s.
 
 ## Do not film
 
-* A pitch view with player dots. The fixture has 30 events and 8–9 players a side; the pitch
-  would look empty and the density check says so in public.
-* Any UI screenshot. A2/A3 are unbuilt; do not mock one up.
-* A "before/after accuracy" comparison. The ablation is underpowered and the README says so.
-* An A2A handshake. The card exists, the transport does not.
-* A claim that the model writes in four languages. Two (`en`, `zh`) are in the contract.
+* **A pitch full of player dots.** The shipped 30-event clip has 8–9 players a side; `fixture_qualify`
+  fails it on density and says so in public. Use the event timeline and evidence points, which are
+  real.
+* **A before/after accuracy comparison.** The ablation separates exactly one variant from noise and
+  the README states that.
+* **An uptime claim.** The instance sleeps. Never say "always on", "instant", or anything the free
+  plan cannot honour.
+* **A four-language claim.** The contract has `en` and `zh`.
+* **Foundry or Azure.** Neither was used. The deployment is Render.
+* **A fallback presented as a live model, or a live model presented as a fallback.** The label on the
+  card is the product's whole argument; get it right on screen.
 
-## If the frontend lands before the deadline
+## The honesty shot in detail
 
-Replace shots 1 and 45–60 with the real page, and keep `source.mode` and `rejected_claims`
-visible in frame — they are the product, not decoration. Everything else stays.
+The degradation must be a **real** run with no model available, not an injected error dressed up as
+natural. Say so out loud: *"No model in this process — so the card is a rule fallback, and it says
+so."* One variable is enough, because a missing key on its own would still be read from the local
+`.env`:
+
+```sh
+# Windows PowerShell
+$env:MATCHMIND_SERVE_FRONTEND="1"; $env:MATCHMIND_MODEL_PROVIDER="mock"; $env:PORT="8000"
+.venv\Scripts\python -m deploy.release_run
+```
+
+Verified before this script was written: `generation.mode` comes back `rule_fallback`,
+`verification.method` comes back `code_only`, the health endpoint reports `degraded` with
+`model_ready: false`, and the replay keeps advancing. Two things make it honest and cheap to
+reproduce:
+
+* the card's own `generation.mode` field says `rule_fallback`, and the UI renders that label;
+* the statistics keep updating and the replay never blocks, which is the actual claim.
+
+If you would rather show a model failure instead, a timeout is the realistic one: set
+`MATCHMIND_MODEL_TIMEOUT_SEC=1` on a local run. Then **label it on screen as an induced timeout**.
+`docs/05_acceptance.md` requires fault injections to be marked as demonstrations.
 
 ## Narration notes
 
-* Say the sample size out loud when quoting a number: "12 windows", "17 corruptions".
-* Say "synthetic" once, early, and let the badge on screen carry it.
-* Never say "the AI decided". Say "the auditor rejected two claims and the card was republished
-  without them", which is both more impressive and true.
+* Say the sample size whenever a number appears: "21 controlled corruptions", "five independent
+  windows", "one recorded run".
+* Say "synthetic" once, early, and let the badge carry it from then on.
+* Never say "the AI decided". Say "the auditor rejected a claim and the card was republished without
+  it" — more impressive, and true.
+* If the model is slow on the day, pause the replay and wait; the explanation stays aligned with the
+  evidence, which is the point.
