@@ -1,7 +1,7 @@
 # ai 交接记录 — Role C（AI 核验与集成）
 
 - 开发者：C / **Meng Yuxuan**（`farlyfeifei`）
-- 分支：`codex/ai-verification`（远端 tip `27e4dd5`，PR **#8**，目标分支 `codex/backend-ab-mvp`）
+- 分支：`codex/ai-verification`（远端 tip `70dec95`，PR **#8**，目标分支 `codex/backend-ab-mvp`）
 - 基线 SHA：`4be6f02`（本地三方合并 `codex/backend-ab-mvp` + `docs/development-plan` + `codex/development-pack-cn-v2.1`，零冲突）
 - 远端基线：`cd48448`（`codex/backend-ab-mvp` 的 tip；HTTPS 推送不通，改用 Git Data API 以单提交形式发布，所以 PR #1/#5 的文档没有在这个分支里重复）
 - 依赖的前端基线：A1 `f88d286092e602d73804e1afeb114ec0f126b2ff`
@@ -233,13 +233,22 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 
 ## 七、仍未完成 / 已知限制
 
+> **这张表在第八轮（`70dec95`）刷新过。** 上一版写于第二轮之前，当时 A2A 与 overlay 还是“未做”，第三轮和第六轮已经交付；如果队友读到旧版本，会低估这个分支。刷新后的状态如下。
+
 | 项 | 状态 | 说明 |
 | --- | --- | --- |
 | Agent Framework 编排 | **已接入，且是默认** | `MATCHMIND_ORCHESTRATOR=framework` 为默认；正例 2/2、12 窗口 6/12 发布，比直连快约 20–25%，质量打平。不可导入时自动降级为直连并在 trace 里写明。见第十节 |
-| MCP server | **已完成** | `ai/mcp_server.py`，5 个工具（`list_matches` / `get_metrics` / `get_event_window` / `get_candidate_moments` / `explain_window`），12 个测试，复用同一份确定性代码。`python -m ai.mcp_server`（stdio）或 `--http` |
-| A2A agent card + 端点 | **未做** | 判据点名 A2A，三个头部竞品都有。见 `evaluation/PLAN_REVIEW.md` §5 第 2 项 |
-| broadcast overlay JSON 导出 | **未做** | 官方 §4.1 要求输出「machine-readable enough to be rendered as synchronized graphical overlays」。见 §5 第 3 项 |
+| MCP server | **已完成，8 个工具** | `ai/mcp_server.py`：`list_matches` / `get_metrics` / `get_event_window` / `get_candidate_moments` / `explain_window` / `build_overlay` / `build_recap` / `get_threat_ranking`，复用同一份确定性代码。`python -m ai.mcp_server`（stdio）或 `--http` |
+| A2A agent card + 端点 | **已完成**（第八轮补 A2A 传输） | `ai/a2a.py` 出 card（`/.well-known/agent-card.json`，8 个 skill，带 `x-matchmind` 诚实块写明只支持 `message/send`），`ai/a2a_transport.py` 是真正可调用的 `dispatch`，自由文本按 `-32602` 拒。**没有对接过第三方 A2A 实现**，材料里不能写“兼容 A2A” |
+| broadcast overlay JSON 导出 | **已完成** | `ai/overlay.py`，`matchmind.overlay/1`，含下三分之一字幕（6000ms）与 pin（3000ms）的时长、每条文字图文的 `speech` 与一份有序 `speech_script`。见第十一节 |
+| recap 角色 | **已完成** | `ai/recap.py`，`matchmind.recap/1`。整段 prefix 输入；它是唯一被允许报告比分的角色。见第十二节 |
+| 威胁排序 | **已完成** | `ai/threat.py`，价值迭代算 xT 网格，样本薄时**拒绝出榜**而不是瞎排。见第 14.2 节 |
+| storyline 限流 | **已完成** | `ai/storyline.py`，45 秒最小间隔、10 分钟 8 张卡上限、重复窗口抑制 |
 | 会话/并发上限 | 沿用 B 的实现 | C 侧无独立限流，沿用 8 会话 / 30 次每小时 / 并发 1 |
+| 审核员校准只测了一半 | **只测误报，没测漏报** | `evaluation/auditor_calibration.py` 量的是“不该拒的被拒了”（现在 0.0%）。**“该拒的漏了没有”，目前只有 `factcheck_bench` 那 21 条硬篡改在覆盖**，软性越权（比如“对方体能下降”这类推断）还没有系统化的漏报率。不要对外说“审核员已被校准” |
+| recap 跨窗口一致性 | **未做** | 单窗口内已校验；两次 recap 之间的口径（同一事件被两段 recap 用不同数字描述）没有交叉检查 |
+| 契约 2.1.0 | **提案，未执行** | `evaluation/CONTRACT_2_1_PROPOSAL.md`。要动 `contracts/` 必须 A/B 都点头，C 不单独动 |
+| 演示视频 | **未做** | 脚本在 `evaluation/DEMO_SCRIPT.md`，录屏需要人来做 |
 | possession 口径自检 | **刻意不做** | `AnalysisRequest` 不带 `Match.initial_possession_team`，无法在 C 侧重算；已在 `consistency_issues` 的 docstring 里写明这是刻意的空白，不猜 |
 | 中文数字校验 | 部分覆盖 | 只认 `十 / X十 / 十Y / X十Y` 形态，其它写法靠 auditor 兜；已在 docstring 里写明限制 |
 | 视频 / 部署 | 不属本轮 | 见 B 的 handoff 与 `docs/05_acceptance.md` |
@@ -247,13 +256,16 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 
 ---
 
-## 八、下一工作块
+## 八、下一工作块（第八轮之后重写）
 
-1. **完整 12 窗口的框架版评测**：现在只测了 2 个正例。拿到完整对照后，才能决定默认编排器是 `direct` 还是 `framework`，也才能在材料里写框架的使用效果。
-2. **MCP server**：把 `ai/tools.py` 的三个工具包成 MCP，让工具调用走 MCP 而不是函数直调 —— 判据里点名了 `MCP integration`，且完全本地、不需要云。
-3. **契约 2.1.0 一次性升版**：按第六节的 3 → 4 → 1 顺序，先和 A/B 确认消费端，再动 `contract.schema.json`。
-4. **`POST /recap` 的 recap 角色**：输入整段 prefix，与 moment 角色共用同一套校验器和 fallback。
-5. 补中文叙事的**完整**评测（现在正例 P2 已通过，但样本只有 1 个窗口）。
+> 上一版这一节列的 5 条里有 4 条已经做完（框架版评测、MCP、recap、中文评测），只有契约升版仍是提案。现在真正剩下的是这些：
+
+1. **等 PR #8 合进 `codex/backend-ab-mvp`，然后回填 `TEAM_ROLES.json` 的 `baseline_sha`** —— 它现在还是 `"pending: codex/ai-verification merge commit"`。这是 C1 唯一没闭环的一格，卡在合并动作上，不缺技术。
+2. **审核员校准补漏报侧**：现在只有误报率（0.0%）。要造一批“该被拒”的软越权样本，量出漏报率，否则“审核员有效”这句话只能靠 21 条硬篡改撑着。
+3. **recap 跨窗口一致性**：同一事件被两段 recap 用不同数字描述时要能抓出来。
+4. **契约 2.1.0**：按 `evaluation/CONTRACT_2_1_PROPOSAL.md`，先和 A/B 确认消费端，再动 `contract.schema.json`。这一步必须全员同意。
+5. **稠密 fixture**：`evaluation/dense_fixture_proposal.py --minutes 45` 已证明能到 971 个事件，但要不要换掉现在这 30 事件的稀疏数据，是 B 的决定。
+6. **演示窗口 1500–1650 → 1540–1690**：现在这个窗口切法里，1640 的解围和 1680 的进球永远进不了同一个窗口，等于把最好的一条因果链剪掉了。改一行，B 说了算。
 
 ---
 
