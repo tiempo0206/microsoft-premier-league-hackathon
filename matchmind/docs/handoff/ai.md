@@ -266,6 +266,7 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 | recap 跨窗口一致性 | **已做** | `ai/recap.py: recap_series_issues()` + `recap_from_insights_issues()`：累计计数不许倒退、同一个进球不许被两次记给不同球员、同窗口两份 recap 必须一致、卡片不许跨场次或漏卡 |
 | 契约 2.1.0 | **提案，未执行** | `evaluation/CONTRACT_2_1_PROPOSAL.md`。要动 `contracts/` 必须 A/B 都点头，C 不单独动 |
 | 演示视频 | **未做** | 脚本在 `evaluation/DEMO_SCRIPT.md`，录屏需要人来做 |
+| `ai/framework_spike.py` | **一次性探针，不是产品路径** | 第八节之前用来回答"C4 能不能做到"的独立脚本，跑法写在它自己的 docstring 里。**没有任何模块 import 它，也没有测试覆盖它**——真实编排在 `ai/agents.py`，由 `test_orchestrator.py` 覆盖。读 `ai/` 的人请把它当历史记录，不要当入口 |
 | possession 口径自检 | **刻意不做** | `AnalysisRequest` 不带 `Match.initial_possession_team`，无法在 C 侧重算；已在 `consistency_issues` 的 docstring 里写明这是刻意的空白，不猜 |
 | 中文数字校验 | **覆盖十/百/千三级，单个数字仍刻意不认** | `chinese_numeral()` 解析 `十五 / 三十五 / 一百一十五 / 两百 / 一千二百`；`百分之三十七` 的 `百` 不会被当成 100。**刻意的空白**：孤立的 `一 / 二 / 三` 不当数字（`一次都没射门`、`进攻三区`），这类靠 auditor 兜。见第二十一节 |
 | 视频 / 部署 | 不属本轮 | 见 B 的 handoff 与 `docs/05_acceptance.md` |
