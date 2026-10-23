@@ -1,39 +1,134 @@
-# Microsoft × Premier League Hackathon
+# MatchMind — verified explanations for live football
 
-Private team workspace for the Microsoft Premier League **Inside the Game** hackathon.
+**Microsoft × Premier League "Inside the Game" hackathon.**
+Category entered: **Best Multi-Agent System**. Contract 2.0.0. All match data is synthetic.
 
-## Project status
+**[Live demo →](https://matchmind-backend-preview.onrender.com)** — one process serving the app, the
+API and the AI pipeline. It runs on a free instance, so the first request after an idle spell takes
+tens of seconds while the container wakes.
 
-Repository initialized. The team will define the idea, MVP scope, and technology stack together.
+MatchMind turns a stream of synthetic match events into the kind of explanation a broadcaster puts on
+screen: *"HOME won the ball high up the pitch three times, and two of those became shots within 15
+seconds."* The interesting part is not that a language model can write that sentence. It is that
+**every number in it is computed by code, every claim cites the events behind it, and a separate
+adversarial agent may delete claims but never write them.**
 
-## Join the workspace
+## Why this is not another LLM commentary wrapper
 
-1. Accept the repository owner's GitHub collaborator invitation.
-2. Clone the repository:
+Three gates stand between the model and a viewer:
 
-   ```sh
-   git clone https://github.com/tiempo0206/microsoft-premier-league-hackathon.git
-   cd microsoft-premier-league-hackathon
-   ```
+| Gate | What it does | Where |
+| --- | --- | --- |
+| **Arithmetic** | refuses a window whose own metrics contradict its own events | `matchmind/ai/verify.py` |
+| **Semantic auditor** | a second agent whose only job is to reject claims the data does not support; its decision is derived from its rejection lists, never taken from a flag it asserts | `matchmind/ai/service.py` |
+| **Contract coupling** | a card may only be labelled `passed` when *both* an agent and code reviewed it — the frozen schema enforces this, so a self-reviewing agent can never claim verification | `matchmind/contracts/contract.schema.json` |
 
-3. Follow [CONTRIBUTING.md](CONTRIBUTING.md) to work on a branch and open a pull request.
+The product's selling point is what it **refuses** to say. In the deployed run the auditor removed
+one claim and the card still published, carrying `verification.rejected_claims: ["C5"]`.
 
-The owner's local working folder is `/Users/tianbo/Desktop/Microsoft+Premier League`.
+## What was measured, with the caveats attached
 
-## Team resources
+| Harness | Result |
+| --- | --- |
+| `evaluation/factcheck_bench.py` — controlled corruptions | **21/21 caught, 0/4 false alarms** |
+| `evaluation/auditor_calibration.py` — both directions | **0/15** honest cards wrongly rejected; **50/50** rigged cards caught and correctly attributed |
+| Dense fixture, 5 independent windows | **11/11 published** in the best run, 8/11 in a second run — quote the range |
+| `evaluation/ablation.py`, 18 runs per variant | exactly one effect separates from noise: the repair round |
+| Single agent vs three | three agents cost 2.8× the calls and 1.7× the latency; the single agent can never carry `passed`. That is the claim, not "more accurate" |
+| Role B acceptance | 512 normal + 72 invalid synthetic backtests, **0 failures, 0 false or missed triggers** |
 
-- [Hackathon links and submission reminders](docs/hackathon.md)
-- [Contribution workflow](CONTRIBUTING.md)
-- [Code of conduct](CODE_OF_CONDUCT.md)
-- [Task tracking](https://github.com/tiempo0206/microsoft-premier-league-hackathon/issues)
+Every one of those numbers has limits — one fixture, one model, a handful of windows — and
+[`matchmind/evaluation/README.md`](matchmind/evaluation/README.md) states them next to the number
+rather than in a footnote.
 
-## First steps
+## Run it
 
-- Invite teammates and agree on responsibilities.
-- Define one fan or broadcaster problem and a focused MVP.
-- Choose the stack and add reproducible setup instructions here.
-- Track implementation work in Issues and review changes through pull requests.
+Requires Python 3.12 and Node ≥ 22.13 (pnpm 11.25.0). No Azure, Foundry or cloud account is needed.
 
-## Repository visibility
+```sh
+cd matchmind
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements-dev.txt      # Windows
+# .venv/bin/python -m pip install -r requirements-dev.txt        # macOS / Linux
 
-This repository is private during development. **Official Rules §4.4 requires a public GitHub code repository for the competition submission.** The owner must arrange publication before submitting.
+cd frontend && pnpm install --frozen-lockfile && pnpm run build && cd ..
+```
+
+Start it (the same entry point the container uses; `PORT` defaults to 8000 locally and to 10000
+inside the image):
+
+```sh
+# Windows PowerShell
+$env:MATCHMIND_SERVE_FRONTEND="1"; $env:PORT="8000"; .venv\Scripts\python -m deploy.release_run
+# macOS / Linux
+MATCHMIND_SERVE_FRONTEND=1 PORT=8000 .venv/bin/python -m deploy.release_run
+```
+
+Open <http://127.0.0.1:8000>. **With no model key the app still runs** and every card is labelled
+`rule_fallback`. To use a real model, set `MATCHMIND_MODEL_PROVIDER`, `MATCHMIND_MODEL_BASE_URL`,
+`MATCHMIND_MODEL_NAME` and `MATCHMIND_MODEL_API_KEY` in the environment — never in the repository.
+
+Check your own copy against the same gates CI runs:
+
+```sh
+python -m pytest tests -q        # 433 tests, offline, no network calls
+python tools/check_frozen.py     # contract and fixtures untouched
+python -m deploy.verify_backend  # Role B's full acceptance; spawns a loopback server
+```
+
+## Deployment
+
+The deployed service builds `matchmind/deploy/Dockerfile.release` from `main`, serves the API and the
+frontend from one origin on port 10000, and runs `deploy.release_check --profile integrated` at image
+build time so a misassembled image cannot start. Environment variables it needs:
+`MATCHMIND_SERVE_FRONTEND=1`, `MATCHMIND_MODEL_*` (provider, base URL, model name, key),
+`MATCHMIND_MODEL_TIMEOUT_SEC=20`, `MATCHMIND_ORCHESTRATOR=framework`, `MATCHMIND_THINKING=disabled`.
+
+## What is built, and what is not
+
+**Built and running:** event-driven replay with a server-side clock and SSE; the three-agent analysis
+pipeline (analyst → narrator → auditor) on Microsoft Agent Framework; the deterministic verifier; a
+rule-based fallback that stays useful when the model dies; a broadcast overlay payload with a spoken
+script; a match recap that can report the goal no single moment card can see; expected-threat ranking
+that refuses when the sample is too thin; an MCP server with eight tools; an A2A agent card and a
+declared `message/send` subset; a match-centre frontend.
+
+**Not built, and not claimed:** the playback controls and the insight/evidence cards in the UI (the
+API, the overlay payload and the MCP/A2A surfaces expose all of it); Azure or Foundry integration;
+full A2A compatibility; a paid always-on deployment; validation against real Premier League data.
+
+## Repository layout
+
+| Path | Owner | Contents |
+| --- | --- | --- |
+| `matchmind/frontend/` | A | match centre, snapshot and SSE consumer |
+| `matchmind/backend/`, `matchmind/data/` | B | fixtures, statistics, replay sessions, deployment entry |
+| `matchmind/ai/`, `matchmind/evaluation/` | C | pipeline, verifier, harnesses, submission documents |
+| `matchmind/contracts/` | shared, frozen | schema 2.0.0, generated types, examples |
+
+## Honest paperwork
+
+The documents below are why the claims above can be trusted; each one lists what it does **not**
+establish.
+
+- [`matchmind/evaluation/SUBMISSION_POSITIONING.md`](matchmind/evaluation/SUBMISSION_POSITIONING.md) — what we may claim per criterion, and the sentences the submission must not contain
+- [`matchmind/evaluation/PLAN_REVIEW.md`](matchmind/evaluation/PLAN_REVIEW.md) — 13 places rival projects are ahead of us, plus 8 self-criticisms
+- [`matchmind/evaluation/README.md`](matchmind/evaluation/README.md) — every measurement with its sample size
+- [`matchmind/evaluation/evidence/`](matchmind/evaluation/evidence/README.md) — a committed, credential-free record of one real model run
+- [`matchmind/docs/handoff/ai.md`](matchmind/docs/handoff/ai.md) — the AI pipeline's handoff, including every defect found and how it was found
+
+## Rules compliance
+
+- **All match data is original and synthetic** (CC0). No real Premier League footage, tracking data or
+  licensed dataset is used or redistributed.
+- Model keys live only in server-side environment variables — not in the repository, the image, the
+  build arguments or the logs. `tests/ai/test_invariants.py` enforces this.
+- Contract 2.0.0 is frozen. `tools/check_frozen.py` fails any change to the schema or the fixtures,
+  and CI runs it on every push.
+- The repository must be **public** before submission (Official Rules §4.4); that is an owner action.
+
+## Contributing
+
+Branch, open a pull request, keep it small. `CONTRIBUTING.md` has the workflow,
+`matchmind/AGENTS.md` and `matchmind/AI_RULES.md` have the module ownership and the rules every
+AI-assisted change follows, and `.github/CODEOWNERS` says who reviews what.
