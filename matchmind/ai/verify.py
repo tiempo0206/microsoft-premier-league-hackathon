@@ -114,10 +114,41 @@ _WORD_NUMBERS["forty"] = 40
 _WORD_NUMBERS["fifty"] = 50
 _ZH_DIGITS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4,
               "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
-_ZH_COMPOUND = re.compile(r"([一二两三四五六七八九])?十([一二三四五六七八九])?")
+_ZH_MULTIPLIERS = {"十": 10, "百": 100, "千": 1000}
+# A run of numeral characters. Scanning RUNS rather than searching for 十-compounds fixes a real
+# misread: 一百一十五 used to be matched at the 十五 inside it and read as 15, so a correct Chinese
+# sentence quoting 115 was rejected for stating a number that had never been supplied.
+_ZH_NUMERAL_RUN = re.compile(r"[零一二两三四五六七八九十百千]+")
 _CJK_VALUE = {0: ("零",), 1: ("一",), 2: ("二", "两"), 3: ("三",), 4: ("四",),
               5: ("五",), 6: ("六",), 7: ("七",), 8: ("八",), 9: ("九",),
               10: ("十",)}
+
+
+def chinese_numeral(token):
+    """Read a Chinese numeral run, or None when it is not clearly a number.
+
+    Handles 十五 → 15, 三十五 → 35, 一百一十五 → 115, 两百 → 200. Returns None for a bare single
+    digit, because 一, 二 and 三 double as ordinary words ("一次都没射门", "进攻三区") and treating
+    them as numbers rejected correct Chinese prose. Returns None for a multi-character run with no
+    multiplier at all, which is a digit string rather than a number anyone writes about a window.
+    """
+    if not token:
+        return None
+    if len(token) == 1:
+        return _ZH_MULTIPLIERS.get(token)
+    total, current, saw_multiplier = 0, 0, False
+    for char in token:
+        if char in _ZH_DIGITS:
+            current = _ZH_DIGITS[char]
+        elif char in _ZH_MULTIPLIERS:
+            saw_multiplier = True
+            total += (current or 1) * _ZH_MULTIPLIERS[char]
+            current = 0
+        else:
+            return None
+    if not saw_multiplier:
+        return None
+    return total + current
 
 
 def allowed_numbers(request):
@@ -158,7 +189,7 @@ def allowed_numbers(request):
 
 
 def numbers_in(text):
-    """Digits, English number words and Chinese 十-compounds found in the text.
+    """Digits, English number words and Chinese numerals found in the text.
 
     Bare single-character Chinese numerals are deliberately NOT scanned. 一, 二 and 三
     double as ordinary words ("一次都没射门", "进攻三区"), so a regex cannot tell the
@@ -166,22 +197,31 @@ def numbers_in(text):
     `states_value` still accepts a Chinese numeral written for a metric claim, so metric
     claims stay verified while ordinary prose stops being rejected.
 
+    Hundred- and thousand-scale numerals ARE scanned (一百一十五 → 115), because a correct Chinese
+    sentence that spelled out 115 used to be read as 15 and rejected for stating an unsupplied
+    number. A `百` or `千` immediately followed by 分 is skipped: that is the percent prefix in
+    百分之三十七, not a quantity, and counting it as 100 rejected correct prose too.
+
     Documented limit: an unsupported number spelled as a bare Chinese character inside an
     interpretation is not caught by this check. The auditor agent covers that class.
     """
     found = set()
-    for token in _NUMBER.findall(_ID_TOKEN.sub(" ", text)):
+    masked = _ID_TOKEN.sub(" ", text)
+    for token in _NUMBER.findall(masked):
         try:
             found.add(float(token))
         except ValueError:
             pass
-    lowered = _ID_TOKEN.sub(" ", text).lower()
+    lowered = masked.lower()
     for word, value in _WORD_NUMBERS.items():
         if re.search(r"\b" + word + r"\b", lowered):
             found.add(float(value))
-    for match in _ZH_COMPOUND.finditer(text):
-        tens, ones = match.group(1), match.group(2)
-        found.add(float((_ZH_DIGITS.get(tens, 1) * 10) + _ZH_DIGITS.get(ones, 0)))
+    for match in _ZH_NUMERAL_RUN.finditer(text):
+        if match.end() < len(text) and text[match.end()] == "分" and match.group(0) in ("百", "千"):
+            continue
+        value = chinese_numeral(match.group(0))
+        if value is not None:
+            found.add(float(value))
     return found
 
 
@@ -192,6 +232,12 @@ def _states_cjk_value(text, value):
     for token in _CJK_VALUE.get(whole, ()):
         if token in text:
             return True
+    if whole >= 11:
+        # "持球一百一十五秒" is a correct statement of 115. Without this the claim was dropped as
+        # "metric value is not stated" purely because the model spelled the number out.
+        for match in _ZH_NUMERAL_RUN.finditer(text):
+            if chinese_numeral(match.group(0)) == whole:
+                return True
     return False
 
 

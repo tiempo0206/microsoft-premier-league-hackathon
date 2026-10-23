@@ -1,5 +1,20 @@
 # ai 交接记录 — Role C（AI 核验与集成）
 
+## 本轮交付（AI_RULES「每次交付给团队的固定格式」六项）
+
+> 这张表按 `AI_RULES.md` 第 14–21 行的固定格式写，放在最上面，因为队友最先要的就是这六行。下面二十节是历史，这一格是现状。
+
+| 项 | 现状 |
+| --- | --- |
+| **角色、分支、基线 SHA、契约版本** | C（AI 核验与集成 + 整合人）；**分支 `main`**，基线 `bcaed0e`（PR #9 把完整基线合进 main 之后的提交）；契约 **2.0.0 未改** |
+| **本次完成的用户行为和修改文件** | 合并 PR #8；修掉 B 报的降级卡证据截断 bug；关闭 foul 口径；把完整基线合进 `main`；装 CI 与 CODEOWNERS。文件清单见第二十节 |
+| **执行的测试命令、结果及失败原因** | `pytest tests -q` → **422 passed / 62 subtests**；`tools/check_frozen.py` → unchanged；`tools/check_scope.py --role C` → OK；`deploy.adapter_check` → **12/12 通过、3/3 篡改被拒、0 次模型调用**；`generate_types.py` + `generate_openapi.py` → 重新生成后 `git diff` 为空（无漂移）。**失败过两处**，原因见 19.1：一处是我的文档过期，一处是我验证环境的假阳性 |
+| **Mock / fallback / live 的实际状态** | Mock：全部单测走注入的 httpx transport，零网络。fallback：`rule_fallback` 三态标签齐全，是默认降级路径。live：真实调用过的**只有** DeepSeek `deepseek-flash`（Chat Completions），**没有 Foundry、没有 Azure、没有云端复测** |
+| **是否需要共享契约变更** | **需要，但没有做**：recap / storyline / 双语 sustained metric 的升级提案在 `evaluation/CONTRACT_2_1_PROPOSAL.md`，要 A/B 都点头才能动 `contracts/`。除此之外**没有**契约变更 |
+| **仍未完成的内容** | 见第七节与 19.7：契约 2.1.0（等 A/B）、A2/A3 前端渲染（A）、演示视频（代表）、公网部署与仓库公开（需要 admin，我没有）、云上复测国内模型端点 |
+
+---
+
 - 开发者：C / **Meng Yuxuan**（`farlyfeifei`）
 - 分支：`codex/ai-verification`（PR **#8**，目标分支 `codex/backend-ab-mvp`）。这里的 SHA 以前每轮都要手改，改一次就可能忘一次，所以现在**只记最新一轮**：第九轮 tip 写在第十七节末尾
 - 基线 SHA：`4be6f02`（本地三方合并 `codex/backend-ab-mvp` + `docs/development-plan` + `codex/development-pack-cn-v2.1`，零冲突）
@@ -251,8 +266,9 @@ traces: analyst 3500ms → narrator 2703ms → auditor 3353ms(rejected) → narr
 | recap 跨窗口一致性 | **已做** | `ai/recap.py: recap_series_issues()` + `recap_from_insights_issues()`：累计计数不许倒退、同一个进球不许被两次记给不同球员、同窗口两份 recap 必须一致、卡片不许跨场次或漏卡 |
 | 契约 2.1.0 | **提案，未执行** | `evaluation/CONTRACT_2_1_PROPOSAL.md`。要动 `contracts/` 必须 A/B 都点头，C 不单独动 |
 | 演示视频 | **未做** | 脚本在 `evaluation/DEMO_SCRIPT.md`，录屏需要人来做 |
+| `ai/framework_spike.py` | **一次性探针，不是产品路径** | 第八节之前用来回答"C4 能不能做到"的独立脚本，跑法写在它自己的 docstring 里。**没有任何模块 import 它，也没有测试覆盖它**——真实编排在 `ai/agents.py`，由 `test_orchestrator.py` 覆盖。读 `ai/` 的人请把它当历史记录，不要当入口 |
 | possession 口径自检 | **刻意不做** | `AnalysisRequest` 不带 `Match.initial_possession_team`，无法在 C 侧重算；已在 `consistency_issues` 的 docstring 里写明这是刻意的空白，不猜 |
-| 中文数字校验 | 部分覆盖 | 只认 `十 / X十 / 十Y / X十Y` 形态，其它写法靠 auditor 兜；已在 docstring 里写明限制 |
+| 中文数字校验 | **覆盖十/百/千三级，单个数字仍刻意不认** | `chinese_numeral()` 解析 `十五 / 三十五 / 一百一十五 / 两百 / 一千二百`；`百分之三十七` 的 `百` 不会被当成 100。**刻意的空白**：孤立的 `一 / 二 / 三` 不当数字（`一次都没射门`、`进攻三区`），这类靠 auditor 兜。见第二十一节 |
 | 视频 / 部署 | 不属本轮 | 见 B 的 handoff 与 `docs/05_acceptance.md` |
 | 前端消费端 | **阻塞在 A 方** | A3 的 Insight 卡 / 证据高亮 / 双档切换还没写，C 的产出目前只能在 API 与快照里看到 |
 
@@ -784,3 +800,157 @@ B 还有一条约束需要 C 一起守：**“第三次夺回没有关联射门�
 2. **B**：决定演示用哪套数据。`validated-demo` + 窗口 1540–1690，或者直接用已经通过门禁的 `data/extra/showcase/press`（进球本来就在 1500–1650 里）。两条都写进 `PLAN_REVIEW` §3.2。
 3. **A**：A2/A3 的卡片渲染。C 的产出目前只能在 API、overlay 快照和 MCP 里看到，视频里不能假装界面已经能显示。
 4. **C（我）**：契约 2.1.0 要 A/B 点头才能动；除此之外 C 侧已无单方可做的项。
+
+---
+
+## 二十、`AI_RULES.md` 逐条对账（以及这轮补的两处）
+
+方案包里的 `AI_RULES.md` 是"所有开发 AI 共用的规则"，`01_三人开发与AI指令.md` 末尾还有"不同 AI 的并行与合并规则"。这一轮我把两份文件逐条对着仓库查了一遍，**发现两条明确派给 C 的动作从来没做过**，已经补上；其余各条能给出证据，列在下面。
+
+### 20.1 这两条漏了，现在是补上的
+
+方案原文（`01_三人开发与AI指令.md` §PR 必须写清楚）：
+
+> 提供 `integration-snippets/ci.yml` **供C**在看过仓库现有CI后放入根 `.github/workflows`。不要直接替换现有CI。**CI需要新增前端构建和正式后端测试**。
+
+> 目前不能独立保证GitHub主分支保护已启用。**拥有仓库管理权限的人**按团队决定配置 required checks 和 review。
+
+**实际情况：仓库里根本没有 CI。** `.github/` 下只有一个 PR 模板和一个 issue 模板，`integration-snippets/ci.yml` 从第一天起就躺在那儿没人装；CODEOWNERS 也不存在。这一条是写给整合人的，而整合人就是我——四轮下来我一直在跑本地检查，却从没把检查装到仓库上。已补：
+
+| 新增 | 内容 | 为什么这样写 |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | 两个 job。`python`：装 `requirements-dev.txt`（已 `-r` 聚合三份依赖）→ `check_frozen` → **重新生成 types/OpenAPI 并 `git diff --exit-code`** → `pytest tests -q`。`frontend`：`pnpm install --frozen-lockfile` → `typecheck` → `build` → `pnpm test` | 没有替换任何现有 CI（因为不存在）。**没有**把 B 的 `deploy.verify_backend`（跑 584 次回测、起真 uvicorn）和 `deploy.adapter_check`（需要 B 先生成 showcase 包）塞进 CI——那两个是提交前的人工验收，写进 CI 只会让它一直红 |
+| `.github/CODEOWNERS` | 按 `CODEOWNERS.fragment` 的骨架填**真实**账号（三个用户名都用 API 核过存在）：A=@tiempo0206、B=@wunianze666-netizen、C=@farlyfeifei。`contracts/`、`data/fixtures/`、`tools/`、`TEAM_ROLES.json` 归整合人 | 文件开头写明它**只请求 review、不阻断合并**：真正的 required checks 需要 admin 打开分支保护，而我没有 admin（`permissions.admin: false`）。写一句"已启用保护"就是撒谎 |
+
+顺带核了两件相关的事，都不需要改：
+
+- **`ai/requirements.txt` 相对 B 验证过的 `02228b8` 没有任何变化**，所以 B 的 `deploy/requirements-release.lock`（42 个包，基于 `02228b8` 固定）**仍然匹配**，不需要复核快照。
+- **生成文件没有漂移**：`python tools/generate_types.py` 和 `generate_openapi.py` 重跑之后 `git diff` 为空，`check_frozen` 依然 unchanged。这一条以前只是"应该没漂"，现在是"跑过，没漂"。
+
+### 20.2 十条共用规则
+
+| # | 规则 | 状态 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 只做本角色任务；先读契约再动手；不凭旧聊天改字段 | 遵守 | 契约 2.0.0 全程未改；每轮先跑 `check_frozen` |
+| 2 | 遵守文件白名单；不重写别人模块；新增依赖要说明 | 遵守 | `check_scope --role C`；`backend/`、`frontend/`、`contracts/`、`data/fixtures/` 零改动；`ai/requirements.txt` 自 `02228b8` 未动 |
+| 3 | `contract.schema.json` 是真源，`types.ts` 是生成文件；时间语义与窗口边界 | 遵守，**本轮验证** | 20.1 的重生成检查；`tests/ai/test_metric_definitions.py`、`test_invariants.py` |
+| 4 | 只用 `tools/reference.py` 做参考；不把 Mock 当正式后端；不把静态 `analysis_result.json` 当真实模型输出 | 遵守 | 所有单测注入 httpx transport；`generation.mode` 三态；`model_calls: 0` 在 adapter 报告里 |
+| 5 | C 不能等 B：先用固定输入完成校验、失败回退和真实模型探针 | **完成** | `analyze()` 离线可用；`python -m ai.probe --live` 跑过 |
+| 6 | 前端不持密钥；`.env` 不入库/不贴群聊/不进日志视频提示词；只发必要数据 | 遵守 | `NoSecretsTests`（3 个）；tracked 树 `sk-` 模式零命中；`input_safety_issues` 只放行白名单 id |
+| 7 | 自动测试不做真实付费调用 | 遵守 | `test_bare_analyze_never_touches_the_network`、`test_offline_composition_never_calls_a_model`；CI 里也没有 Key |
+| 8 | 一次一个小块；先列文件与验收命令；完成后更新 handoff（版本/文件/接口/测试/已知限制/下一块） | **本轮补齐** | 本文件顶部的"本轮交付"六项表，就是这条要求的格式 |
+| 9 | 不无限重试；不放宽校验掩盖错误；不删失败测试；最多一次纠正；deadline 生效；reset 后旧任务不发布 | 遵守 | `CorrectionBudgetTests`（7 个）；两次失败就 fallback；本轮修的 bug 是**加严**校验不是放宽 |
+| 10 | 提交/推送/PR/合并遵守权限；文档不能代替授权；**C 做最终合并** | 遵守，**本轮执行** | PR #8 → #9 → `main`。但仓库公开需要的 admin 权限我没有，这一格交回给 owner |
+
+### 20.3 中国开发与国际部署约束
+
+| 约束 | 状态 |
+| --- | --- |
+| 依赖镜像走 `docs/01_cn_setup.md`；包版本不变；镜像缺包不私自降级或重建锁文件 | 遵守：本轮**没有动过任何锁文件**。CI 里 `pnpm install` 保留 `frontend/.npmrc` 的 npmmirror 配置，不让它悄悄回落到默认源 |
+| 前端不用海外字体/脚本 CDN/远程比赛样本；生产同源、单进程、密钥在后端 | 属 A/B；C 侧只在 CI 里跑 `typecheck`/`build`，不引入任何远程资源 |
+| **云上再次验证国内 API，不能从开发机成功推断云上成功** | 未做，且**材料里没有一处这么说**。`SUBMISSION_POSITIONING.md` 写的是"真实调用过 DeepSeek，未在云端复测" |
+| 集成人负责跨模块依赖整合、CI 与代码归属 | 本轮补齐 CI 与 CODEOWNERS（20.1） |
+
+### 20.4 一个我要说明的守卫盲区
+
+`tools/check_scope.py` 只扫 `matchmind/` 内的路径（`git diff --relative -- .`），所以 **`.github/` 和仓库根 `docs/` 它是看不见的**。我没有为了让新文件"通过检查"去扩白名单——那会让守卫看起来覆盖得比实际更宽。正确说法是：这两处只有人工 diff 审查，CI 与 CODEOWNERS 的改动必须有人看。要真正覆盖，得改守卫的扫描根，那是另一件事，我不在这一轮顺手改。
+
+### 20.5 本轮修改文件
+
+- 新增：`.github/workflows/ci.yml`、`.github/CODEOWNERS`
+- 新增：`evaluation/evidence/README.md`、`evaluation/evidence/live-run-2026-10-23-framework.json`、`tests/ai/test_live_evidence.py`
+- 修改：`evaluation/live_smoke.py`（`--record` + 两处诚实化）、`evaluation/README.md`、`docs/handoff/ai.md`
+
+### 20.6 CI 不是"写好了"，是"在 GitHub 上绿了"
+
+写完 YAML 就宣布"有 CI"是我一贯要挑的毛病，所以这一条实际验证过。推送 `dc24f0b` 到 `main` 后，workflow 自己触发并跑完：
+
+```
+gh run view 39903517201
+  contracts and offline suite          completed / success
+  frontend typecheck, build and test   completed / success
+```
+
+两个 job 都真绿：Python 侧装的是 `requirements-dev.txt` 里钉死的版本、跑 `check_frozen`、重生成 `types.ts`/`openapi.json` 并 `git diff --exit-code`、再跑全套 pytest；前端侧用 `pnpm install --frozen-lockfile` 走 `frontend/.npmrc` 里钉的 npmmirror 源，然后 `typecheck` / `build` / `pnpm test`。
+
+这一条顺带解决了一个我之前没意识到的问题：**从第九轮起 CI 是空的，意味着我的所有检查只在我这台机器上发生过**。现在别人提 PR 也会被同样检查一遍。
+
+---
+
+## 二十一、第十二轮：B 的全套验收在 `main` 上通过，以及一个中文数字的真 bug
+
+### 21.1 共同检查：B 的一条命令验收
+
+`C6` 要求"每日合并小PR并跑共同检查和已有角色测试"。前几轮我跑的都是我自己那部分；这一轮在 `main` 上跑了 B 的整套验收（`python -m deploy.verify_backend`，包含数据审计、确定性分析、584 个合成回测、真实 HTTP/SSE 检查、回收进程）：
+
+```
+status: passed
+synthetic_backtest: normal 512 / invalid 72 / failed 0
+                    false_triggers 0 / missed_triggers 0
+                    logical_seconds_checked 154112 / snapshot_comparisons 1536
+http_and_sse:      stats, retry, play_pause, reset, old_run, invalid_input,
+                   SSE_snapshot_reconnect  —— 数据集含 quiet（不该触发的那套）
+tests:             backend 85 passed, common 19 passed
+model_ready:       false（该进程没配 Key，如实报告，不是失败）
+```
+
+这是整条集成链第一次被 B 自己的标准验过：A1 前端、B 的后端/数据、C 的管线在同一个提交上一起通过。**零模型调用**，因为 `model_job_requested: false`。
+
+### 21.2 中文数字：一个会冤枉模型的 bug
+
+上一版只认 `十 / X十 / 十Y / X十Y`，文档里写着"部分覆盖"。查了一遍发现它不是覆盖面小的问题，是**读错**：
+
+- `一百一十五` 会被匹配到里面的 `十五`，读成 **15**。于是一个正确写出 115 的模型，会被判成"陈述了未提供的数字 15"——**报错信息本身都是错的**。
+- `states_value("持球一百一十五秒", 115)` 返回 `False`，所以中文输出只要把数字写全，指标主张就会被丢掉。
+
+改法：新增 `chinese_numeral()`，按位解析 `十五 / 三十五 / 一百一十五 / 两百 / 一千二百`（"两百"→200，"一千二百"→1200），并且：
+
+- `numbers_in` 改成扫描**连续数字串**而不是搜 `十` 的组合。`三十五个` 现在整串读 35，不再被拆成 15。
+- `百分之三十七` 里的 `百` **不算 100**（那是百分比前缀，不是数量）。不做这一步的话，任何中文百分比句子都会被判成伪造了 100。
+- **孤立的单个数字仍然不认**。`一次都没射门`、`进攻三区` 继续是零命中——这是刻意的取舍，写进 docstring。
+
+4 个新测试钉住：百位整串读取、正确的中文百位指标被接受、百分比前缀不误读、孤立单字继续不识别。
+
+### 21.3 发布门：`release_check --profile integrated` 从 2 项阻塞到全绿
+
+B 的 `deploy/release_check.py` 是"整合者接手时才跑到"的那道门，之前没人跑过。第一次跑的结果：
+
+```
+blocking: ["A_bundled_frontend_artifact", "same_origin_frontend_enabled"]
+```
+
+两条都不难，但都要有人真的做：前端 `dist/` 没构建过，同源托管开关没打开。做完（`pnpm run build` + `MATCHMIND_SERVE_FRONTEND=1`）再跑：
+
+```
+blocking: []
+  audited_reproducible_data        passed
+  C_composition_source             passed
+  C_pinned_dependencies_installed  passed
+  A_bundled_frontend_artifact      passed
+  same_origin_frontend_enabled     passed
+model_calls: 0
+model_endpoint_verified: false      ← 如实：这一步不验模型
+frontend_browser_verified: false    ← 如实：这一步不验浏览器
+```
+
+### 21.4 组合入口真的能把三块东西一起端出来
+
+门禁过了不等于能跑，所以顺手起了 `deploy.release_run`（B 的发布入口，固定单 worker，指向 C 的组合根 `ai.app:app`），用 `curl` 打了三个点：
+
+```
+GET /api/v1/health   -> {"status":"ok","contract_version":"2.0.0","mode":"production","model_ready":true}
+GET /                -> 200 text/html 677B        （A 的 dist，和 API 同源）
+GET /api/v1/matches  -> [{"match_id":...,"home":"Harbor FC",...}]
+GET /.well-known/agent-card.json -> {"schemaVersion":".../agent-card.json","name":"MatchMind",...}
+GET /api/v1/replays/NOPE/insights/NOPE/overlay -> 404
+```
+
+`model_ready: true` 是因为本机 `.env` 有 Key；**这不是云端已验证**，`docs/03_resources.md` 和 `AI_RULES.md` 都要求从真实宿主再测一次，那一步没做。服务验完已关闭，端口回收。
+
+### 21.5 门禁状态（第十二轮）
+
+- `python -m pytest tests -q` → **433 passed, 62 subtests passed**（上一轮 429，+4）
+- `python -m deploy.verify_backend` → **passed**（21.1）
+- `python tools/check_frozen.py` → unchanged
+- `python tools/check_scope.py --role C` → OK
+- 修改：`ai/verify.py`、`tests/ai/test_service.py`、`docs/handoff/ai.md`

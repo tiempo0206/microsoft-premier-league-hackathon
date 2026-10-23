@@ -531,6 +531,38 @@ class VerificationUnitTests(unittest.TestCase):
             request, claims)
         self.assertIsNone(narratives)
 
+    def test_hundreds_are_read_whole_and_not_as_their_tail(self):
+        """Regression: 一百一十五 used to match the 十五 inside it and read as 15.
+
+        The consequence was the worst kind: a model that correctly spelled out 115 got its card
+        rejected for stating a number that had never been supplied, and the number it was accused of
+        inventing (15) was a real one, so the error message made no sense either.
+        """
+        self.assertEqual(numbers_in("持球一百一十五秒"), {115.0})
+        self.assertEqual(numbers_in("一百一十五"), {115.0})
+        self.assertEqual(numbers_in("三十五"), {35.0})
+        self.assertEqual(numbers_in("两百次"), {200.0})
+        self.assertEqual(numbers_in("三千"), {3000.0})
+
+    def test_a_correct_metric_spelled_in_hundreds_is_accepted(self):
+        from ai.verify import states_value
+        self.assertTrue(states_value("客队控球一百一十五秒", 115))
+        self.assertFalse(states_value("客队控球一百一十秒", 115))
+        self.assertTrue(states_value("一百一十五", 115))
+
+    def test_the_percent_prefix_is_not_read_as_a_hundred(self):
+        """百分之三十七 is 37 percent, not 100 and 37. Counting the 百 rejected correct prose."""
+        self.assertEqual(numbers_in("控球占百分之三十七"), {37.0})
+        self.assertEqual(numbers_in("千分之三十五"), {35.0})
+        # 五 on its own stays unread, exactly as it does outside a percent phrase.
+        self.assertEqual(numbers_in("千分之五"), set())
+
+    def test_bare_chinese_digits_are_still_not_numbers(self):
+        """The deliberate half of the rule: 一 and 三 are ordinary words far more often than not."""
+        self.assertEqual(numbers_in("一次都没射门"), set())
+        self.assertEqual(numbers_in("进攻三区"), set())
+        self.assertEqual(numbers_in("上半场"), set())
+
     def test_number_words_and_chinese_numerals_are_read(self):
         from ai.verify import states_value
         self.assertIn(3.0, numbers_in("three recoveries"))

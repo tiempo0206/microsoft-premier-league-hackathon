@@ -1,0 +1,35 @@
+# Review ownership, not a permission rule. This file requests a review; it does not block a merge
+# unless a repository administrator enables "require review from Code Owners" in branch protection,
+# which needs admin rights this repository's integrator does not hold
+# (see matchmind/docs/01_... §"PR 必须写清楚": 拥有仓库管理权限的人按团队决定配置 required checks 和 review).
+#
+# Handles verified against the GitHub API on 2026-10-23; these are the three members recorded in
+# matchmind/TEAM_ROLES.json. Derived from matchmind/integration-snippets/CODEOWNERS.fragment.
+
+# A — frontend experience
+/matchmind/frontend/          @tiempo0206
+/matchmind/tests/frontend/    @tiempo0206
+
+# B — data and backend
+/matchmind/backend/           @wunianze666-netizen
+/matchmind/data/generator/    @wunianze666-netizen
+/matchmind/data/extra/        @wunianze666-netizen
+/matchmind/tests/backend/     @wunianze666-netizen
+/matchmind/deploy/            @wunianze666-netizen
+
+# C — AI verification and evaluation
+/matchmind/ai/                @farlyfeifei
+/matchmind/evaluation/        @farlyfeifei
+/matchmind/tests/ai/          @farlyfeifei
+
+# Shared and frozen. The integrator holds them so that no role can approve its own change to the
+# protocol; listing C here is the process, not an exemption from review.
+/matchmind/contracts/         @farlyfeifei
+/matchmind/data/fixtures/     @farlyfeifei
+/matchmind/tools/             @farlyfeifei
+/matchmind/TEAM_ROLES.json    @farlyfeifei
+
+# The documents every role reads, and the CI that gates all of them.
+/matchmind/AI_RULES.md        @tiempo0206 @wunianze666-netizen @farlyfeifei
+/matchmind/AGENTS.md          @tiempo0206 @wunianze666-netizen @farlyfeifei
+/.github/                     @tiempo0206 @farlyfeifei
