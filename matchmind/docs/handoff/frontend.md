@@ -1,54 +1,67 @@
-# Frontend handoff — A1
+# Frontend handoff — A2/A3 integration
 
-- Role / developer: A / Tianbo Cao (`tiempo0206`), assisted by Codex.
-- Branch: `feat/a1-frontend`.
-- Baseline SHA: `384b58f6195138aadd22f956855acef73fedc0c5`.
-- Contract: `2.0.0`; shared contracts, fixtures, mock, and AI stub remain unchanged from the baseline.
+- Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
+- Date: 2026-10-23 (Asia/Shanghai).
+- Branch: `codex/frontend-integration`; task: #10.
+- Starting main SHA: `bcaed0e`; synchronized main through `31b2c56` before rebuilding the release bundle. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. Only A-owned frontend, frontend tests and this handoff changed. No shared contract, fixture, B/C source or deployment file changed.
 
-## Baseline preparation
+## Delivered
 
-The repository had no shared MatchMind baseline. The prerequisite commit above imports the 69 starter files verbatim from the supplied v2.1 archive. A1 is a separate commit on top. The archive itself and the prior review report are not included. C should confirm this baseline before coordinating B/C branches.
+A1 is already on main (PR #3). This branch completes the next frontend slices:
 
-## A1 delivered behavior
+- A2: play/pause/reset and 1/2/5/10 speeds; all six named SSE kinds; complete snapshot replacement, authoritative match-state statistics, event timeline, real analysis traces and separate business/transport errors.
+- A2 recovery: stable UUIDs for create/command retries, expected-run headers, abort/cleanup, sync after an unconfirmed control, old-run/duplicate/foreign-session guards. Reset clears insights, traces, events and selected evidence atomically. Repeated real narrator steps are preserved.
+- A3: insight cards, local Casual/Analyst switching, metrics and claims, generation/verification labels, expandable evidence, selected event details, timeline highlighting and recorded pitch geometry. Selecting evidence does not seek. Future event details are not rendered before the replay clock reaches them.
+- A4/A5 local coverage: real combined B/C app with offline C fallback, HTTP/SSE consumer integration, keyboard controls and evidence selection, 1280x720 desktop and 390px mobile checks. No horizontal overflow was observed at those sizes.
 
-- Loads `GET /api/v1/matches`, selects the supplied synthetic clip, and creates a replay with `POST /api/v1/replays` at the recommended speed 5.
-- Subscribes to the named `snapshot` stream and displays server-provided clock, score, shots, passes, completed-pass accuracy, and estimated possession seconds.
-- Shows the synthetic label, fictional team names, and the 25:00–30:00 clip boundaries. Zero pass attempts show an em dash.
-- Includes loading, empty catalogue, API failure/retry, stream reconnection, and last-valid-snapshot states.
-- Cleans up requests/subscriptions; discards duplicated snapshots, old runs, and mismatched replay identities.
-- Adds an English page, local SVG branding, local styles, and keyboard-accessible selection/retry controls. No external fonts, CDNs, model keys, or runtime model calls.
+## Validation
 
-## Changed files
-
-Frontend entry, favicon, page/styles, consumer-side replay client and hook, Vite type declarations, README, local installer-cache ignore, and the test script in `frontend/package.json`; role tests in `tests/frontend/replay.test.mjs`; this handoff. No dependency versions or lockfile changes.
-
-## Verification
-
-From `matchmind/frontend`:
+From `frontend`:
 
 ```sh
 pnpm run typecheck
 pnpm run test
 pnpm run build
+pnpm run test:backend
 ```
 
 From `matchmind`:
 
 ```sh
+MATCHMIND_MODEL_PROVIDER=mock .venv/bin/python -m pytest tests -q
 .venv/bin/python tools/check_frozen.py
-.venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
-.venv/bin/python tools/check_scope.py --role A --base 384b58f6195138aadd22f956855acef73fedc0c5
+.venv/bin/python tools/check_scope.py --role A --base 31b2c56
 ```
 
-Results: TypeScript check and production build passed; 11 role tests and all 19 common Python tests passed; frozen files and role scope checks passed. Browser verification confirmed the initial 25:00 / 0:0 screen, connected snapshot feed, and failure/retry recovery against the actual local mock. These checks concern A1, not complete product acceptance.
+Results: TypeScript/build passed; 27 frontend unit tests passed; 433 Python tests and 62 subtests passed; frozen-file and role-scope checks passed. The additional frontend backend probe passed with 0 model calls. It launches a real B/C app with a 5x accelerated test clock, checks actual consumer requests/messages, and stops its own child.
 
-Local environment: Node 24.11.1, pnpm 11.25.0, TypeScript 7.0.2, Python 3.13.9, jsonschema 4.26.0. Python 3.12 was not installed on this machine; the documented team target remains 3.12 and was not independently tested here.
+The probe covers catalogue/event recovery, play/pause/speed, a frozen pause clock, the real rule fallback (3 high recoveries / 2 linked shots), both narrative fields and evidence IDs, comparison with server statistics, second-session isolation, fresh snapshot after reconnect, reset retry with the same operation key, and stale-run rejection. Named model/business errors and malformed stream recovery are covered by frontend unit tests; the probe does not claim a real provider outage or network-location test.
 
-## Runtime state and next work
+Browser checks against `ai.app:app`, dataset `data/extra/showcase/press`, provider explicitly `mock`:
 
-- Runtime source: local contract mock. No live model, semantic verification, or real AI analysis is claimed.
-- No shared contract change is needed for A1. The review's fixture/statistic issues remain C/B follow-up work and were not silently changed in this role.
-- A2: playback controls, all six incremental SSE kinds, and complete control/reconnect scenarios.
-- A3: insight cards, evidence highlighting, and audience mode selection.
-- A4/A5: real backend integration and full responsive/accessibility acceptance.
-- Merging the baseline and assigning B/C remain team coordination tasks. No production backend or public deployment is included.
+- Initial 25:00 / 0:0 and connected feed; API failure/retry restored the page.
+- Keyboard play/pause and 10x selection; pause held at 26:56 across subsequent checks.
+- Actual fallback card appeared for 25:00–27:30 with 3 recoveries, 2 linked recoveries and code-only verification. Validator trace explicitly said no model was called.
+- Keyboard audience switch changed the same card's narrative. Keyboard evidence selection highlighted the matching event row and pitch point; the clock stayed at 30:00.
+- Keyboard reset returned to 25:00 / run 2 with zero insights and zero observed events.
+- Desktop 1280x720 and mobile 390px layouts were inspected; 13 expanded evidence buttons fit without horizontal overflow.
+
+Screenshots are local ignored artifacts under `.artifacts/frontend-integration/` (desktop, mobile and evidence view), not source assets or live-model evidence.
+
+Environment: Node 24.11.1, pnpm 11.25.0, TypeScript 7.0.2; local Python 3.13.9. Backend/AI pinned requirements were installed into the existing project `.venv`. Python 3.12 remains the team's target and was not tested on this machine.
+
+## Startup and production handoff
+
+Use `frontend/README.md` for the exact commands. Development proxy target: `MATCHMIND_BACKEND_URL=http://127.0.0.1:8000`. The integrated process is `ai.app:app`, with provider explicitly `mock` for free offline verification. The dense press dataset was exercised locally; no default dataset was changed.
+
+`pnpm run build` supplies `frontend/dist`, which B's existing `deploy/Dockerfile.release` expects. C's latest main now tracks that directory for Git-based Render builds, so this branch includes the rebuilt A2/A3 bundle and removes the old A1 hashed assets. Current entry assets are `index-BVwS-ZmQ.js` and `index-5U3MrlGQ.css`. The backend-only Render Blueprint remains API-only.
+
+`MATCHMIND_SERVE_FRONTEND=1 MATCHMIND_MODEL_PROVIDER=mock .venv/bin/python -m deploy.release_check --profile integrated` passed all five assembly checks, with 0 model calls. The resulting same-origin production build was also opened through the real backend locally; this is separate from public Render acceptance.
+
+## Remaining joint acceptance
+
+- C/integrator reviews and merges this PR. No automatic main merge, repo visibility change or Render deployment is performed here.
+- B/C verify the combined release on the actual public Render host, including SSE timing and cloud-to-model connectivity. Local success does not establish these.
+- C/representative supplies the authorized live model configuration and runs the real workflow; Live model/agent review labels are supported by the page but were not produced in this offline frontend QA.
+- A6: record and approve the final English video with actual live-model/verified failure-injection footage. This branch supplies working playback, evidence and audience-mode interactions; it does not claim the video exists.
