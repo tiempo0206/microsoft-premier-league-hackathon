@@ -663,3 +663,40 @@ python -m ai.threat                              → available=false, "a five-mi
 - `python tools/check_frozen.py` → 契约与 fixture 未改
 - `python tools/check_scope.py --role C` → 通过
 - 新增文件：`tests/ai/test_auditor_calibration.py`；修改：`evaluation/auditor_calibration.py`、`ai/recap.py`、`tests/ai/test_recap.py`、`evaluation/README.md`、`evaluation/SUBMISSION_POSITIONING.md`
+
+---
+
+## 十八、角色卡逐项对账
+
+`roles/C_AI.md` 里有六个工作块和一份“本角色检查”。下面把每一项对到一个**跑得起来的测试名字**，因为“我觉得我做了”不算证据。
+
+### 18.1 六个工作块
+
+| 工作块 | 状态 | 证据 |
+| --- | --- | --- |
+| C1 基线导入、三人角色、类型生成、冻结摘要、共同测试、`analyze` 离线跑通并核对 fallback 标签、每日集成时间 | **完成，除 `baseline_sha`** | `TEAM_ROLES.json` 已填（同步时间 21:00）；`tools/check_frozen.py`；`tests/test_contracts.py`；`test_service.py::OfflineDefaultTests::test_unconfigured_config_is_a_labelled_fallback`。**`baseline_sha` 仍是 `pending`——要等 PR #8 合并，唯一一格卡在别人手上** |
+| C2 开通国内模型、配置检查、一次真实 `--live` 探针、只记成功标志/模型名/usage/延迟、不记 Key | 完成 | `python -m ai.probe --live`；`ai/usage.py` 账本；`test_invariants.py::NoSecretsTests`（3 个，含“配置的公开视图永不暴露 Key”） |
+| C3 结构化分析 + 双档叙事 + 审核 + 程序校验；`async analyze(dict)->dict`；先 mock 单测再实测；事实只来自输入；纠正最多一次；总 deadline 与并发生效；超时返回诚实 fallback | 完成 | 18.2 全部十三项；`tests/ai/test_service.py`（50 个测试）；`test_app.py::AnalyzeSignatureTests` 钉住签名 |
+| C4 Agent Framework 接管已验证流程；单 Agent 导入 → 无密钥实例化 → 真实单次调用 → 串三角色；角色任务和输入不同；Trace 来自实际执行；注入“证据不足推断”展示审核能力 | 完成 | `MATCHMIND_ORCHESTRATOR=framework` 为默认；`test_orchestrator.py::SelectionTests`（5 个，含“缺框架要降级不是崩”）；`test_service.py::LivePathTests::test_roles_get_different_system_prompts_and_inputs`、`::test_traces_record_each_real_agent`；注入能力见 17.2 那十类 |
+| C5 12 个起步评测，单/多 Agent 共享输入、模型、确定性校验器；记录错误/纠正成功/耗时/调用数；不保证更快更便宜；不改 B 的调用签名；两个观众文本一次结果产出 | 完成 | `evaluation/benchmark.py`；`evaluation/README.md` §2–§3（含“不可比指标”）；`narratives.casual` 与 `narratives.analyst` 在契约里是同一个 `Insight` 的两个字段，一次产出 |
+| C6 每日合并小 PR + 跑共同检查；与 A/B 验收 reset/模式/模型故障/公网访问；填技术栈、模型路由、未实现项；与提交代表完成材料；公开与正式提交由有权限成员执行 | **部分** | 技术栈/模型路由/未实现项在第七节；材料底稿在 `evaluation/SUBMISSION_POSITIONING.md`。**合并、联合验收、录像这三件 A/B/代表不在场做不了** |
+
+### 18.2 “本角色检查”十三项
+
+| 检查项 | 测试 |
+| --- | --- |
+| 非 JSON 响应 | `test_service.py::BoundedFailureTests::test_non_json_content_falls_back` |
+| 空响应 | `::test_empty_content_falls_back` |
+| 错误 ID（编造的事件 id） | `::VerificationUnitTests::test_invented_event_id_is_rejected` |
+| 越界时间 | `::RefusalTests::test_request_outside_window_is_rejected` |
+| 错误数字 | `::test_wrong_metric_number_is_rejected`、`::test_metric_claim_stating_the_wrong_number_is_rejected` |
+| 证据不足推断 | `::test_unsupported_causal_inference_is_rejected` |
+| 超时 | `::test_timeout_returns_fallback_and_says_why` |
+| 一次纠正上限 | `::CorrectionBudgetTests::test_correction_is_capped_at_one_round`、`::test_persistent_auditor_rejection_falls_back` |
+| fallback 标签 | `::OfflineDefaultTests::test_unconfigured_config_is_a_labelled_fallback`、`::LivePathTests::test_valid_model_output_passes_with_live_labels` |
+| 返回身份原样保留 | `::OfflineDefaultTests::test_identity_is_returned_unchanged` |
+| 测试必须 mock 网络（机器上有 Key 也不许付费调用） | `::test_bare_analyze_never_touches_the_network`、`test_app.py::HttpTests::test_offline_composition_never_calls_a_model` |
+| 共享契约的 mock 模式语义仍成立 | `tests/test_contracts.py`、`tests/test_mock_api.py`（B 的，C 只保证不破坏） |
+| 通用 fallback 遇错输入优先 reject，而不是用错数字讲一遍 | `::RefusalTests::test_metrics_that_contradict_events_are_rejected_not_narrated`、`::test_shot_count_that_contradicts_events_is_rejected` |
+
+**这张表的方法论**：角色卡写的每一项都要能被一个测试名字指出来；指不出来的，写进第七节“仍未完成”，而不是留一句“我做了”。唯一的空格是 `baseline_sha`，它不是技术问题，是合并顺序问题。
