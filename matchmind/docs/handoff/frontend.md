@@ -52,3 +52,10 @@ Local environment: Node 24.11.1, pnpm 11.25.0, TypeScript 7.0.2, Python 3.13.9, 
 - A3: insight cards, evidence highlighting, and audience mode selection.
 - A4/A5: real backend integration and full responsive/accessibility acceptance.
 - Merging the baseline and assigning B/C remain team coordination tasks. No production backend or public deployment is included.
+
+## Integration update — 2026-10-23 (A2 transport and controls)
+
+- Shared main baseline: `bcaed0e`; current branch: `codex/frontend-integration`.
+- Added play/pause/reset and 1/2/5/10 speed controls, stable operation keys and expected-run headers. Unconfirmed commands retain their original retry key; users can sync server state instead.
+- The page now listens to all six frozen SSE kinds. Complete snapshots replace state; incremental state is authoritative, events never increment statistics, and reset discards old-generation output. Named business errors are distinct from EventSource transport errors.
+- Frontend tests: 26 passed; TypeScript check and production build passed. Browser integration and insight presentation are the next part of this branch, not yet claimed by this checkpoint.

@@ -247,6 +247,90 @@ export default function App() {
           </div>
         )}
 
+        {replay.controlError && (
+          <div className="notice error-notice" role="alert">
+            <div>
+              <strong>The command could not be confirmed.</strong>
+              <p>
+                {replay.controlError} Retry the same command, or sync the
+                current server state.
+              </p>
+            </div>
+            <div className="notice-actions">
+              <button
+                className="retry-button"
+                disabled={replay.pending}
+                onClick={replay.retryControl}
+              >
+                Retry command
+              </button>
+              <button
+                className="retry-button"
+                disabled={replay.pending}
+                onClick={replay.synchronize}
+              >
+                Sync replay
+              </button>
+            </div>
+          </div>
+        )}
+
+        <section className="playback-controls" aria-label="Playback controls">
+          <div className="playback-buttons">
+            <button
+              className="primary-button"
+              disabled={
+                replay.controlsDisabled || snapshot?.replay.status === "ended"
+              }
+              onClick={() =>
+                replay.control({
+                  action:
+                    snapshot?.replay.status === "playing" ? "pause" : "play",
+                })
+              }
+            >
+              <span aria-hidden="true">
+                {snapshot?.replay.status === "playing" ? "Ⅱ" : "▶"}
+              </span>{" "}
+              {snapshot?.replay.status === "playing" ? "Pause" : "Play"}
+            </button>
+            <button
+              className="secondary-button"
+              disabled={replay.controlsDisabled}
+              onClick={() => replay.control({ action: "reset" })}
+            >
+              <RefreshIcon /> Reset
+            </button>
+          </div>
+          <div className="speed-control">
+            <label htmlFor="replay-speed">Playback speed</label>
+            <select
+              id="replay-speed"
+              value={snapshot?.replay.speed ?? 5}
+              disabled={replay.controlsDisabled}
+              onChange={(event) =>
+                replay.control({
+                  action: "set_speed",
+                  speed: Number(event.target.value) as 1 | 2 | 5 | 10,
+                })
+              }
+            >
+              {[1, 2, 5, 10].map((speed) => (
+                <option key={speed} value={speed}>
+                  {speed}×
+                </option>
+              ))}
+            </select>
+          </div>
+          <p role="status">
+            {replay.pending
+              ? "Confirming command…"
+              : snapshot?.replay.status === "ended"
+                ? "Clip ended. Reset to play again."
+                : "Server clock · Statistics follow the replay"}
+          </p>
+        </section>
+
         <div className="match-grid" aria-busy={replay.loading}>
           <section
             className={`match-board${replay.loading ? " is-loading" : ""}`}

@@ -194,7 +194,7 @@ test("rejects an envelope carrying a snapshot from a different replay", () => {
     data: JSON.stringify({
       replay_id: example.replay.replay_id,
       run_id: example.replay.run_id,
-      seq: 1,
+      seq: example.replay.last_seq + 1,
       kind: "snapshot",
       payload,
     }),

@@ -1,1 +1,13 @@
-export type { Match, Event, MatchState, ReplaySnapshot, StreamMessage, AnalysisRequest, AnalysisResult, Insight } from '../../contracts/types';
+export type {
+  Match,
+  Event,
+  MatchState,
+  ReplaySnapshot,
+  StreamMessage,
+  AnalysisRequest,
+  AnalysisResult,
+  Insight,
+  ControlReplay,
+  ErrorInfo,
+  Trace,
+} from "../../contracts/types";
