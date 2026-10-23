@@ -1,5 +1,11 @@
 # B delivery evidence — 2026-10-23
 
+This table records the original local preparation run. Current status: A/B/C are
+integrated on main (PR #9), the B Render preview is live and public acceptance
+passed after API configuration. C fixed the historical evidence-union failure;
+the main handoff records 12/12 normal requests and 3/3 refusals, zero model calls.
+Use INTEGRATOR_HANDOFF_CN.md and ../deploy/RENDER_STEPS_CN.md for current operations.
+
 Branch: `codex/backend-ab-mvp`. Contract: 2.0.0. Default data and frozen baseline unchanged.
 
 | Acceptance item | Observed result |

@@ -5,7 +5,7 @@
       "name": "matchmind-backend-preview",
       "runtime": "docker",
       "repo": "https://github.com/tiempo0206/microsoft-premier-league-hackathon",
-      "branch": "codex/backend-ab-mvp",
+      "branch": "main",
       "region": "singapore",
       "plan": "free",
       "numInstances": 1,

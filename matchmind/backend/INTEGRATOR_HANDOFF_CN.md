@@ -1,16 +1,20 @@
 # B 后端交接：整合者从这里开始
 
-2026-10-23，协议 **2.0.0**，唯一 B 分支 **codex/backend-ab-mvp**。
-本文件可以直接转发给负责最终联调的人。B 不合并 A/C、不改冻结契约、不替 C 开发模型。
+2026-10-23，协议 **2.0.0**。A/B/C公共基线已在 **main**，基线提交`03910f8`（PR #9），记录见`TEAM_ROLES.json`。原B开发分支不再是部署前置条件；从main接手即可。
+本文件可直接交给最终整合Agent。B已完成开发和后端公网预览；最终整合者接管后续构建、模型资源、联合验收及发布维护。
 
 ## 1. 已交付与使用顺序
 
-1. 在同一历史中接纳团队已确认的 starter/A/B/C。当前 main 还没有应用基线，**不要把 B 整个分支直接当成只含后端的 main PR**；基线关系见 `B_DELIVERY_PLAN.md`。
-2. 先在原始 B 基线上运行完整验收，再由整合者选择增强演示数据。
-3. C 的组合根接入后，用其自己的 probe 检查真实模型；最后由 A 完成浏览器与证据卡联合验收。
-4. 最后才发布；本文件提供准备材料，不表示已经创建公网服务。
+1. Fetch并审查main，使用其现有A/B/C源码，不再寻找或合并已完成的旧角色分支。
+2. B预览已可用：https://matchmind-backend-preview.onrender.com 。先接现有接口，再做最终组合构建。
+3. C的组合根已在main；用C自己的probe检查真实模型，并由最终整合者完成云端与浏览器验收。
+4. 后端预览已发布；完整前端和真实AI的网站仍需最终组合发布，不能将两者混称为已完成。
 
-已核对的远端：A `f88d286` / PR #3；C最新为 `70dec95` / PR #8（目标 B 分支），它相对本次验证的 `02228b8` 只更新文档/评测材料，`ai/`代码未变。后续 C 若继续更新，由整合者审查完整 diff 后选择版本。本机导出的 C 文件只用于隔离打包检查，**没有复制回 B 分支**。
+核对main时为`f0556c2`。B提交`0425283`的后端/数据/测试/部署内容已随公共基线合入；A1和C管线亦已合入。当前Render预览固定部署`bcaed0e`，自动部署Off，push新main不会自动改变线上版本。
+
+## 接手Agent可直接执行的任务
+
+> 从main接管项目，读取本文件、docs/02_contract.md与各角色交接。复用已上线B接口和已有C组合根，完成A前端产物构建、云端模型配置、同源组合发布与最终验收。调用后端不需要Render Key；只有改云配置/发布才从Agent私密配置读取RENDER_API_KEY。常规技术集成和部署由整合者负责，无需等待B本人继续操作；不修改冻结协议来规避失败。
 
 ## 2. B 的一条验收命令
 
@@ -122,7 +126,7 @@ $env:MATCHMIND_MODEL_TIMEOUT_SEC="20"
 
 C可从其忽略的`.env`读取模型配置，但B的开关/超时/数据目录读取**进程环境**，必须如上设置，或由托管平台注入。保持两侧共用同一个20秒候选预算，云端实测后调整，不单独改C导致B提前截断。
 
-**增强数据的已知C阻塞项**：C `02228b8` 的降级证据截断导致12个正常输入中4个输出违反证据包含关系；详见 `C_INTEGRATION_FINDINGS.md`。C修复前，组合运行请把上面数据目录改为 `data/extra/validated-demo`。增强组合启动已增加离线门禁，失败就明确退出，不带病上线。C修复后由整合者运行：
+**增强数据的历史问题已经修复**：B在C `02228b8`发现的降级证据截断问题已由C在main修复，`card_evidence`保序合并全部保留主张的证据；仓库记录12/12正常输入通过、3/3篡改被拒、零模型调用。`C_INTEGRATION_FINDINGS.md`保留为历史复现报告，不是当前阻塞项。最终整合者仍针对其采用的提交执行：
 
 ```powershell
 .\.venv\Scripts\python.exe -m deploy.adapter_check --output .artifacts/C-offline-compatibility.json
@@ -145,7 +149,7 @@ docker run --name matchmind-release-local -p 127.0.0.1:8000:10000 matchmind-rele
 | --- | --- | --- |
 | 数据、统计、规则模型 | B已提供，无需账号/GPU/训练 | 数据目录、版本、预期、输入包 |
 | GitHub私有仓库 | 已有协作权限 | 整合者确认同一基线和A/B/C提交 |
-| Render | 已注册，团队仓库未授权；**由 tiempo0206 配置 GitHub App** | Render工作区/服务链接，确认费用责任 |
+| Render | 账号和仓库授权已完成，B预览已Live且公网验收通过 | 接口URL已交付；发布Agent另需有权管理现有服务的Render Key |
 | DeepSeek模型 | C交接称已实测；优先复用团队授权资源，B不重复开户 | C确认provider/base_url/model，Secret由持有人直接填云平台 |
 | Microsoft Agent Framework | C提供库接入；库本身不要求Azure资源 | 安装C固定依赖，真实trace显示实际framework路径 |
 | Azure/Foundry | B不创建；不是B预览部署前置条件 | 若另选Foundry/Azure奖项，由团队明确实现与负责人 |
@@ -155,7 +159,19 @@ docker run --name matchmind-release-local -p 127.0.0.1:8000:10000 matchmind-rele
 
 若团队确实没有可用模型账号，由模型持有人打开 https://platform.deepseek.com/ 注册、按平台要求认证/开通API余额、在API Keys页创建项目Key，再由C执行其 `python -m ai.probe`；`--live`会产生一次真实调用，按团队授权执行。之后还要从实际云宿主再测。官方入口：https://api-docs.deepseek.com/ 。不要把Key发群聊或贴PR。
 
-Render授权入口：https://github.com/apps/render/installations/new 。需要所有者把目标仓库加入Repository access。原 `render-backend.yaml` **仍只部署B预览**；最终组合发布由整合者选择已确认的整合分支、Dockerfile=`matchmind/deploy/Dockerfile.release`、context=`matchmind`、健康路径=`/api/v1/health`、单实例、AutoDeploy关闭。不要凭空填写一个尚不存在的整合分支。
+现有服务不需要再次注册或创建：服务ID=`srv-dbdegcnavr4c739pockg`，Free / Singapore / 单实例，健康路径`/api/v1/health`。Root Directory=`matchmind/`，Dockerfile Path=`deploy/Dockerfile`，context=`.`。环境变量为PORT=10000、SERVE_FRONTEND=0、DATA_DIR=`data/extra/validated-demo`（后两项均带MATCHMIND_前缀），会话8、AI并发1、每小时任务30、超时12秒。Render管理Key从未写入服务环境或Git。
+
+协作Agent只需GitHub代码访问权，加有权操作该服务的Render API Key（私密变量`RENDER_API_KEY`），即可查看/配置/部署现有服务，不以加入工作区成员为前置条件。限制操作对象为上述服务ID；Key能力取决于持有人权限，本文不分发凭据或扩大权限。
+
+`render-backend.yaml`已对齐main，仍只定义B预览。现有服务由Web Service方式建立，不要为它重复创建Blueprint。最终组合在现有Root Directory=`matchmind/`设置下应使用Dockerfile=`deploy/Dockerfile.release`、context=`.`；若Root Directory留空，才使用仓库根相对路径`matchmind/deploy/Dockerfile.release`和context=`matchmind`。最终发布前先确认前端dist已进入真实构建流程。
+
+## 8a. 最终云端构建还必须解决的产物条件
+
+`deploy/Dockerfile.release`是已做本地隔离打包验证的组合模板，要求上下文中有A交付的`frontend/dist`。该目录通常被Git忽略；Render从Git克隆时不会自动得到某人的本机构建产物。最终整合者须将A构建纳入Docker多阶段构建或CI产物打包，然后再切换发布入口。不要仅改Dockerfile路径和开关就宣称完整网站已经上线。
+
+C提供模型endpoint、名称、Secret与预算；整合者从真实云宿主执行探针及一次实际分析。Render Key只负责平台管理，不是模型Key。候选20秒整体超时须同步作用于B/C并实测；当前B预览保留12秒。
+
+API部署时明确选择已审查的Git提交，部署Live后先运行`python -m deploy.smoke_backend https://matchmind-backend-preview.onrender.com`，再验浏览器→回放→AI→证据展示。单独的后端探针不验证前端或真实模型。
 
 平台若始终不能连私有Git，Render官方支持预构建镜像，但那另需镜像仓库/发布授权。本轮不为绕过授权擅自fork、公开源码或发布镜像。
 
@@ -181,9 +197,9 @@ B贡献可如实表述为：**可重复的合成场景 → 独立预期核验 �
 
 ## 11. 未完成且不能被“准备好了”掩盖的事项
 
-- Render私有仓库授权、云端构建/可用性和实际费用设置。
+- B账号/授权/云端构建/公网回归已完成；最终整合者还需持有部署权限，并确认正式服务的运行维护责任。
 - A后续播放控制、AI卡片、证据和观众模式。
 - C最新代码的最终审查、真实Key与云端模型探针、语义评测。
-- 联合浏览器验收、正式main整合、最终PR和提交材料。
+- 联合浏览器验收、完整产品发布和提交材料；公共基线的main整合已经完成。
 
 本轮 Kimi运行入口不可用，未调用Kimi；由Codex实施并审查。DSPy skipped：B是确定性数据与调度层，不属于本轮模型优化职责。

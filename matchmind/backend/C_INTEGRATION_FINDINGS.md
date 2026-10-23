@@ -1,9 +1,15 @@
 # C compatibility finding for the integrator
 
+**Resolved on main (2026-10-23).** C added `card_evidence` to union every retained
+claim's citations into the card evidence. The main handoff records 12/12 normal
+requests passing and 3/3 corruptions refused, with zero model calls. This file is
+the historical report against `02228b8`; it is no longer an open blocker. Rerun
+`python -m deploy.adapter_check` on the release commit to retain the guarantee.
+
 Checked 2026-10-23 against C commit `02228b8` in an isolated Linux image. No C
 source was modified, no key was supplied and no model call was made.
 
-## Blocker: fallback evidence truncation on denser inputs
+## Historical defect: fallback evidence truncation on denser inputs
 
 `ai/fallback.py::_evidence` returns at most 12 IDs. `rule_claims` separately
 selects recovery/shot IDs from every chain. A claim can therefore reference a
@@ -37,9 +43,9 @@ The checker imports C read-only, supplies no provider/config, blocks Python sock
 connections and validates every output. It is a trusted-adapter regression check,
 not a hostile-code sandbox. It never prints C exception messages or model keys.
 
-C should make the final Insight evidence contain the ordered union of all
+C's fix makes the final Insight evidence contain the ordered union of all
 retained claim evidence, while retaining valid request-event IDs and the frozen
-schema. Alternatively, C can select/cap claims and evidence together. Do not
+schema. Do not
 weaken `check_result`, remove the third recovery, falsify the metrics, or silently
 truncate a retained claim's evidence to get a green result.
 
@@ -51,10 +57,10 @@ Run C's existing tests and semantic checks separately after the fix.
 
 - B's original `validated-demo` remains the default. Its baseline metrics and all
   frozen files remain unchanged.
-- The release image also defaults to `validated-demo` until C fixes this issue.
+- The release image retains `validated-demo` as its conservative default; C's fix is already in main.
 - Enhanced datasets can already be used for B-only data/replay demonstrations.
-- `deploy.release_run` explicitly refuses to start an enhanced integrated dataset
-  until the offline adapter gate passes. It does not silently replace a failed
+- `deploy.release_run` checks enhanced integrated datasets against the offline
+  adapter gate, now recorded as passing on main. It does not silently replace a failed
   model result with a fabricated card.
 - C's model/semantic implementation remains C-owned. This document is a handoff,
   not authorization for B to edit or merge C's code.

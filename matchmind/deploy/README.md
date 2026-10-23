@@ -1,10 +1,16 @@
 # Role B — backend-only deployment
 
+**Current status (2026-10-23):** the shared code is on main and the B preview is
+live at https://matchmind-backend-preview.onrender.com . Authenticated API
+configuration and post-deploy public HTTP/SSE checks passed. Start with
+`RENDER_STEPS_CN.md` and `../backend/INTEGRATOR_HANDOFF_CN.md` to take over; do not
+repeat account creation or look for the old role branch.
+
 This package runs the data/API service, with no frontend build, page assets, model implementation, cloud provisioning, database or object storage. Default configuration is in `backend.env.example`; export its values in the process/platform environment. Arbitrary .env files are not auto-loaded.
 
 ## Local readiness and startup
 
-For a complete backend/data acceptance, use `python -m deploy.verify_backend` from `matchmind/`. It runs data/readiness, analysis export, backend/common tests and a real loopback HTTP/SSE probe, then stops its own server. No model, Docker or cloud account is required. Read `backend/DATA_PIPELINE.md`; the report distinguishes this local pass from outstanding Linux/cloud/frontend/live-AI validation.
+For a complete backend/data acceptance, use `python -m deploy.verify_backend` from `matchmind/`. It runs data/readiness, analysis export, backend/common tests and real loopback HTTP/SSE probes, then stops its own servers. No model, Docker or cloud account is required. That local command does not itself attest to Linux/cloud/frontend/live-AI acceptance; the separate Linux and B cloud records are already available.
 
 From `matchmind/`, after installing the pinned `backend/requirements.lock`:
 
@@ -37,11 +43,11 @@ The backend image has now been **built and run on Linux** from source commit `cd
 
 On this machine, Docker Desktop 4.96.2 still reproduced its Windows AF_UNIX error after a normal stop/start, even after an IPC cleanup. With the human's explicit uninstall/reinstall authorization, it was replaced by a dedicated WSL2 Docker Engine 29.8.2 and the native Windows CLI/Buildx, using a pinned-key SSH context named `matchmind-wsl`. The failed Desktop application was officially uninstalled. Three complete stops/starts of the dedicated WSL distribution preserved the image, and an additional cold start and HTTP/SSE pass succeeded after Desktop removal. The entire WSL VM was then shut down and the engine was confirmed ready again through the user launcher. This is a verified replacement runtime; it is not a claim that the Desktop vendor bug was fixed.
 
-Machine-specific startup/stop scripts, SSH material and settings backups are outside Git. The local desktop shortcut is `启动 Docker`; the image/runtime data stays on E:. Other teammates may use any working Docker Linux engine. No cloud service or paid resource was created; Render's cloud builder does not depend on this local workaround.
+Machine-specific startup/stop scripts, SSH material and settings backups are outside Git. The local desktop shortcut is `启动 Docker`; the image/runtime data stays on E:. Other teammates may use any working Docker Linux engine. The runtime repair itself did not provision cloud resources; Render's cloud builder does not depend on this local workaround.
 
 ## Render account through preview acceptance
 
-Follow `RENDER_STEPS_CN.md`. The prepared `render-backend.yaml` uses repo-root-relative paths, a free single-instance Singapore backend, no model/database secrets and disabled service auto-deploy. Also disable Blueprint Auto Sync in the dashboard. The branch must be pushed and the private repository authorized before creating the service. The file passed the official JSON Schema locally; authenticated platform validation and the first Linux build remain outstanding.
+Follow `RENDER_STEPS_CN.md` for the existing service, its ID, source version and configuration. The optional `render-backend.yaml` now targets main with repo-root-relative paths and a Free single-instance Singapore backend. It creates only a B preview, with no model/database secrets and auto-deploy off. The existing service was created manually; do not create a duplicate Blueprint. Its cloud build, authenticated configuration read-back and public smoke have passed. A future Blueprint has an independent Auto Sync switch.
 
 Once the service is live, run from `matchmind/`:
 

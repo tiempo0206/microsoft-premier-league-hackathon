@@ -8,3 +8,6 @@ node_modules/
 frontend/dist/
 .artifacts/
 *.log
+
+# Third-party competitor READMEs are read for analysis, not redistributed.
+evaluation/research/readmes/

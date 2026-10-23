@@ -1,0 +1,219 @@
+{
+  "Wael-Akhdar/InsideTheGame": {
+    "why": "Agent Framework + MCP + Foundry fine-tune",
+    "description": "GamePulse: AI match intelligence and tactical lab for football. Multi-agent (Microsoft Agent Framework + MCP) explained insights, a fine-tuned model on Microsoft Foundry, and a match simulator validated against real data.",
+    "stars": 0,
+    "created_at": "2026-10-08",
+    "language": "Python",
+    "size_kb": 1441,
+    "topics": [
+      "azure-openai",
+      "fastapi",
+      "football",
+      "hackathon",
+      "mcp",
+      "microsoft-agent-framework",
+      "microsoft-foundry",
+      "multi-agent",
+      "soccer",
+      "sports-analytics"
+    ],
+    "readme_chars": 6798,
+    "file": "Wael-Akhdar__InsideTheGame.md"
+  },
+  "likalight/touchline": {
+    "why": "multi-agent explainability, closest structural rival",
+    "description": "Multi-agent AI that explains why football moments matter: verified live graphics, storylines, two-voice commentary and personal 3D highlights on Microsoft Foundry and Azure. Synthetic data, fictional clubs.",
+    "stars": 0,
+    "created_at": "2026-10-18",
+    "language": "Python",
+    "size_kb": 17314,
+    "topics": [],
+    "readme_chars": 28556,
+    "file": "likalight__touchline.md"
+  },
+  "pshah208/matchlens": {
+    "why": "evidence-first grounded claims, our own thesis",
+    "description": "Evidence-first live football intelligence with grounded Microsoft Foundry editorial AI",
+    "stars": 0,
+    "created_at": "2026-10-03",
+    "language": "TypeScript",
+    "size_kb": 2007,
+    "topics": [],
+    "readme_chars": 50248,
+    "file": "pshah208__matchlens.md"
+  },
+  "Zhiyilang/matchlens": {
+    "why": "cited insights",
+    "description": "Explainable match-intelligence agent: cited insights, real-time bilingual narration, automated recaps. Built for the Microsoft x Premier League Inside the Game hackathon.",
+    "stars": 0,
+    "created_at": "2026-10-12",
+    "language": "Python",
+    "size_kb": 1006,
+    "topics": [
+      "agent",
+      "ai",
+      "hacktoberfest",
+      "offline",
+      "opensource",
+      "python"
+    ],
+    "readme_chars": 6121,
+    "file": "Zhiyilang__matchlens.md"
+  },
+  "Adamzuckk/Rematch": {
+    "why": "counterfactual comparison",
+    "description": "Rematch: explainable football intelligence. Compares what a player did with what they could have done, scores each alternative, and explains the difference in English and Arabic, with every claim verified against match evidence. Built for the Microsoft Inside the Game Hackathon.",
+    "stars": 2,
+    "created_at": "2026-10-17",
+    "language": "Python",
+    "size_kb": 5315,
+    "topics": [],
+    "readme_chars": 12626,
+    "file": "Adamzuckk__Rematch.md"
+  },
+  "dhruvkulkarni02/second-act": {
+    "why": "self-checking tactical read",
+    "description": "A half-time tactical read that checks itself: multi-agent match intelligence over synthetic football data (Microsoft x Premier League hackathon).",
+    "stars": 0,
+    "created_at": "2026-10-22",
+    "language": "Python",
+    "size_kb": 4315,
+    "topics": [],
+    "readme_chars": 3109,
+    "file": "dhruvkulkarni02__second-act.md"
+  },
+  "diego-sicignano/soundpitch": {
+    "why": "accessibility angle for impact",
+    "description": "Audio-first football match companion for blind and low-vision fans: verified audio description from synthetic match events. Built for the Microsoft x Premier League Inside the Game hackathon.",
+    "stars": 0,
+    "created_at": "2026-10-21",
+    "language": "Python",
+    "size_kb": 1956,
+    "topics": [],
+    "readme_chars": 20643,
+    "file": "diego-sicignano__soundpitch.md"
+  },
+  "iSharaf6/regista": {
+    "why": "match director framing",
+    "description": "Multi-agent match director: synthetic football events in, explainable, verified, personalised broadcast intelligence out. Microsoft Agent Framework + Foundry on Azure.",
+    "stars": 0,
+    "created_at": "2026-10-16",
+    "language": "Python",
+    "size_kb": 10893,
+    "topics": [
+      "azure-ai-foundry",
+      "azure-container-apps",
+      "football",
+      "hackathon",
+      "mcp",
+      "microsoft-agent-framework",
+      "multi-agent"
+    ],
+    "readme_chars": 21277,
+    "file": "iSharaf6__regista.md"
+  },
+  "abhiiiesh/MatchMind": {
+    "why": "identical product name",
+    "description": "AI-driven applications and agents that transform synthetic football (Premier League) events into explainable match intelligence",
+    "stars": 0,
+    "created_at": "2026-10-03",
+    "language": "Python",
+    "size_kb": 8177,
+    "topics": [],
+    "readme_chars": 6991,
+    "file": "abhiiiesh__MatchMind.md"
+  },
+  "TheNeuralWars/matchmind": {
+    "why": "identical product name",
+    "description": "MatchMind: multi-agent football match intelligence (Microsoft Inside the Game hackathon)",
+    "stars": 0,
+    "created_at": "2026-10-21",
+    "language": "Python",
+    "size_kb": 2166,
+    "topics": [],
+    "readme_chars": 6960,
+    "file": "TheNeuralWars__matchmind.md"
+  },
+  "sagitta414/before-the-roar": {
+    "why": "personalisation depth",
+    "description": "Explainable synthetic football intelligence with personalized stories, agent receipts, correction propagation, and an always-available guided demo.",
+    "stars": 0,
+    "created_at": "2026-10-15",
+    "language": "JavaScript",
+    "size_kb": 340195,
+    "topics": [],
+    "readme_chars": 12924,
+    "file": "sagitta414__before-the-roar.md"
+  },
+  "lauramiro/the-dugout": {
+    "why": "explains a manager's decisions",
+    "description": "Explains a football manager's decisions as they happen, on synthetic match data. Microsoft x Premier League Inside the Game hackathon entry.",
+    "stars": 0,
+    "created_at": "2026-10-19",
+    "language": "Python",
+    "size_kb": 5446,
+    "topics": [],
+    "readme_chars": 16849,
+    "file": "lauramiro__the-dugout.md"
+  },
+  "TomThomasPrintac/live-sub-intel": {
+    "why": "substitution intelligence niche",
+    "description": "Explainable live substitution intelligence for football: reads a match event stream, works out what the team needs right now, and ranks the substitutions that address it, with trade-offs. Microsoft × Premier League \"Inside the Game\" hackathon.",
+    "stars": 0,
+    "created_at": "2026-10-15",
+    "language": "Python",
+    "size_kb": 5625,
+    "topics": [],
+    "readme_chars": 7895,
+    "file": "TomThomasPrintac__live-sub-intel.md"
+  },
+  "Zidup123/ShapeShift-Explainable-Tactical-Shape-Intelligence": {
+    "why": "tactical shape",
+    "error": "HTTP 404"
+  },
+  "bradhack/lasso": {
+    "why": "live playable match intelligence",
+    "description": "Live, explainable football match intelligence you can play. Five AI agents (Microsoft Agent Framework on Foundry) explain every swing in a Bayesian win-probability model, then challenge fans to out-predict it. Synthetic data, MCP, A2A, Azure.",
+    "stars": 0,
+    "created_at": "2026-10-15",
+    "language": "Python",
+    "size_kb": 16395,
+    "topics": [],
+    "readme_chars": 18043,
+    "file": "bradhack__lasso.md"
+  },
+  "enniob/pitchlens": {
+    "why": "same hackathon, TypeScript",
+    "description": "Repo for MS and Premier League hackathon ",
+    "stars": 0,
+    "created_at": "2026-09-30",
+    "language": "TypeScript",
+    "size_kb": 43896,
+    "topics": [],
+    "readme_chars": 15088,
+    "file": "enniob__pitchlens.md"
+  },
+  "GOkwori/matchdesk": {
+    "why": "production-studio framing",
+    "description": "My football production studio for turning synthetic match events into explainable, evidence-linked stories.",
+    "stars": 0,
+    "created_at": "2026-10-08",
+    "language": "Python",
+    "size_kb": 15503,
+    "topics": [],
+    "readme_chars": 7631,
+    "file": "GOkwori__matchdesk.md"
+  },
+  "SairajBandre16/tacticlens": {
+    "why": "Azure deployment angle",
+    "description": "AI match-intelligence engine on Azure: synthetic football events to grounded, personalized, accessible match storytelling.",
+    "stars": 0,
+    "created_at": "2026-10-21",
+    "language": "Python",
+    "size_kb": 7209,
+    "topics": [],
+    "readme_chars": 740,
+    "file": "SairajBandre16__tacticlens.md"
+  }
+}

@@ -1,0 +1,82 @@
+# Installed from matchmind/integration-snippets/ci.yml by the integrator (Role C) after reviewing the
+# existing CI in this repository. There was none: .github/ held only a pull-request template and an
+# issue template. This file does not replace anything.
+#
+# What it checks, and what it deliberately does not:
+#   * the frozen contract and fixtures are untouched, and the whole offline suite passes
+#   * the frontend typechecks, builds and passes its own test
+#   * it does NOT run Role B's full acceptance (`python -m deploy.verify_backend`), which spawns a
+#     real uvicorn, runs 584 synthetic backtests and takes minutes. That stays a pre-submission
+#     manual step, described in matchmind/backend/INTEGRATOR_HANDOFF_CN.md.
+#   * it does NOT run `deploy.adapter_check`, because that needs Role B's generated showcase packet
+#     (`python -m backend.showcase`) which is an artifact, not a committed input.
+#   * no job makes a network call to a model endpoint. A test asserts that too
+#     (tests/ai/test_service.py::OfflineDefaultTests::test_bare_analyze_never_touches_the_network).
+name: matchmind checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: contracts and offline suite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: matchmind
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            matchmind/requirements-dev.txt
+            matchmind/requirements-contracts.txt
+            matchmind/backend/requirements.txt
+            matchmind/ai/requirements.txt
+      - name: install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: frozen contracts and fixtures unchanged
+        run: python tools/check_frozen.py
+      - name: generated types and OpenAPI match the schema
+        run: |
+          python tools/generate_types.py
+          python tools/generate_openapi.py
+          git diff --exit-code contracts/types.ts contracts/openapi.json
+      - name: shared, backend and ai tests
+        run: python -m pytest tests -q
+
+  frontend:
+    name: frontend typecheck, build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: matchmind/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+          cache: pnpm
+          cache-dependency-path: matchmind/frontend/pnpm-lock.yaml
+      # matchmind/frontend/.npmrc pins registry.npmmirror.com on purpose (docs/01_cn_setup.md);
+      # keep it, do not let CI silently fall back to the default registry.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run build
+      - run: pnpm test

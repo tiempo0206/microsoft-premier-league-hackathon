@@ -1,8 +1,13 @@
 # Role B handoff — data processing and backend deployment
 
-**Latest (2026-10-23):** use `backend/INTEGRATOR_HANDOFF_CN.md` for the current
-assembly instructions and `backend/C_INTEGRATION_FINDINGS.md` for the measured C
-blocker. The 2026-10-23 addendum at the end supersedes earlier status statements.
+**Latest (2026-10-23, after main integration and cloud acceptance):** A/B/C are on
+main (PR #9, baseline `03910f8`). B's preview is live at
+https://matchmind-backend-preview.onrender.com and the post-configuration public
+HTTP/SSE acceptance passed. Render management access was verified and the limits
+were applied through the API; no credentials are in Git. C's evidence-union defect
+is fixed on main (handoff: 12/12 + 3/3 offline). Use
+`backend/INTEGRATOR_HANDOFF_CN.md` and `deploy/RENDER_STEPS_CN.md` to take over.
+Earlier sections and the original addendum are historical snapshots, not open tasks.
 
 - Developer: B / `wunianze666-netizen`, assisted by Codex.
 - Task: [Issue #6](https://github.com/tiempo0206/microsoft-premier-league-hackathon/issues/6).
