@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { formatClock, passAccuracy } from "./replay";
 import { useReplay } from "./useReplay";
 import { MatchIntelligence } from "./MatchIntelligence";
+import { DataSources } from "./DataSources";
 
 function Mark() {
   return (
@@ -582,12 +583,13 @@ export default function App() {
             full-game result.
           </Detail>
         </section>
+        <DataSources match={match} />
         <footer className="page-footer">
           <span>
             MatchMind<span className="brand-dot">.</span>{" "}
             <span className="footer-tagline">Make sense of the moments.</span>
           </span>
-          <span>Synthetic football · Original data · No match footage</span>
+          <span>Synthetic replay · No match footage</span>
         </footer>
       </main>
     </>

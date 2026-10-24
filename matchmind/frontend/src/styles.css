@@ -645,6 +645,58 @@ h1 > span {
   margin: 0;
   max-width: 240px;
 }
+.data-sources {
+  margin-bottom: 28px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+.data-sources summary {
+  padding: 18px 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.data-sources-hint {
+  display: inline-block;
+  margin-left: 12px;
+  color: #606957;
+  font-size: 12px;
+  font-weight: 400;
+}
+.data-sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: 24px;
+  padding: 0 20px 20px;
+}
+.data-sources-grid > section {
+  min-width: 0;
+}
+.data-sources-grid h3 {
+  margin: 8px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.data-sources-grid p {
+  margin: 8px 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #606957;
+}
+.data-sources-grid .source-status {
+  font-weight: 600;
+  color: #39432e;
+}
+.data-sources-grid a {
+  color: #31532d;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.data-sources-grid .source-changes {
+  font-size: 12px;
+}
 .page-footer {
   border-top: 1px solid var(--line);
   padding: 21px 0 28px;

@@ -1,16 +1,28 @@
-# Frontend handoff — public integration and keyboard focus
+# Frontend handoff — provenance, public integration and keyboard focus
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
-- Date: 2026-10-24 (Asia/Shanghai).
-- Branch: `codex/frontend-public-acceptance`; tasks: #13 and #16; PR #14.
-- Starting main SHA: `601256039a5485120d42376c329e347144893441`; synchronized through `34c89024b5968dd0ea580541cf97b44f3e183fdf` with merge `1a06c62`. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
-- Contract: `2.0.0`. A changes frontend code/build/docs, frontend probes and this handoff. The 2026-10-24 runtime change is limited to pending playback-button focus; no shared contract, fixture, B/C source or deployment file is edited. Main's documentation/CI updates were merged as authored by C. No contract change is needed for this fix; real-data ingestion needs a separately reviewed contract update.
+- Date: 2026-10-25 (Asia/Shanghai); earlier observations retain their recorded dates.
+- Branch: `codex/frontend-public-acceptance`; tasks: #13, #16 and A's source presentation in #15; PR #14.
+- Starting main SHA: `601256039a5485120d42376c329e347144893441`; synchronized through `0df6144` (B's research package, PR #17) with merge `ad04771`, after the earlier `34c8902`/`1a06c62` sync. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. A changes frontend code/build/docs, frontend probes and this handoff. Runtime changes are pending playback-button focus and a separate source-reference disclosure. No shared contract, fixture, B/C implementation or deployment file is edited. Main's documentation/CI and B's research package were merged as authored. No contract change is needed for this disclosure; independent real replay ingestion needs a reviewed versioned contract.
+
+## Latest follow-up: received historical reference
+
+The representative supplied B's #15 handoff and requested a fresh sync. Main `0df6144` includes the Wyscout original-field research kit. After code inspection, A ran `.venv/bin/python -m data.generator.real_history --verify` offline: passed, match 2499719, 1,768 full-match records, 96 first-half 1500–1800 records, `synthetic=false`, `runtime_compatible=false`, zero model calls. This independently checks the delivered sample/manifest; the complete-season archive result remains B's recorded verification, not an A re-download. Source acquisition is no longer waiting on B.
+
+`DataSources.tsx` adds a native `details` disclosure, `About the data`, below the existing replay notes. It labels the current synthetic replay separately from `Historical reference · Not connected`: Arsenal–Leicester City, source UTC date 2017-08-11, **source full-time** result 4–3 and the 96-record first-half 25:00–30:00 research excerpt. It credits Pappalardo/Massucco and Wyscout, links the versioned collection and CC BY 4.0, and describes selection/reserialization. It explicitly says the research source has not calibrated the current replay. The footer is scoped to the synthetic replay. No original real event records are included in the browser bundle or submitted to replay/model endpoints.
+
+`historicalReference.ts` contains presentation metadata only. Two new source-reference tests compare the displayed identity/date/score/credits with the original match/manifest and recompute the displayed excerpt count from the full original-field sample. `DATA_SOURCES.md` now records the resolved Wyscout access gap and the remaining adoption/initial-state/provider-mapping questions for C. A did not add a second schema or a playable historical option. The absent explicit recovery/possession records remain unavailable; the synthetic 3/2 trigger is not asserted for Arsenal–Leicester City.
+
+Current rebuilt entry assets: `index-C8F7BEC-.js` / `index-GQj0pIxq.css`. TypeScript/Vite build and 29 frontend tests passed; common Python suite passed **440 tests / 69 subtests**; the real B/C frontend consumer probe passed with an explicit mock provider and zero model calls. Browser accessibility inspection observed the expanded source statuses, source date/result, excerpt and citation links on the local integrated build. The native browser input interface subsequently returned `noWindowsAvailable`; keyboard toggle and 390px expanded-layout acceptance were not established in this follow-up. See `frontend/qa/browser-2026-10-24.md` for the earlier focus acceptance and the separate reference-disclosure observation. The latest runtime changes need C review/merge and deployment; no cloud change was made.
+
+**Next for C / #15:** choose calibration or independent historical replay; retain the synthetic submission pipeline. Calibration needs documented comparable event/window/unit definitions and actual results before the UI can claim it happened. A historical runtime needs reviewed source/date/season/competition/identity/initial-score/credit semantics and a versioned contract. A is ready to consume those agreed fields. B's delivered sample is usable research input; no additional B download/account setup is needed.
 
 ## Latest follow-up: browser review and focus repair
 
 On 2026-10-24 a separate Edge browser provided usable native accessibility and screenshots. Public initial layouts were inspected at emulated 1280×720 and 390×844 with no observed horizontal clipping. Public keyboard Play, advancing statistics/events, pause at 25:34 and an idle reset run 2 were observed. No new public live-model window was requested. This closes part of the earlier browser tooling gap; it does not complete expanded public insight/evidence/audience-mode or final-video acceptance.
 
-The review found a pending-command focus defect (#16): native disabling removed focus from the Play/Pause button. `App.tsx` now keeps Play/Pause and Reset focusable during confirmation, marks them `aria-disabled`, marks the group `aria-busy`, and guards activation. Existing in-flight/idempotency logic remains unchanged; unavailable/error/ended-play states still use native blocking. Styling indicates busy buttons. The rebuilt entry assets are `index-C39S-ICU.js` / `index-C-LzJ9lp.css`.
+The review found a pending-command focus defect (#16): native disabling removed focus from the Play/Pause button. `App.tsx` now keeps Play/Pause and Reset focusable during confirmation, marks them `aria-disabled`, marks the group `aria-busy`, and guards activation. Existing in-flight/idempotency logic remains unchanged; unavailable/error/ended-play states still use native blocking. Styling indicates busy buttons. The intermediate focus-only assets were `index-C39S-ICU.js` / `index-C-LzJ9lp.css`; the source-disclosure bundle above supersedes them.
 
 On the local integrated app with provider explicitly `mock`, keyboard Space played and paused while focus stayed on the active button. Tab + Space reset to idle run 2 at 25:00 with an empty timeline and focus still on Reset. Build and 27 unit tests passed, as did the real B/C frontend consumer probe with zero model calls. The full record and reproduction commands are in `frontend/qa/browser-2026-10-24.md`; local ignored screenshots/accessibility evidence are under `.artifacts/frontend-browser-20261024/`.
 
@@ -22,7 +34,7 @@ The [public match centre](https://matchmind-backend-preview.onrender.com) serves
 
 - Existing Render service: `srv-dbdegcnavr4c739pockg`, free plan, Singapore, one instance; repository main, Docker root `matchmind`, release Dockerfile `deploy/Dockerfile.release`.
 - Management API inspection found live deployment `dep-dbdhuvd9fdbs73b6pqv0`, source `36790b58ac0eee1884c59456397d593a8965f793`, finished at 2026-10-23 08:49:41 UTC.
-- Main through `34c8902` differs from the deployed executable only in documentation/CI. The pending A focus repair is a new runtime bundle and is not yet deployed. No resource creation, secret/config change or plan upgrade was performed.
+- Main through `0df6144` adds documentation/CI and B's isolated research package/tests to the previously inspected executable. Its application behavior and default synthetic dataset are unchanged. A's pending focus/source-disclosure bundle is not yet deployed. No resource creation, secret/config change or plan upgrade was performed.
 - Public health returned HTTP 200, contract `2.0.0`, mode `production`, `model_ready: true`. The root returned HTTP 200 and the A2/A3 bundle. Health alone is not live-model proof; the actual workflow below supplies that evidence.
 - The temporary management-credential process was closed after inspection. No credential is included in source, reports or this handoff.
 
