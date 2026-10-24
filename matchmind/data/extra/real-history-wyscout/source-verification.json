@@ -1,0 +1,80 @@
+{
+  "duplicate_event_ids": 0,
+  "england_event_matches": 380,
+  "england_events": 643150,
+  "england_matches": 380,
+  "format": "Original field values preserved, selected and JSON-reserialized; not contract 2.0.0",
+  "integration_gaps": [
+    "Contract 2.0.0 fixes synthetic=true; real historical input needs a versioned source representation.",
+    "Recovery and possession semantics need documented provider mapping, not invented events.",
+    "Coordinates are attack-team relative; period clocks are fractional seconds within each half.",
+    "Full-time source score is not the starting score of a 25:00 clip.",
+    "No continuous tracking, speed, pressure or live/current-season service is established."
+  ],
+  "model_calls": 0,
+  "runtime_data_changed": false,
+  "sample": {
+    "clip_events": 96,
+    "clip_types": {
+      "Duel": 16,
+      "Free Kick": 3,
+      "Interruption": 3,
+      "Others on the ball": 9,
+      "Pass": 59,
+      "Save attempt": 2,
+      "Shot": 4
+    },
+    "competition_id": 364,
+    "date_utc": "2017-08-11 18:45:00",
+    "explicit_possession_id_available": false,
+    "first_half_clip_sec": [
+      1500,
+      1800
+    ],
+    "full_match_events": 1768,
+    "label": "Arsenal - Leicester City, 4 - 3",
+    "match_id": 2499719,
+    "original_fields": [
+      "eventId",
+      "eventName",
+      "eventSec",
+      "id",
+      "matchId",
+      "matchPeriod",
+      "playerId",
+      "positions",
+      "subEventId",
+      "subEventName",
+      "tags",
+      "teamId"
+    ],
+    "season_id": 181150
+  },
+  "sources": [
+    {
+      "article": 7770599,
+      "bytes": 77323413,
+      "file": "events.zip",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "md5": "7c20e8647e7eda58d7838a0c7b1ec6ab",
+      "published_md5_matches": true,
+      "sha256": "877e015b716ffdeea18f04418e3f24fed307ed03c37ff305cabe1f47c4822a45",
+      "source": "https://ndownloader.figshare.com/files/14464685",
+      "version": 1
+    },
+    {
+      "article": 7770422,
+      "bytes": 645097,
+      "file": "matches.zip",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "md5": "51d80beb17480919f69a53a0152c2d71",
+      "published_md5_matches": true,
+      "sha256": "c8f92bb7533e5c127e043cee764c991b5c25b4f5e70a65be931baae0b1765ce9",
+      "source": "https://ndownloader.figshare.com/files/14464622",
+      "version": 1
+    }
+  ],
+  "status": "original_source_verified_not_integrated"
+}

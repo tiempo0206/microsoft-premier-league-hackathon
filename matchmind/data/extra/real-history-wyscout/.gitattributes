@@ -1,0 +1,5 @@
+# Keep committed research payload digests identical on Windows and Unix.
+*.json text eol=lf
+*.jsonl text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
