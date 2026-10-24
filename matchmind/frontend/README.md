@@ -82,6 +82,7 @@ Common Python checks run from `matchmind`:
 ## Interaction and recovery
 
 - Play, pause, reset and speeds 1/2/5/10 use the frozen control endpoint. A replay starts idle. Reset preserves speed and advances the run.
+- Play/Pause and Reset keep keyboard focus while confirming a command. Busy buttons expose `aria-disabled`, and repeated activation is suppressed until the current command is resolved.
 - Catalogue/create/control failures show recovery actions. Create and command retries retain one UUID per logical operation. An unconfirmed command can be retried with the same key or resolved by syncing the current replay.
 - All six named SSE kinds are handled. Snapshots replace state; `match_state` supplies statistics. Events only populate the timeline, never increment totals. Old runs, duplicated sequence numbers and other replay identities are discarded.
 - Snapshot recovery does not promise lossless transport-log replay. Match event queries restore evidence details, filtered to the current replay clock so future events remain hidden.
@@ -92,4 +93,6 @@ Common Python checks run from `matchmind`:
 
 The team now commits `frontend/dist` for Git-based Render builds. Rebuild and commit its updated hashed assets alongside frontend source changes. Run `pnpm run build` before packaging B's integrated release image: `deploy/Dockerfile.release` copies the resulting `frontend/dist`. Production uses one origin and one worker/instance; the backend serves these assets and `/api`.
 
-The Render service retains its original `backend-preview` name but now runs the integrated release, including the frontend and live model. Historical backend-only handoff notes describe an earlier deployment. Its deployed executable commit is `36790b5`; main `6012560` adds only C's revised demo script. Public API/live acceptance has passed; public browser interaction checks and the final video remain joint A/C/representative work. This frontend acceptance change creates no cloud resources and requires no runtime redeployment.
+The Render service retains its original `backend-preview` name but now runs the integrated release, including the frontend and live model. Historical backend-only handoff notes describe an earlier deployment. Its inspected executable commit is `36790b5`; main through `34c8902` adds only documentation and CI changes. Public API/live acceptance has passed on that earlier bundle.
+
+This branch now also fixes keyboard focus during playback commands and commits the rebuilt assets `index-C39S-ICU.js` / `index-C-LzJ9lp.css`. It needs review/merge and an explicit deployment before that fix reaches the public URL; no cloud reconfiguration or new resources are required. The live public probe intentionally checks bundle equality before requesting a model workflow, so use it only after the chosen build is deployed. See [the dated browser acceptance record](qa/browser-2026-10-24.md) for public/local evidence and the remaining final-video work.

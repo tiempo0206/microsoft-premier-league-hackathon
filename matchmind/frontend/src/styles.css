@@ -990,6 +990,10 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.playback-buttons button[aria-disabled="true"]:not(:disabled) {
+  opacity: 0.5;
+  cursor: progress;
+}
 .speed-control {
   display: flex;
   align-items: center;

@@ -139,6 +139,8 @@ export default function App() {
       : "Replay unavailable";
   const empty =
     replay.catalogueState === "ready" && replay.matches.length === 0;
+  // Keep pending buttons focusable; their handlers still reject another command.
+  const controlsUnavailable = !snapshot || !!replay.controlError;
 
   return (
     <>
@@ -276,19 +278,31 @@ export default function App() {
           </div>
         )}
 
-        <section className="playback-controls" aria-label="Playback controls">
+        <section
+          className="playback-controls"
+          aria-label="Playback controls"
+          aria-busy={replay.pending}
+        >
           <div className="playback-buttons">
             <button
               className="primary-button"
               disabled={
+                controlsUnavailable || snapshot?.replay.status === "ended"
+              }
+              aria-disabled={
                 replay.controlsDisabled || snapshot?.replay.status === "ended"
               }
-              onClick={() =>
+              onClick={() => {
+                if (
+                  replay.controlsDisabled ||
+                  snapshot?.replay.status === "ended"
+                )
+                  return;
                 replay.control({
                   action:
                     snapshot?.replay.status === "playing" ? "pause" : "play",
-                })
-              }
+                });
+              }}
             >
               <span aria-hidden="true">
                 {snapshot?.replay.status === "playing" ? "Ⅱ" : "▶"}
@@ -297,8 +311,12 @@ export default function App() {
             </button>
             <button
               className="secondary-button"
-              disabled={replay.controlsDisabled}
-              onClick={() => replay.control({ action: "reset" })}
+              disabled={controlsUnavailable}
+              aria-disabled={replay.controlsDisabled}
+              onClick={() => {
+                if (!replay.controlsDisabled)
+                  replay.control({ action: "reset" });
+              }}
             >
               <RefreshIcon /> Reset
             </button>

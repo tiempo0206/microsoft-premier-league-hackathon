@@ -1,10 +1,20 @@
-# Frontend handoff — A4 public integration acceptance
+# Frontend handoff — public integration and keyboard focus
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
-- Date: 2026-10-23 (Asia/Shanghai).
-- Branch: `codex/frontend-public-acceptance`; task: #13.
-- Starting main SHA: `601256039a5485120d42376c329e347144893441`. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
-- Contract: `2.0.0`. This slice changes only `frontend/{README,DATA_SOURCES}.md`, `tests/frontend/{public-probe,public-stream-probe,http-event-source,backend-probe}.mjs` and this handoff. No shared contract, fixture, frontend runtime, built asset, B/C source or deployment file changed. These acceptance/documentation changes need no contract change; real-data ingestion would require a separately reviewed contract update.
+- Date: 2026-10-24 (Asia/Shanghai).
+- Branch: `codex/frontend-public-acceptance`; tasks: #13 and #16; PR #14.
+- Starting main SHA: `601256039a5485120d42376c329e347144893441`; synchronized through `34c89024b5968dd0ea580541cf97b44f3e183fdf` with merge `1a06c62`. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. A changes frontend code/build/docs, frontend probes and this handoff. The 2026-10-24 runtime change is limited to pending playback-button focus; no shared contract, fixture, B/C source or deployment file is edited. Main's documentation/CI updates were merged as authored by C. No contract change is needed for this fix; real-data ingestion needs a separately reviewed contract update.
+
+## Latest follow-up: browser review and focus repair
+
+On 2026-10-24 a separate Edge browser provided usable native accessibility and screenshots. Public initial layouts were inspected at emulated 1280×720 and 390×844 with no observed horizontal clipping. Public keyboard Play, advancing statistics/events, pause at 25:34 and an idle reset run 2 were observed. No new public live-model window was requested. This closes part of the earlier browser tooling gap; it does not complete expanded public insight/evidence/audience-mode or final-video acceptance.
+
+The review found a pending-command focus defect (#16): native disabling removed focus from the Play/Pause button. `App.tsx` now keeps Play/Pause and Reset focusable during confirmation, marks them `aria-disabled`, marks the group `aria-busy`, and guards activation. Existing in-flight/idempotency logic remains unchanged; unavailable/error/ended-play states still use native blocking. Styling indicates busy buttons. The rebuilt entry assets are `index-C39S-ICU.js` / `index-C-LzJ9lp.css`.
+
+On the local integrated app with provider explicitly `mock`, keyboard Space played and paused while focus stayed on the active button. Tab + Space reset to idle run 2 at 25:00 with an empty timeline and focus still on Reset. Build and 27 unit tests passed, as did the real B/C frontend consumer probe with zero model calls. The full record and reproduction commands are in `frontend/qa/browser-2026-10-24.md`; local ignored screenshots/accessibility evidence are under `.artifacts/frontend-browser-20261024/`.
+
+The public service still serves the earlier bundle. The focus repair needs C review/merge and an explicit deployment of the selected main commit. No Render deployment or configuration change was performed for this follow-up. Previous public live results below belong to their recorded older build; they are not acceptance of this unpublished fix.
 
 ## Current public release
 
@@ -12,7 +22,7 @@ The [public match centre](https://matchmind-backend-preview.onrender.com) serves
 
 - Existing Render service: `srv-dbdegcnavr4c739pockg`, free plan, Singapore, one instance; repository main, Docker root `matchmind`, release Dockerfile `deploy/Dockerfile.release`.
 - Management API inspection found live deployment `dep-dbdhuvd9fdbs73b6pqv0`, source `36790b58ac0eee1884c59456397d593a8965f793`, finished at 2026-10-23 08:49:41 UTC.
-- Current main `6012560` differs only in C's `evaluation/DEMO_SCRIPT.md`; it adds no runtime changes. No redundant deployment, resource creation, secret/config change or plan upgrade was performed during this acceptance.
+- Main through `34c8902` differs from the deployed executable only in documentation/CI. The pending A focus repair is a new runtime bundle and is not yet deployed. No resource creation, secret/config change or plan upgrade was performed.
 - Public health returned HTTP 200, contract `2.0.0`, mode `production`, `model_ready: true`. The root returned HTTP 200 and the A2/A3 bundle. Health alone is not live-model proof; the actual workflow below supplies that evidence.
 - The temporary management-credential process was closed after inspection. No credential is included in source, reports or this handoff.
 
@@ -46,7 +56,7 @@ The ignored transport report is `.artifacts/frontend-public-transport/result.jso
 
 ## Browser boundary and remaining work
 
-The public page loaded and a screenshot showed the integrated page. Browser automation's DOM, accessibility and native scroll operations repeatedly timed out, including a fresh retry during the follow-up. A native-app alternative was denied by the tool's safety restriction for the Codex app. Consequently this run does **not** establish public browser play/pause clicks, keyboard audience/evidence selection, mobile layout or browser-native EventSource retry timing. The live-model consumer probe uses HTTP snapshots; the separate stream probe above establishes public wire-level incremental delivery and explicit reconnect recovery. Neither replaces a full browser walkthrough.
+The earlier in-app browser DOM/accessibility/native scroll attempts timed out; direct native control of the Codex app was denied by the tool's safety restriction. The separate Edge review on 2026-10-24 established initial public layouts and basic playback controls, as recorded above. Expanded public evidence/mode interaction and browser-native EventSource retry timing remain unverified. The live-model consumer probe uses HTTP snapshots; the separate stream probe establishes public wire-level incremental delivery and explicit reconnect recovery. These scopes remain distinct.
 
 The earlier local A5 browser checks below remain valid local evidence. A/C still need the public keyboard/evidence/mode walkthrough and the final English video using C's revised `evaluation/DEMO_SCRIPT.md` from `6012560`. No final video has been recorded. C/integrator reviews and merges this acceptance PR; no automatic main merge is performed.
 
