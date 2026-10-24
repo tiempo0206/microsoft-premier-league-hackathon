@@ -345,7 +345,12 @@ class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
                             for t in result["traces"]))
         insight = result["insight"]
         self.assertEqual(insight["verification"]["status"], "passed")
-        self.assertEqual(insight["verification"]["rejected_claims"], ["C2"])
+        rejected = insight["verification"]["rejected_claims"]
+        self.assertEqual(len(rejected), 1)
+        # The entry names the draft, the claim and who refused it, so it can never be
+        # confused with a surviving claim that happens to carry the same number.
+        self.assertIn("draft 1 C2", rejected[0])
+        self.assertIn("auditor", rejected[0])
         self.assertNotIn("C2", [c["claim_id"] for c in insight["claims"]])
         check_result(request, result)
 
@@ -359,7 +364,8 @@ class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
              {"casual": "They had 12 shots.", "analyst": "Two shots."}])
         result = await analyze(request, config=config(), provider=provider)
         self.assertEqual(result["status"], "fallback")
-        self.assertEqual(result["insight"]["verification"]["rejected_claims"], ["C2"])
+        self.assertIn("draft 1 C2",
+                      result["insight"]["verification"]["rejected_claims"][0])
         check_result(request, result)
 
     async def test_a_code_rejection_of_prose_does_not_spend_the_auditor_correction(self):
@@ -388,7 +394,8 @@ class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
         notes = " ".join(t.get("note", "") for t in result["traces"])
         self.assertIn("code-check retry", notes)
         self.assertIn("repair pass", notes)
-        self.assertEqual(result["insight"]["verification"]["rejected_claims"], ["C2"])
+        self.assertIn("draft 1 C2",
+                      result["insight"]["verification"]["rejected_claims"][0])
 
     async def test_a_formatting_retry_alone_can_save_a_window(self):
         request = load_request()
@@ -426,7 +433,38 @@ class CorrectionBudgetTests(unittest.IsolatedAsyncioTestCase):
         analyst_calls = sum(1 for body in transport.requests
                             if "YOUR ROLE: analyst" in body["messages"][0]["content"])
         self.assertEqual(analyst_calls, 1, "the analyst must not be re-run for a wording problem")
-        self.assertIn("C2", result["insight"]["verification"]["rejected_claims"])
+        self.assertIn("C2", result["insight"]["verification"]["rejected_claims"][0])
+
+    async def test_a_rejected_claim_cannot_be_confused_with_a_published_one(self):
+        """Regression, found on the public deployment rather than in a test.
+
+        The live card published claims C1..C5 and carried `rejected_claims: ["C5"]`. A viewer saw
+        "we removed C5" sitting next to a C5 and could not tell whether the removal happened, which
+        claim it referred to, or whether the card was contradicting itself — on the one field that
+        exists to prove the card is trustworthy. The ids came from different drafts: the rejected
+        one was numbered by the first attempt, the published ones by the second.
+
+        The reproduction needs the *analysis* repair, not the narration repair: only there does the
+        published card come from a fresh draft that renumbers from C1. Each entry now names its draft
+        and its reason, so a rejected entry can never equal a published claim id.
+        """
+        request = load_request()
+        bad = {"claims": [dict(GOOD_CLAIMS["claims"][1], metric_value=9)]}  # C2, wrong number
+        provider, transport = provider_for([bad, GOOD_CLAIMS, GOOD_NARRATIVES, GOOD_AUDIT])
+        result = await analyze(request, config=config(), provider=provider)
+        self.assertEqual(result["status"], "passed")
+        insight = result["insight"]
+        published = [c["claim_id"] for c in insight["claims"]]
+        rejected = insight["verification"]["rejected_claims"]
+        self.assertIn("C2", published, "this case exists precisely because the ids collide")
+        self.assertTrue(rejected, "a refused claim must be reported on the card")
+        for entry in rejected:
+            self.assertTrue(entry.startswith("draft "), entry)
+            self.assertNotIn(entry, published)
+        self.assertIn("C2", rejected[0], "the reader must still learn which claim was removed")
+        reason = rejected[0].split(":", 1)[-1].strip()
+        self.assertTrue(reason, "and why it was removed, not just a bare id")
+        check_result(request, result)
 
 
 class VerificationUnitTests(unittest.TestCase):

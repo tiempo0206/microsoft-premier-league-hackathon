@@ -5,7 +5,12 @@
 __pycache__/
 *.pyc
 node_modules/
-frontend/dist/
+# frontend/dist IS committed on purpose, from the release-integration round. deploy/Dockerfile.release
+# opens with "Integrator supplies reviewed C source and A's already built frontend/dist", and the
+# image runs `release_check --profile integrated` at build time, which fails without it. Render builds
+# from git, so a gitignored dist makes the release image unbuildable. Committing it also makes
+# staleness visible: after any frontend change, `git status` shows the rebuilt bundle instead of
+# hiding it.
 .artifacts/
 *.log
 

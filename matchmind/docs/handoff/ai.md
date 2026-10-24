@@ -848,7 +848,7 @@ B 还有一条约束需要 C 一起守：**“第三次夺回没有关联射门�
 | --- | --- |
 | 依赖镜像走 `docs/01_cn_setup.md`；包版本不变；镜像缺包不私自降级或重建锁文件 | 遵守：本轮**没有动过任何锁文件**。CI 里 `pnpm install` 保留 `frontend/.npmrc` 的 npmmirror 配置，不让它悄悄回落到默认源 |
 | 前端不用海外字体/脚本 CDN/远程比赛样本；生产同源、单进程、密钥在后端 | 属 A/B；C 侧只在 CI 里跑 `typecheck`/`build`，不引入任何远程资源 |
-| **云上再次验证国内 API，不能从开发机成功推断云上成功** | 未做，且**材料里没有一处这么说**。`SUBMISSION_POSITIONING.md` 写的是"真实调用过 DeepSeek，未在云端复测" |
+| **云上再次验证国内 API，不能从开发机成功推断云上成功** | **已做（第二十二节）**：Render 新加坡主机上的真实请求打到了 `api.deepseek.com`，产出 `live_model` + `agent_and_code` + `passed` 的卡。这条以前是"未做"，现在是"做过，证据在公网 URL 上" |
 | 集成人负责跨模块依赖整合、CI 与代码归属 | 本轮补齐 CI 与 CODEOWNERS（20.1） |
 
 ### 20.4 一个我要说明的守卫盲区
@@ -874,6 +874,8 @@ gh run view 39903517201
 两个 job 都真绿：Python 侧装的是 `requirements-dev.txt` 里钉死的版本、跑 `check_frozen`、重生成 `types.ts`/`openapi.json` 并 `git diff --exit-code`、再跑全套 pytest；前端侧用 `pnpm install --frozen-lockfile` 走 `frontend/.npmrc` 里钉的 npmmirror 源，然后 `typecheck` / `build` / `pnpm test`。
 
 这一条顺带解决了一个我之前没意识到的问题：**从第九轮起 CI 是空的，意味着我的所有检查只在我这台机器上发生过**。现在别人提 PR 也会被同样检查一遍。
+
+**后续又补了第三个 job（第十四轮）**：`frontend consumer against a real B/C application`。前两个 job 各测一边——Python 测试摸不到前端，前端 job 不起服务——**所以 A 的消费端和 B 的接口哪天不说话了，CI 也不会红**。`tests/frontend/backend-probe.mjs` 本来就干这件事（在回环端口起组合应用、5 倍时钟、`MATCHMIND_MODEL_PROVIDER=mock`，跑暂停冻结 / 两会话隔离 / 快照重连 / 旧 run 拒绝），只是没接进 CI。现在三个 job 全绿：`39967587069`。
 
 ---
 
@@ -945,7 +947,7 @@ GET /.well-known/agent-card.json -> {"schemaVersion":".../agent-card.json","name
 GET /api/v1/replays/NOPE/insights/NOPE/overlay -> 404
 ```
 
-`model_ready: true` 是因为本机 `.env` 有 Key；**这不是云端已验证**，`docs/03_resources.md` 和 `AI_RULES.md` 都要求从真实宿主再测一次，那一步没做。服务验完已关闭，端口回收。
+`model_ready: true` 是因为本机 `.env` 有 Key；本机跑通**不等于**云端跑通——`docs/03_resources.md` 和 `AI_RULES.md` 都明确要求从真实宿主再测一次。那一步在第二十二节完成了。
 
 ### 21.5 门禁状态（第十二轮）
 
@@ -954,3 +956,176 @@ GET /api/v1/replays/NOPE/insights/NOPE/overlay -> 404
 - `python tools/check_frozen.py` → unchanged
 - `python tools/check_scope.py --role C` → OK
 - 修改：`ai/verify.py`、`tests/ai/test_service.py`、`docs/handoff/ai.md`
+
+---
+
+## 二十二、公网部署：Render 上的真实一次
+
+负责人给了 Render 的管理密钥、服务 ID 和仓库信息，要求直接部署。做完的结果先写在最前面：
+
+**线上地址 `https://matchmind-backend-preview.onrender.com`，跑的是组合镜像（C 的组合根 + A 的前端 + B 的数据），一次真实的 `live_model` 卡已经在公网上产出。**
+
+### 22.1 服务原来配的是错的镜像
+
+`GET /v1/services/srv-dbdegcnavr4c739pockg` 读出来的配置：
+
+```
+rootDir:        matchmind/
+branch:         main
+dockerfilePath: deploy/Dockerfile          ← 这是 B 的"纯后端"镜像
+SERVE_FRONTEND: 0
+MODEL_TIMEOUT:  12
+```
+
+`deploy/Dockerfile` 里没有 `ai/`，也没有前端。也就是说按原配置部署出来的服务**永远不会有 AI 卡片**——这正是 B 在 `INTEGRATOR_HANDOFF_CN.md` §7 里警告的那件事：
+
+> **不要只在 Render 填 Key，却继续启动 B-only 镜像。**
+
+改成 B 指定的组合镜像：
+
+| 项 | 改成 |
+| --- | --- |
+| `dockerfilePath` | `deploy/Dockerfile.release` |
+| `MATCHMIND_SERVE_FRONTEND` | `1`（同源托管 A 的 dist） |
+| `MATCHMIND_MODEL_TIMEOUT_SEC` | `20`（B 的 12 秒装不下一次纠正） |
+| `MATCHMIND_MODEL_PROVIDER / BASE_URL / NAME` | `deepseek` / `https://api.deepseek.com` / `deepseek-flash` |
+| `MATCHMIND_ORCHESTRATOR` | `framework` |
+| `MATCHMIND_THINKING` | `disabled` |
+| `MATCHMIND_MODEL_API_KEY` | 由负责人在平台上填，不进仓库、不进镜像 |
+
+其余限额项（8 会话 / 30 次每小时 / 并发 1）保持不动。
+
+### 22.2 一个真实的部署阻塞：`dist` 被 gitignore 了
+
+第一次触发部署会必然失败，原因在组合镜像第 19 行：
+
+```dockerfile
+COPY frontend/dist ./frontend/dist
+```
+
+`frontend/dist` 在**两个** `.gitignore` 里都被忽略（项目级一条、仓库根一条 `dist/`，深的那个赢），而 Render 是从 git 构建的。于是 `release_check --profile integrated` 在构建期就会因为没有 `A_bundled_frontend_artifact` 而失败。
+
+处理：把 `dist` 纳入版本控制（4 个文件 / 249 KB），根 `.gitignore` 加 `!matchmind/frontend/dist/` 并写明理由。**选择跟踪而不是 `git add -f`**，是为了让"前端改了但 dist 没重构建"这件事在 `git status` 里看得见，而不是被 ignore 规则藏起来。
+
+同一张构建期门禁也在提醒：`deploy/Dockerfile.release` 的第 1 行原本就写着 "Integrator supplies … A's already built frontend/dist"——**它一直假设整合者会把 dist 放进去，而没人做过**。
+
+### 22.3 部署与验证
+
+```
+POST /v1/services/{id}/deploys
+  -> dep-dbdgonui0phs739oipb0  build_in_progress -> update_in_progress -> live
+```
+
+公网实测（全部是真实请求，不是本地）：
+
+```
+GET /api/v1/health   -> {"status":"ok","contract_version":"2.0.0","mode":"production","model_ready":true}
+GET /                -> 200 text/html 677B          （A 的 dist，与 API 同源）
+GET /api/v1/matches  -> MM-DEMO-01
+POST /api/v1/replays -> R-80b456f0...（speed 5）
+POST .../control {"action":"play"}  -> 1755 秒时比分 1:0
+GET /api/v1/replays/{id} -> insights[0] =
+      window 1500-1650, high_recoveries 3, linked_shots 2
+      generation   = {mode: live_model, provider: deepseek, model: deepseek-flash}
+      verification = {status: passed, method: agent_and_code, rejected_claims: ["C5"]}
+GET .../insights/{id}/overlay -> {"schema":"matchmind.overlay/1", ...}
+GET /.well-known/agent-card.json -> {"name":"MatchMind", ...}
+```
+
+**这一条最有价值**：`rejected_claims: ["C5"]` 说明在公网上、用真模型，确实有一条主张被审核员砍掉，卡片仍然 `passed` 发布出来了。这是整个产品卖点在公网上的第一次实证。
+
+trace 也来自这次真实执行：
+
+```
+validator  started   orchestrator=agent_framework
+analyst    completed 4549ms  framework claims=4 rejected=1 tools=get_metrics,get_candidate_moments
+analyst    completed 2912ms  framework claims=5 rejected=0 tools=none
+narrator   rejected  1462ms  issues=1
+narrator   completed 1661ms  agent_framework; code-check retry (issues=0)
+auditor    completed 1338ms
+```
+
+注意 `narrator rejected -> code-check retry -> completed`：**代码门在公网上真的拦了一次并修好了**，不是排练。
+
+### 22.4 这一节要写清楚的边界
+
+- 免费的 Render 实例**空闲后会休眠**，冷启动首请求要等几十秒。演示前先手动打开一次预热，或者负责人评估常驻实例的费用。**不要声称"随时秒开"。**
+- 服务名仍是 `matchmind-backend-preview`（当初 B 建的名字），URL 也带着 `preview`。改名会换域名，提交前动它没有收益，所以留着。
+- 只有**一次**真实调用被公网验证。它证明"这条链路在云上能通"，**不证明**稳定性、并发或费用。`SUBMISSION_POSITIONING.md` 的措辞规则继续有效。
+- 模型 Key 只存在于 Render 的环境变量里，仓库、镜像、日志里都没有。部署脚本手里那份 token 是负责人的管理密钥，用完应当轮换。
+- 这一轮改了 `deploy/` 之外的镜像选择与平台配置，**没有改 B 的 Dockerfile、也没有改任何 `backend/` 代码**。
+
+### 22.5 门禁状态（第十三轮）
+
+- 公网 `deploy.release_check --profile integrated` 的构建期检查在镜像里跑过并通过（镜像因此才起得来）
+- 本地 `python -m pytest tests -q` → 433 passed（本轮只改文档与 `.gitignore` + 新增 dist）
+- `tools/check_frozen.py` → unchanged；`tools/check_scope.py --role C` → OK
+- 新增：`frontend/dist/`（4 个文件）；修改：`.gitignore`、`matchmind/.gitignore`、本文件、`evaluation/SUBMISSION_POSITIONING.md`
+
+---
+
+## 二十三、整合人对账：A 和 B 的角色卡
+
+我是整合人，所以"他们说自己做完了"不能当证据。这一节把 `roles/A_FRONTEND.md` 和
+`roles/B_BACKEND.md` 的每个工作块对到**跑过的东西**上，并明确标出哪几条我只核对了代码、没有能力亲自验证
+（我没有浏览器）。这份对账单是给提交代表用的：被问到"某块谁做的、证据在哪"，照这张表念。
+
+### 23.1 我实际跑了什么
+
+| 命令 | 结果 | 覆盖谁的卡 |
+| --- | --- | --- |
+| `pytest tests/ai -q` | **330 passed** | C |
+| `pytest tests/backend -q` | **85 passed, 62 subtests** | B |
+| `pytest tests/test_contracts.py tests/test_mock_api.py -q` | **15 + 4 = 19 passed** | 共同基线 |
+| `pnpm test`（前端单元） | **27 passed** | A |
+| `pnpm run test:backend`（前端消费端 × 真实 B/C 进程） | **passed**，见 23.2 | A × B × C |
+| `python -m deploy.verify_backend` | **passed**，512 正常 / 72 异常 / 0 失败 | B |
+| `python -m deploy.adapter_check` | **passed**，12/12 合法 + 3/3 篡改被拒，0 次模型调用 | C × B |
+| 公网 health / `/` / replays | `model_ready: true`、200 HTML、`live_model` 卡 | 全部 |
+
+合计 Python **434**、前端 **27**，与 PR 里报的数一致——**数对得上，不是各报各的**。
+
+### 23.2 A 的六个工作块
+
+| 块 | 状态 | 证据（我核过的那部分） |
+| --- | --- | --- |
+| A1 比赛中心、从 mock snapshot 到真实 API | 完成 | 公网 `/` 返回 A 的 dist；`GET /api/v1/matches` 的内容渲染在页面上；`backend-probe` 的 `catalogue and event recovery` 通过 |
+| A2 播放/暂停/重置/倍速、六种 SSE 逐类处理、reset 后按 run_id 丢弃旧消息 | 完成 | `pnpm run test:backend` 实测 8 项全过，其中 `controls and pause freeze`、`two-session isolation`、`snapshot reconnect without duplicates`、`idempotent reset and stale-run rejection` 直接对应 A2；观测到的 stream kinds = snapshot / match_event / match_state / agent_status / insight（`error` 没被触发所以没出现，不算缺失） |
+| A3 Insight 卡、Casual/Analyst 切换、证据展开、来源标签 | 完成 | 公网卡片上读到 `Live model` 标签、`Evidence checked`、`rejected_claims` 文案、"Where it happened"、"Event timeline"；探针的 `same-insight audience texts and event references` 通过；`MatchIntelligence.tsx` 切换语态只读同一 Insight 的两段文本，不触发模型调用 |
+| A4 接真实 API 时不改页面字段、不私造字段 | 完成 | `frontend/src/contract.ts` **只有 re-export**，指向生成的 `../../contracts/types`，没有任何本地重定义；`check_frozen` 通过，契约仍是 2.0.0 |
+| A5 1280×720 与 390 像素宽、键盘可操作、语义文字、前端无 Key、不加载海外字体/CDN/远程图 | **代码层面通过，浏览器层面我没验** | 源码与构建产物里 **0 个 `http(s)://` 外链**；CSS 断点在 1440 / 1000 / 900 / 700 / 600；15 处 `onKeyDown/tabIndex/aria-*`；`NoSecretsTests` 通过、tracked 树 `sk-` 零命中。**但"390 像素下真的不塌"要人眼看**——A 的 PR 里报了浏览器验证，我这里只标注"A 报告、我未复核" |
+| A6 与 C 排练 110 秒演示、视频只展示已实现能力、故障注入有标签、更新 handoff | **未完成（只差录屏）** | `evaluation/DEMO_SCRIPT.md` 已由我按现在的产品重写（原来还写着"UI 未建，禁止拍界面"）；`docs/handoff/frontend.md` A 已更新。**录像需要人。** |
+
+### 23.3 B 的六个工作块
+
+| 块 | 状态 | 证据 |
+| --- | --- | --- |
+| B1 版本化数据、基础接口、统一统计 | 完成 | 验收的分析导出与 301 项逻辑秒不变量通过；公网 `matches`、`stats` 正常 |
+| B2 独立会话、服务端时钟、播放/暂停/倍速/重置、run_id | 完成 | 验收含 `play_pause`、`reset`、`old_run`；`test_play_pause_speed_and_two_session_isolation`、`test_create_and_reset_idempotency_and_old_run_guard` 通过 |
+| B3 六种冻结 SSE、独立队列、快照恢复、不补发日志 | 完成 | 契约 `StreamMessage` 的 const 集合 = `agent_status, error, insight, match_event, match_state, snapshot`，正好六个；`test_sse_begins_with_snapshot_even_with_last_event_id`、`test_subscribers_receive_independently_and_reconnect_is_snapshot`、`test_slow_subscriber_is_disconnected_without_blocking_other` 通过 |
+| B4 高位夺回检测、窗口提取、有界后台调用、同窗口只调一次、只发布双校验通过的结果 | 完成 | 验收的 `retry` / `invalid_input` 项通过；`test_budget_deduplication_and_queue_bounds`、`test_queue_wait_is_part_of_total_deadline`、`test_queue_capacity_rejection_does_not_consume_budget` 通过 |
+| B5 会话容量、空闲回收、次数限制、请求体上限、同域单 worker、`/api` 不被 SPA 吞 | 完成 | 公网单进程同源：`/` 200 HTML，`/api/v1/does-not-exist` 返回 **JSON 404**（没被 SPA 回退吞掉）。**注意**：深层路径 `/some/deep/link` 也是 JSON 404——A1 没有客户端路由，这是正确行为，但写材料时别说"支持任意深链" |
+| B6 公网匿名验收 + 记录版本/URL/费用/保活 | **公网验收完成，费用口径要代表落一句** | 见第二十二节：公网已跑通真实模型调用。费用与保活口径：团队账号、**free 计划、空闲会休眠、无固定保活到期日**。必须写进材料，不能承诺"一直在" |
+
+### 23.4 B 的"本角色检查"逐项
+
+| 检查项 | 结果 |
+| --- | --- |
+| 共同契约测试、`tests/backend/`、与 A 的真实端到端 | 19 + 85 + `test:backend` 探针全过 |
+| 比分不双计 | 验收 0 失败，`tests/backend` 有对应用例 |
+| 窗口边界 / 坏 ID | 通过（越界窗口与坏 ID 被拒） |
+| pause / reset | 探针 `controls and pause freeze` + 验收 `reset` |
+| 两个订阅者不抢消息 | `test_subscribers_receive_independently...` |
+| 重连快照 | `snapshot reconnect without duplicates` |
+| 旧 run 结果 | `idempotent reset and stale-run rejection` |
+| 模型失败统计仍更新 | 公网 + 本地 fallback 实测：出现 `rule_fallback` 卡时时钟仍在走 |
+| 不把 Mock 当正式后端 | 公网跑的是真实模型路径；探针显式 `MATCHMIND_MODEL_PROVIDER=mock` 并报 `model_calls: 0` |
+
+### 23.5 结论：现在谁卡着谁
+
+- **A**：代码层面六块全完成，只差**录屏**这一件人做的事。
+- **B**：六块全完成，`foul` 语义已闭环；只剩"费用/保活"一句话要代表落进材料。
+- **C（我）**：单方可做的已清空，见第七节与 19.7。
+- **只在负责人手上**：仓库改 public（规则 §4.4，需要 admin）、分支保护（admin）、视频（人）。
+
+**方法论**：能跑的都跑了，跑不了的说"我没验"，而不是"应该没问题"。A5 的浏览器观感和 B6 的费用口径，是两处明确的"不由我背书"。

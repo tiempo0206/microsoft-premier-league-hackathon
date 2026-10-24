@@ -1,0 +1,86 @@
+{
+  "archives": [
+    {
+      "article": 7770599,
+      "bytes": 77323413,
+      "file": "events.zip",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "md5": "7c20e8647e7eda58d7838a0c7b1ec6ab",
+      "published_md5_matches": true,
+      "sha256": "877e015b716ffdeea18f04418e3f24fed307ed03c37ff305cabe1f47c4822a45",
+      "source": "https://ndownloader.figshare.com/files/14464685",
+      "version": 1
+    },
+    {
+      "article": 7770422,
+      "bytes": 645097,
+      "file": "matches.zip",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "md5": "51d80beb17480919f69a53a0152c2d71",
+      "published_md5_matches": true,
+      "sha256": "c8f92bb7533e5c127e043cee764c991b5c25b4f5e70a65be931baae0b1765ce9",
+      "source": "https://ndownloader.figshare.com/files/14464622",
+      "version": 1
+    }
+  ],
+  "authors": [
+    "Luca Pappalardo",
+    "Emanuele Massucco"
+  ],
+  "checked_date": "2026-10-24",
+  "collection": "https://doi.org/10.6084/m9.figshare.c.4415000.v5",
+  "frontend_collaborator": "tiempo0206",
+  "integration_coordinator": "farlyfeifei",
+  "kind": "historical_real_research_only",
+  "license": "CC-BY-4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "model_calls": 0,
+  "payload_files": {
+    "ATTRIBUTION.md": {
+      "bytes": 1615,
+      "sha256": "fc457916bb2991e1a36ff03233322a812856ec97f1d6a40ceb80c711f9f5d95d"
+    },
+    "LICENSE-CC-BY-4.0.txt": {
+      "bytes": 18656,
+      "sha256": "9e5f1b3c610b9c2da5c313bf81d577a7d1acec686bdb0384edefa6df0f90cd94"
+    },
+    "samples/wyscout-2499719.1H-1500-1800.original.jsonl": {
+      "bytes": 27841,
+      "sha256": "11c35ef10a1d6a0d1f62cfb2651a6b21f0df736a14e7b9a4e25aa2a559526a00"
+    },
+    "samples/wyscout-2499719.events.original.jsonl": {
+      "bytes": 519781,
+      "sha256": "78fa5bf6b0887b44d8d2a112453a27901a7c78ce2731835ab761a3f8bf045b54"
+    },
+    "samples/wyscout-2499719.match.original.json": {
+      "bytes": 8118,
+      "sha256": "ab552e3d5c6a796c58bfd49aa37d6121559427d7118cbc6ca5b220c688bb5dc0"
+    },
+    "source-verification.json": {
+      "bytes": 2502,
+      "sha256": "19d1b443ba6caf68ac95987b51385e7d134f76f7c582347ad92f1b091eaa3739"
+    }
+  },
+  "production_changed": false,
+  "provider": "Wyscout",
+  "release": "https://github.com/tiempo0206/microsoft-premier-league-hackathon/releases/tag/data-wyscout-2017-18-v1",
+  "runtime_compatible": false,
+  "sample": {
+    "clip_events": 96,
+    "clip_file": "samples/wyscout-2499719.1H-1500-1800.original.jsonl",
+    "clip_period": "1H",
+    "clip_sec": [
+      1500,
+      1800
+    ],
+    "events_file": "samples/wyscout-2499719.events.original.jsonl",
+    "full_match_events": 1768,
+    "match_file": "samples/wyscout-2499719.match.original.json",
+    "match_id": 2499719
+  },
+  "selection": "Original field values retained; match/closed-window selection and JSON reserialization only.",
+  "synthetic": false,
+  "version": 1
+}
