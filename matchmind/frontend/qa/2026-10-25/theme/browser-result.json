@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-25",
+  "scope": "Local same-origin built UI; explicit mock provider; synthetic press QA dataset; no public deployment or model calls",
+  "assets": [
+    "index-9Jdbo-up.js",
+    "index-Bfv8OZrL.css"
+  ],
+  "earlierPausedCheck": {
+    "clock": "29:51",
+    "focus": "MM-SHOW-PRESS-E01125:23 · pass",
+    "mode": "analyst",
+    "numbers": "3High recoveries2Recoveries linked to shots150sAnalysis window",
+    "scrollWidth": 1280,
+    "selectedEvidence": "MM-SHOW-PRESS-E01125:23 · pass",
+    "selectedPoint": true,
+    "status": "Replay paused",
+    "timelineSelection": "25:23passHarbor FC · H02MM-SHOW-PRESS-E011↗",
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  "finalDesktop": {
+    "clock": "30:00",
+    "mode": "analyst",
+    "narrative": "This window records 3 high recoveries, 2 of which produced a shot within 15 seconds, with possession 69 seconds to 81 seconds. These are auditable counts and not a causal explanation.",
+    "observed": "128 observed",
+    "scrollWidth": 1280,
+    "selected": "MM-SHOW-PRESS-E011 · 25:23 · pass · H02Harbor FC · successful · (74, 52.9)",
+    "selectedPoint": true,
+    "status": "Clip complete",
+    "viewport": [
+      1280,
+      720
+    ]
+  },
+  "finalMobile": {
+    "clock": "30:00",
+    "eventClientWidth": 348,
+    "eventScrollWidth": 348,
+    "mode": "casual",
+    "narrative": "The home side kept winning the ball high up the pitch and turning it into shots.",
+    "scrollWidth": 390,
+    "selected": "MM-SHOW-PRESS-E011 · 25:23 · pass · H02Harbor FC · successful · (74, 52.9)",
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "sourceDisclosure": {
+    "focus": "Source collection",
+    "open": true,
+    "scrollWidth": 390,
+    "viewport": [
+      390,
+      844
+    ]
+  },
+  "reset": {
+    "clock": "25:00",
+    "events": "0 observed",
+    "feed": "Snapshot feed connectedSession 2b482a4b · Run 2",
+    "insights": 0,
+    "scrollWidth": 1280,
+    "status": "Ready to replay",
+    "viewport": [
+      1280,
+      720
+    ]
+  }
+}

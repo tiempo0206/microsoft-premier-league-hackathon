@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-25",
+  "head": "409d25c5277dfc01e7cde07ad250aa5a99763c05",
+  "origin": "http://127.0.0.1:18400/",
+  "environment": "local integrated B/C app; explicit mock model provider",
+  "replayPlayed": false,
+  "modelCalls": 0,
+  "keyboard": {
+    "spaceExpanded": true,
+    "enterCollapsed": true,
+    "tabOrder": [
+      "Source collection",
+      "CC BY 4.0"
+    ],
+    "shiftTabReachedSourceCollection": true
+  },
+  "desktop": {
+    "focused": "CC BY 4.0",
+    "scrollWidth": 1280,
+    "source": {
+      "open": true,
+      "rect": {
+        "bottom": 627.2421875,
+        "height": 313.1796875,
+        "left": 48,
+        "right": 1232,
+        "top": 314.0625,
+        "width": 1184
+      },
+      "sections": [
+        {
+          "bottom": 606.2421875,
+          "height": 240.1796875,
+          "left": 69,
+          "right": 628,
+          "top": 366.0625,
+          "width": 559
+        },
+        {
+          "bottom": 606.2421875,
+          "height": 240.1796875,
+          "left": 652,
+          "right": 1211,
+          "top": 366.0625,
+          "width": 559
+        }
+      ]
+    },
+    "viewport": {
+      "height": 720,
+      "width": 1280
+    }
+  },
+  "mobile": {
+    "focused": "Source collection",
+    "scrollWidth": 390,
+    "source": {
+      "open": true,
+      "rect": {
+        "bottom": 726.328125,
+        "height": 593.5625,
+        "left": 20,
+        "right": 370,
+        "top": 132.765625,
+        "width": 350
+      },
+      "sections": [
+        {
+          "bottom": 349.359375,
+          "height": 149.59375,
+          "left": 41,
+          "right": 349,
+          "top": 199.765625,
+          "width": 308
+        },
+        {
+          "bottom": 705.328125,
+          "height": 331.96875,
+          "left": 41,
+          "right": 349,
+          "top": 373.359375,
+          "width": 308
+        }
+      ]
+    },
+    "viewport": {
+      "height": 844,
+      "width": 390
+    }
+  },
+  "screenshots": [
+    "source-desktop-1280x720.jpg",
+    "source-mobile-390x844.jpg"
+  ]
+}

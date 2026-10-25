@@ -2,17 +2,36 @@ import type { ReactNode } from "react";
 import { formatClock, passAccuracy } from "./replay";
 import { useReplay } from "./useReplay";
 import { MatchIntelligence } from "./MatchIntelligence";
+import { DataSources } from "./DataSources";
 
 function Mark() {
   return (
     <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-      <rect width="40" height="40" rx="12" fill="currentColor" />
       <path
-        d="M10 28V13l10 10 10-10v15"
-        stroke="#d8ed8d"
-        strokeWidth="3.5"
-        strokeLinejoin="round"
+        d="M3 10 10 5l10 11L30 5l7 5v24l-8-3V17l-9 10-9-10v14l-8 3V10Z"
+        fill="currentColor"
       />
+      <path
+        d="m11 8 9 10 9-10M20 18v9"
+        stroke="var(--canvas)"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function CrownMotif() {
+  return (
+    <svg
+      className="crown-motif"
+      viewBox="0 0 240 210"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path d="m25 55 48 16 47-48 47 48 48-16-23 75H48L25 55Z" />
+      <path d="m48 145 72 48 72-48M73 71l16 43m78-43-16 43M120 23v91" />
+      <circle cx="120" cy="23" r="6" />
+      <path className="motif-orbit" d="M9 170 231 11M6 193h228" />
     </svg>
   );
 }
@@ -139,6 +158,8 @@ export default function App() {
       : "Replay unavailable";
   const empty =
     replay.catalogueState === "ready" && replay.matches.length === 0;
+  // Keep pending buttons focusable; their handlers still reject another command.
+  const controlsUnavailable = !snapshot || !!replay.controlError;
 
   return (
     <>
@@ -150,32 +171,30 @@ export default function App() {
           <a className="brand" href="/" aria-label="MatchMind home">
             <Mark />
             <span>
-              MatchMind<span className="brand-dot">.</span>
+              MatchMind <span className="brand-ai">AI</span>
             </span>
           </a>
-          <span className="header-section">
-            <span />
-            Match centre
-          </span>
-          <span className="header-note">
-            A new perspective on the game <span aria-hidden="true">↗</span>
-          </span>
+          <nav className="header-nav" aria-label="Main navigation">
+            <a href="#match-heading">Match</a>
+            {snapshot && match && <a href="#insight-heading">Insights</a>}
+            <a href="#data-sources">Data sources</a>
+          </nav>
         </div>
       </header>
 
       <main id="match-centre" className="page">
         <section className="intro" aria-labelledby="page-title">
+          <CrownMotif />
           <div>
             <p className="eyebrow">
               <span className="tiny-pitch" aria-hidden="true" />
-              THE GAME, IN FOCUS
+              A NEW PERSPECTIVE ON THE GAME
             </p>
             <h1 id="page-title">
-              Every match has
-              <br />a story to tell<span>.</span>
+              Football, <span>explained.</span>
             </h1>
             <p className="intro-copy">
-              Get closer to the game, one moment at a time.
+              Make sense of the moments.
             </p>
           </div>
           <div className="clip-select">
@@ -276,19 +295,31 @@ export default function App() {
           </div>
         )}
 
-        <section className="playback-controls" aria-label="Playback controls">
+        <section
+          className="playback-controls"
+          aria-label="Playback controls"
+          aria-busy={replay.pending}
+        >
           <div className="playback-buttons">
             <button
               className="primary-button"
               disabled={
+                controlsUnavailable || snapshot?.replay.status === "ended"
+              }
+              aria-disabled={
                 replay.controlsDisabled || snapshot?.replay.status === "ended"
               }
-              onClick={() =>
+              onClick={() => {
+                if (
+                  replay.controlsDisabled ||
+                  snapshot?.replay.status === "ended"
+                )
+                  return;
                 replay.control({
                   action:
                     snapshot?.replay.status === "playing" ? "pause" : "play",
-                })
-              }
+                });
+              }}
             >
               <span aria-hidden="true">
                 {snapshot?.replay.status === "playing" ? "Ⅱ" : "▶"}
@@ -297,8 +328,12 @@ export default function App() {
             </button>
             <button
               className="secondary-button"
-              disabled={replay.controlsDisabled}
-              onClick={() => replay.control({ action: "reset" })}
+              disabled={controlsUnavailable}
+              aria-disabled={replay.controlsDisabled}
+              onClick={() => {
+                if (!replay.controlsDisabled)
+                  replay.control({ action: "reset" });
+              }}
             >
               <RefreshIcon /> Reset
             </button>
@@ -564,12 +599,13 @@ export default function App() {
             full-game result.
           </Detail>
         </section>
+        <DataSources match={match} />
         <footer className="page-footer">
           <span>
             MatchMind<span className="brand-dot">.</span>{" "}
             <span className="footer-tagline">Make sense of the moments.</span>
           </span>
-          <span>Synthetic football · Original data · No match footage</span>
+          <span>Synthetic replay · No match footage</span>
         </footer>
       </main>
     </>
