@@ -117,5 +117,41 @@ class ComparisonTests(unittest.TestCase):
                            columns["real sample"]["shots_per_10_min"])
 
 
+class CalibratedProfileTests(unittest.TestCase):
+    """The tuned knobs, and the limits of tuning."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.report = calibration.build_report()
+        cls.columns = cls.report["columns"]
+
+    def test_the_default_knobs_still_reproduce_the_published_proposal(self):
+        """Tuning must not quietly change the fixture the repository already publishes."""
+        from collections import Counter
+        events = calibration.dense_window()
+        self.assertEqual(len(events), 110)
+        self.assertEqual(Counter(e["name"] for e in events),
+                         {"pass": 94, "shot": 9, "recovery": 6, "goal": 1})
+
+    def test_the_calibrated_profile_matches_the_real_shot_rate(self):
+        real = self.columns["real sample"]["shots_per_10_min"]
+        tuned = self.columns["synthetic dense (calibrated)"]["shots_per_10_min"]
+        self.assertEqual(tuned, real)
+
+    def test_the_calibrated_profile_keeps_the_density(self):
+        tuned = self.columns["synthetic dense (calibrated)"]
+        real = self.columns["real sample"]["seconds_per_event"]
+        self.assertLess(abs(tuned["seconds_per_event"] - real) / real, 0.30)
+        # Tuning the shot chance must not shrink the fixture back into sparse territory.
+        self.assertGreaterEqual(tuned["events"], 96)
+
+    def test_tuning_does_not_claim_to_fix_the_pass_share(self):
+        tuned = self.columns["synthetic dense (calibrated)"]["pass_share_pct"]
+        self.assertGreater(tuned, self.columns["real sample"]["pass_share_pct"])
+        note = self.report["cannot_be_fixed_by_a_knob"]
+        self.assertIn("pass share", note["what_it_cannot"])
+        self.assertIn("recoveries", note["pass_share_gap"])
+
+
 if __name__ == "__main__":
     unittest.main()

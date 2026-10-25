@@ -35,6 +35,17 @@ PRESSES = [
     {"at": 1640, "x": 79, "convert_after": 40, "scoring": True},
 ]
 
+# The tuned profile, from measuring the defaults against one real five-minute sample
+# (evaluation/real_data_calibration.py). At the defaults this generator produces a shot every
+# thirty seconds; this drops the rate to the sample's 0.8 per minute without touching the pressed
+# spells the detector depends on.
+#
+# It does not and cannot fix the pass share. That gap is about the event vocabulary -- a real
+# five-minute sample is 34% duels, interruptions and "others on the ball", and our contract has no
+# type for any of them -- so it is documented in the calibration report instead of being engineered
+# around by inflating recoveries.
+CALIBRATED = {"shot_chance": 0.30}
+
 
 class Builder:
     def __init__(self, seed=11):
@@ -77,13 +88,20 @@ def attacking_x(team, x):
     return x if team == "HOME" else (100.0 - x)
 
 
-def generate(seed=11, clip_start=1500, clip_end=1800, presses=None):
+def generate(seed=11, clip_start=1500, clip_end=1800, presses=None, *,
+             pass_range=(4, 6), shot_chance=0.45, recovery_chance=0.45):
     """Scripted possession chains. `clip_end - clip_start` is the covered span.
 
     A 300 s span produces roughly 110 events and clears every qualification threshold. A
     2700 s span (a 45-minute half) additionally produces enough completed moves for the
     expected-threat grid in `ai/threat.py` to converge, which is how the claim "this technique
     needs a full match, not a clip" is demonstrated instead of asserted.
+
+    The three keyword knobs exist because the composition of this fixture turned out to be
+    measurable against real football (`evaluation/real_data_calibration.py`): at the defaults it
+    produces a shot every 30 seconds, which is roughly twice what a real five-minute sample did and
+    about six times a typical match rate. Their defaults reproduce the original output byte for
+    byte, so the published proposal and its tests are unchanged; `CALIBRATED` is the tuned profile.
     """
     b = Builder(seed)
     t = clip_start + 1
@@ -118,11 +136,11 @@ def generate(seed=11, clip_start=1500, clip_end=1800, presses=None):
 
         # Ordinary possession: a recovery or a restart, some passes, then an ending.
         poss = b.new_possession()
-        if b.rng.random() < 0.45:
+        if b.rng.random() < recovery_chance:
             b.add(t, "recovery", owner, b.player(owner), "successful",
                   (b.rng.uniform(20, 45), b.rng.uniform(20, 80)), possession=poss)
             t += b.rng.choice((2, 3))
-        passes = b.rng.randint(4, 6)
+        passes = b.rng.randint(*pass_range)
         success = True
         for _ in range(passes):
             start_x = b.rng.uniform(25, 70)
@@ -135,7 +153,7 @@ def generate(seed=11, clip_start=1500, clip_end=1800, presses=None):
             t += 2
             if not success:
                 break
-        if success and t < clip_end - 10 and b.rng.random() < 0.45:
+        if success and t < clip_end - 10 and b.rng.random() < shot_chance:
             b.add(t, "shot", owner, b.player(owner),
                   "on_target" if b.rng.random() < 0.4 else "off_target",
                   (b.rng.uniform(78, 92) if owner == "HOME" else b.rng.uniform(8, 22),

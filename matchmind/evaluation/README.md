@@ -189,15 +189,15 @@ So it is used for what it can support: **calibration**. `evaluation/real_data_ca
 real five minutes and our synthetic five minutes side by side on the only metrics that survive the
 vocabulary gap, with the tolerances fixed before the numbers were looked at.
 
-| metric, same 300 s window | real sample | synthetic (shipped) | synthetic (dense proposal) |
-| --- | --- | --- | --- |
-| events | 96 | 30 | 110 |
-| **seconds per event** | **3.12** | **10.0** | **2.73** |
-| passes | 59 | 18 | 94 |
-| pass share | 61.5% | 60.0% | 85.5% |
-| shots per 10 min | 8.0 | 10.0 | 20.0 |
-| passes starting in the final third | 28.8% | 33.3% | 18.1% |
-| median gap between events | 1.9 s | 10.0 s | 2.0 s |
+| metric, same 300 s window | real sample | synthetic (shipped) | synthetic (dense proposal) | synthetic (dense, **calibrated**) |
+| --- | --- | --- | --- | --- |
+| events | 96 | 30 | 110 | 106 |
+| **seconds per event** | **3.12** | **10.0** | 2.73 | **2.83** |
+| passes | 59 | 18 | 94 | 88 |
+| pass share | 61.5% | 60.0% | 85.5% | 83.0% |
+| **shots per 10 min** | **8.0** | 10.0 | 20.0 | **8.0** |
+| passes starting in the final third | 28.8% | 33.3% | 18.1% | 17.0% |
+| median gap between events | 1.9 s | 10.0 s | 2.0 s | 2.0 s |
 
 **What this says, in order of importance:**
 
@@ -206,12 +206,19 @@ vocabulary gap, with the tolerances fixed before the numbers were looked at.
    `fixture_qualify.py` already failed it on — now confirmed against a real match instead of against a
    threshold we invented. That threshold was ≤ 3.0 s per event; the real sample runs at 3.12. It was
    picked from football intuition before this data existed and lands within 4% of it.
-2. **The dense proposal fixes density and overshoots composition.** It is within 12.5% on density —
-   the problem it was built to solve — but 39% too pass-heavy and **150% too shot-heavy**. A demo
-   built on it would look busy in a way real football does not. If it is adopted, the generator needs
-   its pass and shot rates pulled down, not just its event count raised.
-3. **Four of the eight comparisons are out of range, and they are listed as such.** The harness prints
-   the failures before the passes, because a table where everything is green is the one nobody checks.
+2. **A knob fixes the shot rate, and it is now set.** The dense proposal fired a shot every thirty
+   seconds — 20 per ten minutes against the sample's 8. `dense_fixture_proposal.CALIBRATED` drops that
+   to 8.0, an exact match, while keeping density inside tolerance. The default knobs still reproduce
+   the published 110-event fixture byte for byte, so nothing already written down changed.
+3. **No knob can fix the pass share, and the reason is arithmetic.** The sample is 34% duels,
+   interruptions and loose balls; our frozen contract has an event type for none of them, so inside
+   300 seconds the only non-pass action available is a recovery. Reaching 61.5% would mean inventing
+   ~37 recoveries in five minutes — about 665 per match, several times what real football has.
+   Inflating them to make the table look tidy would corrupt the very metric the product exists to
+   protect, so **the gap stays published**. A real fix needs new event types, which is a contract
+   change and therefore a team decision.
+4. **Six of the twelve comparisons are out of range and the harness prints them first.** A table where
+   everything is green is the one nobody checks.
 
 **What it refuses to compute**, and why: `high_recoveries`, `linked_shots`, `sustained_control`, the
 3-recovery/2-shot trigger, and pass completion. Wyscout's sample has no `possession_id` and no

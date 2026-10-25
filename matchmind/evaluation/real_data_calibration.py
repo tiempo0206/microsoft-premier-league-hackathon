@@ -115,13 +115,33 @@ def shipped_window():
             for e in rows]
 
 
-def dense_window():
+def dense_window(knobs=None):
     presses = dense.spread_presses(WINDOW[0], WINDOW[1], every_sec=10 ** 6, first_at=60, burst_size=3)
-    rows = dense.generate(seed=11, clip_start=WINDOW[0], clip_end=WINDOW[1], presses=presses)
+    rows = dense.generate(seed=11, clip_start=WINDOW[0], clip_end=WINDOW[1], presses=presses,
+                          **(knobs or {}))
     picked = [e for e in rows if WINDOW[0] <= float(e["timestamp_sec"]) <= WINDOW[1]]
     return [{"sec": float(e["timestamp_sec"]), "name": e["type"], "team": e["team_id"],
              "x": dense.attacking_x(e["team_id"], float(e["position"]["x"]))}
             for e in picked]
+
+
+def calibration_note():
+    """The arithmetic behind the one gap a knob cannot close, stated where the numbers are."""
+    real = summarise(real_window(), passes=("Pass",), shots=("Shot",))
+    other = 100.0 - real["pass_share_pct"]
+    return {
+        "pass_share_gap": (
+            "A real five-minute sample is %.1f%% passes. In our vocabulary the only non-pass action "
+            "is a recovery, so reaching that share inside 300 s would mean inventing about %d "
+            "recoveries in five minutes -- roughly %.0f per match, several times what a real match "
+            "has. Inflating them to make a table look right would corrupt exactly the metric the "
+            "product is about, so the gap stays published instead of engineered away."
+            % (real["pass_share_pct"], round(other / 100.0 * real["events"]),
+               (other / 100.0 * real["events"]) * 18)),
+        "what_a_knob_can_fix": "the shot rate, which is a parameter of the generator (see CALIBRATED)",
+        "what_it_cannot": "pass share, because the missing 34% is duels, interruptions and loose "
+                          "balls that the frozen contract has no event type for",
+    }
 
 
 def summarise(events, passes=("pass",), shots=("shot", "goal")):
@@ -177,13 +197,11 @@ def compare(columns):
 def build_report():
     real = real_window()
     columns = {
-        "real sample": summarise(real),
-        # Wyscout's "Shot" only; our own "goal" type has no separate Wyscout row in the sample.
+        "real sample": summarise(real, passes=("Pass",), shots=("Shot",)),
         "synthetic shipped": summarise(shipped_window()),
         "synthetic dense (proposal)": summarise(dense_window()),
+        "synthetic dense (calibrated)": summarise(dense_window(dense.CALIBRATED)),
     }
-    # The real side counts passes by Wyscout's name, not by our vocabulary.
-    columns["real sample"] = summarise(real, passes=("Pass",), shots=("Shot",))
     return {
         "window": {"start_sec": WINDOW[0], "end_sec": WINDOW[1], "seconds": WINDOW[1] - WINDOW[0]},
         "real_source": {
@@ -198,6 +216,7 @@ def build_report():
                             for name, pair in WYSCOUT_MAPPING.items()},
         "columns": columns,
         "verdicts": compare(columns),
+        "cannot_be_fixed_by_a_knob": calibration_note(),
         "refusals": [{"metric": metric, "reason": why} for metric, why in REFUSALS],
         "assumptions": [
             "Wyscout's x runs in the acting team's attacking direction; the coordinate rows depend "
@@ -221,7 +240,8 @@ def main(argv=None):
         return 0
 
     columns = report["columns"]
-    order = ["real sample", "synthetic shipped", "synthetic dense (proposal)"]
+    order = ["real sample", "synthetic shipped", "synthetic dense (proposal)",
+             "synthetic dense (calibrated)"]
     rows = ["events", "seconds_per_event", "passes", "pass_share_pct", "shots",
             "shots_per_10_min", "pass_final_third_pct", "median_gap_sec"]
     width = max(len(r) for r in rows) + 2
@@ -230,9 +250,9 @@ def main(argv=None):
              report["window"]["seconds"], report["real_source"]["match"]))
     print("real sample event names:", report["event_names_in_sample"])
     print()
-    print("metric".ljust(width) + "".join(name.rjust(28) for name in order))
+    print("metric".ljust(width) + "".join(name.rjust(30) for name in order))
     for row in rows:
-        cells = "".join(str(columns[name].get(row, "-")).rjust(28) for name in order)
+        cells = "".join(str(columns[name].get(row, "-")).rjust(30) for name in order)
         print(row.ljust(width) + cells)
     print()
     print("verdicts (tolerance fixed before the numbers were looked at):")
