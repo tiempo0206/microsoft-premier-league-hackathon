@@ -4,7 +4,7 @@ import { historicalReference as reference } from "./historicalReference";
 
 export function DataSources({ match }: { match?: Match }) {
   return (
-    <details className="data-sources">
+    <details id="data-sources" className="data-sources">
       <summary>
         <span>About the data</span>
         <span className="data-sources-hint">

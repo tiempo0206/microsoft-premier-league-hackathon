@@ -1,0 +1,53 @@
+{
+  "scope": "Static solid CSS token pairs only; not a full accessibility audit",
+  "pairs": [
+    {
+      "foreground": "text",
+      "background": "surface",
+      "ratio": 16.39,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "muted",
+      "background": "surface",
+      "ratio": 8.15,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "muted",
+      "background": "selected",
+      "ratio": 5.91,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "canvas",
+      "background": "lime",
+      "ratio": 14.78,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "lilac",
+      "background": "violet-surface",
+      "ratio": 6.59,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "warning",
+      "background": "warning-surface",
+      "ratio": 9.67,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "danger",
+      "background": "danger-surface",
+      "ratio": 9.73,
+      "at_least_4_5": true
+    },
+    {
+      "foreground": "success",
+      "background": "success-surface",
+      "ratio": 10.39,
+      "at_least_4_5": true
+    }
+  ]
+}
