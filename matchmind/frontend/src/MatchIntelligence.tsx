@@ -29,6 +29,11 @@ export function MatchIntelligence({
   const [audience, setAudience] = useState<"casual" | "analyst">("casual");
   const [selectedInsightId, setSelectedInsightId] = useState("");
   const [selectedEventId, setSelectedEventId] = useState("");
+  const [selectionSource, setSelectionSource] = useState<"evidence" | "timeline">(
+    "evidence",
+  );
+  const selectionOrigin = useRef<HTMLButtonElement>(null);
+  const evidencePanel = useRef<HTMLElement>(null);
   const timeline = useRef<HTMLDivElement>(null);
   const selectedButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -41,7 +46,7 @@ export function MatchIntelligence({
           button.getBoundingClientRect().top -
           list.getBoundingClientRect().top -
           12,
-        behavior: "smooth",
+        behavior: "auto",
       });
   }, [selectedEventId]);
   const insights = snapshot.insights;
@@ -55,9 +60,22 @@ export function MatchIntelligence({
     : events.slice(-12);
   const teamName = (team: string) =>
     team === "HOME" ? match.home : match.away;
-  function selectEvent(eventId: string, insightId?: string) {
+  function selectEvent(
+    eventId: string,
+    button: HTMLButtonElement,
+    insightId?: string,
+  ) {
+    selectionOrigin.current = button;
+    setSelectionSource(insightId ? "evidence" : "timeline");
     if (insightId) setSelectedInsightId(insightId);
     setSelectedEventId(eventId);
+  }
+  function returnToSelection() {
+    const button = selectionOrigin.current;
+    if (!button?.isConnected) return;
+    const disclosure = button.closest<HTMLDetailsElement>("details");
+    if (disclosure) disclosure.open = true;
+    button.focus();
   }
   return (
     <section className="intelligence" aria-labelledby="insight-heading">
@@ -179,7 +197,9 @@ export function MatchIntelligence({
                           selectedEventId === id &&
                           active?.insight_id === insight.insight_id
                         }
-                        onClick={() => selectEvent(id, insight.insight_id)}
+                        onClick={(event) =>
+                          selectEvent(id, event.currentTarget, insight.insight_id)
+                        }
                       >
                         {id}
                         <span>
@@ -191,6 +211,17 @@ export function MatchIntelligence({
                     );
                   })}
                 </div>
+                {selected &&
+                  active?.insight_id === insight.insight_id &&
+                  insight.evidence_event_ids.includes(selected.event_id) && (
+                    <button
+                      className="evidence-jump"
+                      onClick={() => evidencePanel.current?.focus()}
+                    >
+                      View selected event on pitch{" "}
+                      <span aria-hidden="true">↘</span>
+                    </button>
+                  )}
                 <h4>Claims behind this explanation</h4>
                 <ul className="claim-list">
                   {insight.claims.map((claim) => (
@@ -258,6 +289,8 @@ export function MatchIntelligence({
           <section
             className="evidence-panel"
             aria-labelledby="evidence-heading"
+            ref={evidencePanel}
+            tabIndex={-1}
           >
             <div className="evidence-panel-heading">
               <p className="eyebrow">FOLLOW THE EVIDENCE</p>
@@ -337,6 +370,12 @@ export function MatchIntelligence({
                     {selected.outcome.replaceAll("_", " ")} · (
                     {selected.position.x}, {selected.position.y})
                   </p>
+                  <button className="evidence-jump" onClick={returnToSelection}>
+                    <span aria-hidden="true">↖</span>{" "}
+                    {selectionSource === "evidence"
+                      ? "Back to evidence"
+                      : "Back to timeline"}
+                  </button>
                 </>
               ) : (
                 <>
@@ -379,7 +418,9 @@ export function MatchIntelligence({
                       }
                       className={`${event.team_id === "HOME" ? "home-event" : "away-event"} ${evidenceIds.has(event.event_id) ? "evidence-event" : ""}`}
                       aria-pressed={selectedEventId === event.event_id}
-                      onClick={() => selectEvent(event.event_id)}
+                      onClick={(click) =>
+                        selectEvent(event.event_id, click.currentTarget)
+                      }
                     >
                       <time>{formatClock(event.timestamp_sec)}</time>
                       <span>
