@@ -61,6 +61,10 @@ This manual check creates its own replay, selects 1x, observes early `match_stat
 
 The Node-only `http-event-source.mjs` adapter reads the wire stream and feeds the actual `subscribeToReplay` consumer. It is also used by the offline backend probe. It does not implement browser automatic reconnect: this check explicitly closes and opens a subscription, verifies snapshot recovery without duplicate timeline entries, and leaves the replay reset to idle. Browser clicks, native EventSource retry behavior and a sustained latency/load benchmark remain separate checks. Neither public probe runs in ordinary tests or CI.
 
+### Manual local browser retry (offline)
+
+For a separate **local native-browser retry** check, see [the offline fault-injection record](qa/browser-reconnect-2026-10-25.md). `tests/frontend/browser-reconnect-proxy.mjs` forwards an explicitly mock loopback app and cuts its active SSE response on `SIGUSR2`. The browser performs the automatic retry. This manual helper refuses production/model-ready health, belongs outside CI/production, and does not replace public acceptance or attest a provider configuration by health alone.
+
 ### Manual public live acceptance (explicit live opt-in)
 
 The integrated application is currently available at [the Render match centre](https://matchmind-backend-preview.onrender.com). For an authorized manual live check, run this from `frontend`:

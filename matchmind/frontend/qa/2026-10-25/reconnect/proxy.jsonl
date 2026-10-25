@@ -1,0 +1,7 @@
+{"at":"2026-10-25T08:11:26.421Z","type":"ready","pid":79771,"origin":"http://127.0.0.1:18401","upstream":"http://127.0.0.1:18400","faultSignal":"SIGUSR2","modelReady":false}
+{"at":"2026-10-25T08:11:45.208Z","type":"stream_request","number":1,"path":"/api/v1/replays/R-d9986a8b8e414e2d8eba8441175dcdaf/stream","lastEventId":null}
+{"at":"2026-10-25T08:14:10.678Z","type":"cut_requested","activeStreams":1}
+{"at":"2026-10-25T08:14:10.684Z","type":"stream_closed","number":1,"injected":true}
+{"at":"2026-10-25T08:14:13.688Z","type":"stream_request","number":2,"path":"/api/v1/replays/R-d9986a8b8e414e2d8eba8441175dcdaf/stream","lastEventId":"R-d9986a8b8e414e2d8eba8441175dcdaf:1:26"}
+{"at":"2026-10-25T08:17:21.901Z","type":"stream_closed","number":2,"injected":false}
+{"at":"2026-10-25T08:18:20.130Z","type":"stopping"}

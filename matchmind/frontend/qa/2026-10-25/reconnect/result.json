@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-25",
+  "application_head": "86564f8d3cacec898a702b8b967cb0215f163167",
+  "runtime_assets": [
+    "index-C8F7BEC-.js",
+    "index-GQj0pIxq.css"
+  ],
+  "environment": "local integrated B/C app, MATCHMIND_MODEL_PROVIDER=mock; loopback-only manual proxy",
+  "fault": "one SIGUSR2 cut of the active SSE response; upstream stays running",
+  "stream_requests": [
+    {
+      "at": "2026-10-25T08:11:45.208Z",
+      "type": "stream_request",
+      "number": 1,
+      "path": "/api/v1/replays/R-d9986a8b8e414e2d8eba8441175dcdaf/stream",
+      "lastEventId": null
+    },
+    {
+      "at": "2026-10-25T08:14:13.688Z",
+      "type": "stream_request",
+      "number": 2,
+      "path": "/api/v1/replays/R-d9986a8b8e414e2d8eba8441175dcdaf/stream",
+      "lastEventId": "R-d9986a8b8e414e2d8eba8441175dcdaf:1:26"
+    }
+  ],
+  "cut_closed_at": "2026-10-25T08:14:10.684Z",
+  "retry_request_gap_ms": 3004,
+  "timing_scope": "one observed request arrival gap; not total UI recovery duration or latency benchmark",
+  "transient_reconnecting_ui_captured": false,
+  "explicit_page_reload_or_subscription_restart": false,
+  "before": {
+    "clock": "25:10",
+    "eventIds": [
+      "MM-DEMO-01-E002",
+      "MM-DEMO-01-E001"
+    ],
+    "feed": "Snapshot feed connected\nSession 175dcdaf \u00b7 Run 1",
+    "statistics": "THE NUMBERS\n\nMatch statistics\n\nSame match. A little more perspective.\n\nHarbor FC\nMountain United\n0\nShots\n0\n0\nPasses\n2\n\u2014\nPass accuracy\n100%\n0s\nPossession time\n10s\n\nPossession time is estimated from the synthetic event sequence.",
+    "status": "Replay paused",
+    "timeline": "Event timeline\n2 observed\n25:10\nPass\nMountain United \u00b7 A03\nMM-DEMO-01-E002\n25:01\nPass\nMountain United \u00b7 A02\nMM-DEMO-01-E001"
+  },
+  "after": {
+    "clock": "25:10",
+    "eventIds": [
+      "MM-DEMO-01-E002",
+      "MM-DEMO-01-E001"
+    ],
+    "feed": "Snapshot feed connected\nSession 175dcdaf \u00b7 Run 1",
+    "statistics": "THE NUMBERS\n\nMatch statistics\n\nSame match. A little more perspective.\n\nHarbor FC\nMountain United\n0\nShots\n0\n0\nPasses\n2\n\u2014\nPass accuracy\n100%\n0s\nPossession time\n10s\n\nPossession time is estimated from the synthetic event sequence.",
+    "status": "Replay paused",
+    "timeline": "Event timeline\n2 observed\n25:10\nPass\nMountain United \u00b7 A03\nMM-DEMO-01-E002\n25:01\nPass\nMountain United \u00b7 A02\nMM-DEMO-01-E001"
+  },
+  "reset": {
+    "clock": "25:00",
+    "eventIds": [],
+    "feed": "Snapshot feed connected\nSession 175dcdaf \u00b7 Run 2",
+    "statistics": "THE NUMBERS\n\nMatch statistics\n\nSame match. A little more perspective.\n\nHarbor FC\nMountain United\n0\nShots\n0\n0\nPasses\n0\n\u2014\nPass accuracy\n\u2014\n0s\nPossession time\n0s\n\nPossession time is estimated from the synthetic event sequence.",
+    "status": "Ready to replay",
+    "timeline": "Event timeline\n0 observed\n\nEvents appear as the replay advances."
+  },
+  "model_calls": 0,
+  "cloud_changes": false,
+  "result": "passed_local_browser_native_retry"
+}
