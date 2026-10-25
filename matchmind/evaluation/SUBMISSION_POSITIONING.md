@@ -18,16 +18,21 @@ technologies, code structure.
 | We can claim | Evidence |
 | --- | --- |
 | The synthetic dataset is *qualified*, not merely generated | `evaluation/fixture_qualify.py` — 7 checks with thresholds and reasons; the shipped fixture fails 3 and we publish that |
+| The synthetic data is **calibrated against real football**, and where it is off is published too | `evaluation/real_data_calibration.py` compares our 300-second clip with a real five-minute match sample (CC BY 4.0, Role B's delivery): composition is inside tolerance, density is 3.2× too sparse, and the dense proposal fixes density but overshoots shots by 150%. All three statements are in `evaluation/README.md` §1c |
+| We refuse to compute what the real record cannot support | the calibration harness refuses recovery, possession and the 3-recovery trigger, because that sample has no `possession_id` and no won-ball attribution |
 | We proved the thresholds are reachable | `evaluation/dense_fixture_proposal.py` — 110 events, 1 per 2.7 s, 11 players a side, 0 contract violations, all 7 checks green |
 | One deterministic implementation per concept | the recovery chain exists once, in `ai/verify.high_press_chains`, and the tools, the fallback and the recap all call it |
 | The verifier is measured | `evaluation/factcheck_bench.py` — 21/21 corruptions caught, 0/4 false alarms, pinned by a regression test |
 | The *semantic* layer is measured in both directions | `evaluation/auditor_calibration.py` — 0/15 honest cards wrongly rejected, 50/50 rigged cards caught and correctly attributed; and the corpus is asserted to be invisible to the code gate, so the 100% is not counting the gate's work |
 | Consistency is checked across payloads, not just inside them | `ai.recap.recap_series_issues()` — cumulative counters may not go down, one goal may not be credited twice to different players; `tests/ai/test_recap.py` |
-| 395 tests, offline, across three roles | `python -m pytest tests -q` |
+| 453 tests, offline, across three roles | `python -m pytest tests -q` |
 | Frozen interface discipline | contract 2.0.0 untouched; `tools/check_frozen.py` and `tools/check_scope.py` gate every change |
 
-**We cannot claim** a simulator validated against real football (a rival did that against 1,446
-real matches; we did not). Do not imply it.
+**We cannot claim** a simulator validated against real football. What we have is **one real match, one
+five-minute window**, used to check our clip's density and composition — not 1,446 matches (a rival did
+that), not a Premier League distribution, and not a calibration of the trigger itself, because that
+sample cannot support it. Say "calibrated against one real five-minute sample and we publish where it
+misses", never "validated against real football".
 
 ### Agentic Design & Innovation (20%)
 

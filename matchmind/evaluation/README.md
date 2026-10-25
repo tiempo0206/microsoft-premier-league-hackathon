@@ -15,6 +15,7 @@ disabled, prompt `c3-1.1.0`. Reproduce any of them; none require Azure or Foundr
 | `dense_fixture_proposal.py` | are those thresholds actually reachable? (`--minutes 45` for a half that also supports expected threat) | free |
 | `scan_competitors.py` / `fetch_readmes.py` | what is the field shipping? see [`research/README.md`](research/README.md) | free |
 | `scan_football_oss.py` | which open football projects and datasets can we legally reuse? | free |
+| `real_data_calibration.py` | does the synthetic clip behave like real football? compares it against Role B's five-minute real-match sample | free |
 
 Two documents sit alongside them for the submission:
 
@@ -174,6 +175,54 @@ python -m ai.recap --series 1550 1650 1800
 Pinned by `tests/ai/test_recap.py::SeriesConsistencyTests` and
 `::CardBasedRecapConsistencyTests`, including the negative direction: a counter that only grows
 must **not** be flagged, or the check would be useless noise.
+
+---
+
+## 1c. Is the synthetic clip realistic? Measured against one real match
+
+Role B delivered a real match — Arsenal 4–3 Leicester City, 2017-08-11 — as a research package under
+`data/extra/real-history-wyscout`: 1,768 events for the full game plus the 96 events of the first-half
+window 25:00–30:00, CC BY 4.0, hash-verified. It is **not** a runtime fixture and cannot become one:
+the frozen contract requires `synthetic: true`, and the official rules require synthetic data.
+
+So it is used for what it can support: **calibration**. `evaluation/real_data_calibration.py` puts the
+real five minutes and our synthetic five minutes side by side on the only metrics that survive the
+vocabulary gap, with the tolerances fixed before the numbers were looked at.
+
+| metric, same 300 s window | real sample | synthetic (shipped) | synthetic (dense proposal) |
+| --- | --- | --- | --- |
+| events | 96 | 30 | 110 |
+| **seconds per event** | **3.12** | **10.0** | **2.73** |
+| passes | 59 | 18 | 94 |
+| pass share | 61.5% | 60.0% | 85.5% |
+| shots per 10 min | 8.0 | 10.0 | 20.0 |
+| passes starting in the final third | 28.8% | 33.3% | 18.1% |
+| median gap between events | 1.9 s | 10.0 s | 2.0 s |
+
+**What this says, in order of importance:**
+
+1. **The shipped clip's composition is realistic; its density is not.** Pass share is within 2.4% of
+   real football and the final-third share within 15.6%. It is 3.2× too sparse, which is exactly what
+   `fixture_qualify.py` already failed it on — now confirmed against a real match instead of against a
+   threshold we invented. That threshold was ≤ 3.0 s per event; the real sample runs at 3.12. It was
+   picked from football intuition before this data existed and lands within 4% of it.
+2. **The dense proposal fixes density and overshoots composition.** It is within 12.5% on density —
+   the problem it was built to solve — but 39% too pass-heavy and **150% too shot-heavy**. A demo
+   built on it would look busy in a way real football does not. If it is adopted, the generator needs
+   its pass and shot rates pulled down, not just its event count raised.
+3. **Four of the eight comparisons are out of range, and they are listed as such.** The harness prints
+   the failures before the passes, because a table where everything is green is the one nobody checks.
+
+**What it refuses to compute**, and why: `high_recoveries`, `linked_shots`, `sustained_control`, the
+3-recovery/2-shot trigger, and pass completion. Wyscout's sample has no `possession_id` and no
+attribution of who won a duel, so every one of those would have to be invented — and inventing them is
+precisely what the metric is supposed to detect. The refusals print with the report and are pinned by
+`tests/ai/test_real_data_calibration.py`.
+
+**Caveats that travel with the table:** it is one match, one five-minute window; Wyscout's `Shot` class
+is wider than ours; the coordinate comparison assumes Wyscout's x runs in the attacking direction (if
+that is wrong, the coordinate rows fail and the density rows stand); and the real sample is CC BY 4.0,
+not our CC0 synthetic data, so nothing from it is redistributed as ours.
 
 ---
 
