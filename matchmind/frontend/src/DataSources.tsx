@@ -23,7 +23,7 @@ export function DataSources({ match }: { match?: Match }) {
           </p>
         </section>
         <section aria-labelledby="historical-source-heading">
-          <p className="source-status">Historical reference · Not connected</p>
+          <p className="source-status">Historical reference · Not played back</p>
           <h3 id="historical-source-heading">
             {reference.home} vs {reference.away}
           </h3>
@@ -35,8 +35,9 @@ export function DataSources({ match }: { match?: Match }) {
           <p>
             Research excerpt: first half, {formatClock(reference.clip.startSec)}–
             {formatClock(reference.clip.endSec)}, {reference.clip.events} recorded
-            events. This separate reference is available for research; it has not
-            been used to calibrate the current replay.
+            events. It is not connected to the replay or the model. It is used
+            offline only, to check how closely our synthetic clip matches real
+            football — and it did not change this replay.
           </p>
           <p>
             Data by {reference.authors.join(" and ")} ({reference.provider}).{" "}
