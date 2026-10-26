@@ -1,12 +1,24 @@
 # Frontend handoff — purple/lime theme, provenance and playback
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
-- Date: 2026-10-25 (Asia/Shanghai); earlier observations retain their recorded dates.
-- Branch: `codex/frontend-public-acceptance`; tasks: #13, #16, #18 and A's source presentation in #15; PR #14.
-- Starting main SHA: `601256039a5485120d42376c329e347144893441`; synchronized through `0df6144` (B's research package, PR #17) with merge `ad04771`, after the earlier `34c8902`/`1a06c62` sync. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
-- Contract: `2.0.0`. A changes frontend code/build/docs, frontend probes and this handoff. Pending runtime changes include playback-button focus, a separate source-reference disclosure and the representative's requested purple/lime visual theme. No shared contract, fixture, B/C implementation or deployment file is edited. Main's documentation/CI and B's research package were merged as authored. No contract change is needed for this UI; independent real replay ingestion needs a reviewed versioned contract.
+- Date: 2026-10-26 (Asia/Shanghai); earlier observations retain their recorded dates.
+- Branch: `codex/frontend-demo-kit`; task #21, A6 recording package. Previous theme/source/focus work was merged in PR #14 (`d4488d1`). Evidence navigation in PR #20 remains independently pending, with all three CI jobs passed and no review at this preflight.
+- Starting main SHA: `1113388b29b15be573af4ee04ec2cd613bec7c3b`; C's offline comparison/tuned proposal and source-copy correction are included. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. This slice changes frontend recording docs/assets/evidence and this handoff only. No runtime source, build asset, dependency, B/C implementation, fixture, contract or deployment change.
 
-## Latest follow-up: apply the project concept to the working UI
+## Latest follow-up: recording package and public-build preflight
+
+`frontend/demo/recording-kit/` contains the 110-second edited shot list, English narration, 18-cue importable SRT, timing source/validation and fresh inspectable offline/public-HTTP evidence. The captions have no gaps/overlaps, end at 01:50, use at most two lines/44 characters per line and peak at 15.6 characters per second. The 190-word script plans approximately 104 words per minute; this is not a recorded voice duration. The kit keeps actual generation/verification labels, a persistent offline-fallback segment label, controlled-test sample sizes and the single historical-window limit.
+
+The shot schedule explicitly fixes a timing ambiguity: from 25:00 to the 27:30 trigger takes 30 wall seconds at 5x before model latency. Source footage must include the actual wait; an edit shortening it must say WAIT SHORTENED. The kit is an edited timeline, not an uncut response-time claim. It does not assume PR #20-only controls have deployed or claim that a fresh take had a natural model rejection. C's canonical demo and submission/evidence descriptions need editorial reconciliation where they still say A2/A3 are unbuilt or describe only the earlier local evidence; A left those C-owned files untouched.
+
+On 2026-10-26, direct HTTPS root/health/matches returned 200. The public catalogue is synthetic MM-DEMO-01, Harbor FC / Mountain United. Deployed assets `index-DiFIbE5M.js` and `index-Bfv8OZrL.css` are byte-identical to main `1113388`; production health reports contract 2.0.0 / model_ready true. This establishes the published main theme/source build, not the exact deployment commit or a new live-model result. The earlier proxy-route failures did not establish service failure. Browser UI reads timed out, so no new public screenshot/keyboard/evidence acceptance is claimed; the temporary tab is left to automatic turn-end cleanup. No replay Play/control or new model workflow was requested.
+
+A reran `evaluation.factcheck_bench` offline: 21 targeted corruptions caught, four valid controls accepted, zero false alarms. `ai.recap --series 1550 1650 1800` returned consistent true for exactly those three prefixes. The kit retains the fresh outputs, not an invented terminal screenshot. Neither controlled-test score is a live reliability rate. No model calls or deployment/configuration changes were made.
+
+Validation: TypeScript/Vite build and 29 frontend tests passed; 19 common contract/mock tests and frozen-file/A-scope/whitespace checks passed. The build regenerated the existing hashes without tracked dist changes. SRT/timing, offline-result and public/local-hash validation passed. A6 **video capture/export, synchronized voice track, final duration/frame review and representative review remain unfinished**; the package is prepared material, not a completed film. Public advanced interaction/native retry acceptance remains separate. C reviews/merges this package and PR #20 independently.
+
+## Earlier follow-up: apply the project concept to the working UI
 
 On 2026-10-25 the representative requested a working UI consistent with the generated project concept. Issue #18 records this A slice. `App.tsx`, `DataSources.tsx`, `styles.css`, `index.html` and the local favicon now coordinate deep purple, layered purple surfaces, lime actions/evidence and lilac secondary information. The introduction reads “Football, explained.” with an original M mark and decorative geometric crown. Header anchors reach the actual match, insights and source disclosure. Playback/statistics, insights, agent traces, evidence, timeline, notices and sources use the same theme tokens. Semantic labels, keyboard focus, selected evidence and reduced-motion support remain present. No dependency or remote asset was added.
 

@@ -1,0 +1,43 @@
+category                                     caught   note
+--------------------------------------------------------------------------------------------------------------
+wrong_metric_value                           yes      metric_value says 9, backend computed 3
+metric_value_not_in_text                     yes      claims 3 recoveries but never states the number
+invented_event_id                            yes      cites an event that does not exist
+event_outside_window                         yes      cites a real match event from outside this window
+claim_without_evidence                       yes      no evidence at all
+unknown_metric_key                           yes      invents a metric name
+empty_text                                   yes      empty claim text
+unknown_kind                                 yes      claim kind outside the enum
+stray_number_in_interpretation               yes      interpretation invents a number
+unsupported_causation                        yes      attributes fatigue the window cannot show
+quantifier_overreach                         auditor  says all three when only two did
+interpretation_carrying_number               yes      interpretation supplies a metric fact
+no_metric_claim                              yes      every claim is an interpretation
+narrative_stray_number                       yes      narrative invents 12 shots
+narrative_event_id_leak                      yes      narrative shows a raw event id
+narrative_fatigue                            yes      narrative claims fatigue
+narrative_missing_audience                   yes      only one audience produced
+narrative_empty                              yes      empty prose
+wrong_language_english_for_chinese_request   yes      Chinese was requested, the prose is English
+wrong_language_chinese_for_english_request   yes      English was requested, the prose is Chinese
+recovery_claim_citing_only_a_shot            yes      a high_recoveries claim cites a shot, which cannot demonstrate a recovery
+shots_claim_citing_only_passes               yes      a linked_shots claim cites only passes
+
+clean case                                   ok
+--------------------------------------------------------------------------------------------------------------
+clean_example                                yes
+clean_zero_written_as_words                  yes
+clean_chinese                                yes
+clean_narrative_rephrase                     yes
+
+{
+  "corruptions_total": 22,
+  "corruptions_required": 21,
+  "corruptions_caught": 21,
+  "catch_rate": 100.0,
+  "clean_total": 4,
+  "clean_passed": 4,
+  "false_alarm_rate": 0.0,
+  "gaps": [],
+  "false_alarms": []
+}

@@ -1,0 +1,26 @@
+{
+  "language": "en",
+  "duration_seconds": 110,
+  "status": "Recording package; no video captured or exported",
+  "base_commit": "1113388b29b15be573af4ee04ec2cd613bec7c3b",
+  "cues": [
+    {"start": 0, "end": 4, "lines": ["Why did that moment matter?"]},
+    {"start": 4, "end": 8, "lines": ["MatchMind makes the explanation checkable."]},
+    {"start": 8, "end": 13, "lines": ["This is a five-minute synthetic replay,", "with fictional teams."]},
+    {"start": 13, "end": 20, "lines": ["Play, pause, change speed, or reset.", "Statistics follow the server clock."]},
+    {"start": 20, "end": 27, "lines": ["An insight explains a recorded window.", "Its label states how it was produced."]},
+    {"start": 27, "end": 34, "lines": ["Live model, rule fallback, and precomputed", "results remain visibly distinct."]},
+    {"start": 34, "end": 41, "lines": ["Open the evidence and select an event.", "The recorded point appears on the pitch."]},
+    {"start": 41, "end": 48, "lines": ["The clock stays where it is.", "These are event locations, not tracking."]},
+    {"start": 48, "end": 54, "lines": ["Switch from Casual to Analyst.", "The wording changes for the audience."]},
+    {"start": 54, "end": 60, "lines": ["Both versions use the same facts.", "Switching makes no model request."]},
+    {"start": 60, "end": 67, "lines": ["Evidence checked identifies the review.", "Code checks references and metrics."]},
+    {"start": 67, "end": 74, "lines": ["Live results also require agent review.", "Neither proves tactical causality."]},
+    {"start": 74, "end": 81, "lines": ["This next segment is an offline demo.", "There is no live model in this process."]},
+    {"start": 81, "end": 88, "lines": ["The result is labelled Rule fallback.", "The replay continues when AI is unavailable."]},
+    {"start": 88, "end": 94, "lines": ["In controlled offline tests, the verifier", "caught all twenty-one deliberate errors."]},
+    {"start": 94, "end": 100, "lines": ["Four valid controls had zero false alarms.", "Three recap prefixes were consistent."]},
+    {"start": 100, "end": 105, "lines": ["Built with Microsoft Agent Framework.", "Deployed on Render."]},
+    {"start": 105, "end": 110, "lines": ["One historical sample informed comparisons.", "A prototype, with published limits."]}
+  ]
+}
