@@ -2,13 +2,29 @@
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
 - Date: 2026-10-26 (Asia/Shanghai); earlier observations retain their recorded dates.
-- Branches: `codex/frontend-evidence-navigation` (task #19, merged by C as PR **#20**, `1360326`) and
-  `codex/frontend-demo-kit` (task #21, the A6 recording package, this PR). The purple/lime theme and
-  source-presentation work was merged by C in PR #14 (`d4488d1`).
-- Starting main SHA: `1113388b29b15be573af4ee04ec2cd613bec7c3b`; C's offline calibration/comparison,
-  tuned synthetic proposal and source-copy correction are included. Shared baseline recorded by C:
+- Current branch: `codex/project-description`, task #23. PR **#20** (`1360326`) and the A6 recording
+  kit PR **#22** (`2636e09`) are merged. The theme/source work is in PR #14 (`d4488d1`).
+- Current starting main SHA: `cd050e4137ee02c6fd0bf95754a36df011198bfb`; C's calibration, integration
+  and corrected submission copy are included. Shared baseline recorded by C:
   `03910f8889e846bc70215c3c0faf4bb63cd84977`.
 - Contract: `2.0.0`. A changes only frontend source/build/docs/QA and this handoff.
+
+## Current follow-up: refreshed recording baseline and submission copy
+
+At the representative's request, A refreshed the recording entry point after C's merges. The old `frontend/demo/recording-kit/preflight.json` remains byte-for-byte unchanged. New `preflight-2026-10-26-post-integration.json` records **14:49 UTC / 22:49 Asia/Shanghai**, against main `cd050e4`: root/health/catalogue HTTP 200, production contract 2.0.0, model_ready true, synthetic Harbor FC / Mountain United. Public HTML and local dist list the same two assets, both byte-identical:
+
+- `index-DnW473jk.js`: `20ff045be18cfdc3d2f58d7aa3c6b6f20188ab5ce7234507f07c059627e00fdb`
+- `index-Bkk-p2ET.css`: `8ab4470be0931fca3125deb5aa85a958a15c1b865a6d8e15216d3a25bd6c33b7`
+
+The README now selects that snapshot and marks the old evidence as historical. `capture_preflight.py` reproduces GET-only snapshots using the existing pinned httpx dependency, refuses to overwrite a file, retains full SHA-256s and does not infer the entire deployment revision. It starts no replay or model workflow. No new public interaction, new live result or completed film is claimed. The original narration, SRT and offline evidence are preserved.
+
+`frontend/submission/` adds a detailed English Description, other field values and a sourced submission guide. The copy describes the actual Microsoft Agent Framework / DeepSeek / Render implementation, three model roles, two audience modes, merged keyboard navigation and scoped offline evaluation. It distinguishes fictional synthetic runtime data from the attributed historical comparison. Azure/Foundry deployment, player tracking and a historical replay are not claimed. Native Edge could read the portal/editor but AX setValue and paste left the old text unchanged; Save remained disabled. The representative then chose manual editing and requested the complete copy in chat. **No portal save or final contest submission is claimed.** Video recording/export is still unfinished.
+
+The representative also requested repository administration. The authenticated owner had admin permission: visibility is now **public**, verified with an anonymous GitHub API GET. Main requires the existing three GitHub Actions checks, an up-to-date branch, one approving review and resolved conversations; administrators are included, force pushes and main deletion disabled. The closed PR #5 branch was archived at `archive/closed-pr-5-development-pack` (`6976bd77c962dabd22a8eb6c21714b6fd8843083`) before its branch reference was removed. No commit history was rewritten. A pattern scan of 414 fetched historical text blobs found no credential-pattern matches; this is not a completeness guarantee. These owner-requested settings do not change code ownership or C's integration role.
+
+Validation: TypeScript/Vite build and 29 frontend tests passed with unchanged tracked dist; full offline Python suite **457 passed / 69 subtests**. Frozen-file, Role A scope, whitespace, preflight help/overwrite refusal and anonymous repository/archive readback are checked before PR handoff. No frozen contract, fixture, runtime source, model/deployment configuration, dependency or B/C-owned file changed. C should review/merge the Role A PR; the new protection also requires a teammate approval.
+
+The sections below are dated earlier observations, preserved as historical records.
 
 ## Integrator note (Role C), on merging #20 before #21
 
