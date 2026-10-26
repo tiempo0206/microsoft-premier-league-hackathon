@@ -1,0 +1,11 @@
+{
+  "cues": 18,
+  "end_seconds": 110,
+  "gaps_or_overlaps": 0,
+  "max_lines": 2,
+  "max_line_characters": 44,
+  "max_characters_per_second": 15.6,
+  "words": 190,
+  "planned_words_per_minute": 103.6,
+  "scope": "Text/timing validation only; no audio or video export exists"
+}

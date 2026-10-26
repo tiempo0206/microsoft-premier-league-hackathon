@@ -1,0 +1,87 @@
+1
+00:00:00,000 --> 00:00:04,000
+Why did that moment matter?
+
+2
+00:00:04,000 --> 00:00:08,000
+MatchMind makes the explanation checkable.
+
+3
+00:00:08,000 --> 00:00:13,000
+This is a five-minute synthetic replay,
+with fictional teams.
+
+4
+00:00:13,000 --> 00:00:20,000
+Play, pause, change speed, or reset.
+Statistics follow the server clock.
+
+5
+00:00:20,000 --> 00:00:27,000
+An insight explains a recorded window.
+Its label states how it was produced.
+
+6
+00:00:27,000 --> 00:00:34,000
+Live model, rule fallback, and precomputed
+results remain visibly distinct.
+
+7
+00:00:34,000 --> 00:00:41,000
+Open the evidence and select an event.
+The recorded point appears on the pitch.
+
+8
+00:00:41,000 --> 00:00:48,000
+The clock stays where it is.
+These are event locations, not tracking.
+
+9
+00:00:48,000 --> 00:00:54,000
+Switch from Casual to Analyst.
+The wording changes for the audience.
+
+10
+00:00:54,000 --> 00:01:00,000
+Both versions use the same facts.
+Switching makes no model request.
+
+11
+00:01:00,000 --> 00:01:07,000
+Evidence checked identifies the review.
+Code checks references and metrics.
+
+12
+00:01:07,000 --> 00:01:14,000
+Live results also require agent review.
+Neither proves tactical causality.
+
+13
+00:01:14,000 --> 00:01:21,000
+This next segment is an offline demo.
+There is no live model in this process.
+
+14
+00:01:21,000 --> 00:01:28,000
+The result is labelled Rule fallback.
+The replay continues when AI is unavailable.
+
+15
+00:01:28,000 --> 00:01:34,000
+In controlled offline tests, the verifier
+caught all twenty-one deliberate errors.
+
+16
+00:01:34,000 --> 00:01:40,000
+Four valid controls had zero false alarms.
+Three recap prefixes were consistent.
+
+17
+00:01:40,000 --> 00:01:45,000
+Built with Microsoft Agent Framework.
+Deployed on Render.
+
+18
+00:01:45,000 --> 00:01:50,000
+One historical sample informed comparisons.
+A prototype, with published limits.

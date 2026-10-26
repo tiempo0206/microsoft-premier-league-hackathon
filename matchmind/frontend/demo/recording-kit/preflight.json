@@ -1,0 +1,55 @@
+{
+  "recorded_at_utc": "2026-10-26 02:23:55 UTC",
+  "client_date": "2026-10-26",
+  "client_timezone": "Asia/Shanghai",
+  "origin": "https://matchmind-backend-preview.onrender.com",
+  "root_http_status": 200,
+  "health_http_status": 200,
+  "matches_http_status": 200,
+  "health_response": {
+    "status": "ok",
+    "contract_version": "2.0.0",
+    "mode": "production",
+    "model_ready": true
+  },
+  "catalogue": [
+    {
+      "match_id": "MM-DEMO-01",
+      "home": "Harbor FC",
+      "away": "Mountain United",
+      "synthetic": true
+    }
+  ],
+  "assets": [
+    {
+      "name": "index-DiFIbE5M.js",
+      "local_sha256": "524249084c7af08c2940a657cec9699529d172eba451315acbffb598bf87d78a",
+      "public_sha256": "524249084c7af08c2940a657cec9699529d172eba451315acbffb598bf87d78a",
+      "byte_identical": true
+    },
+    {
+      "name": "index-Bfv8OZrL.css",
+      "local_sha256": "bb61c70763d2cf2cd28d5555261ef4df5ac23e7bdf22bfc17b4cae8e70b83649",
+      "public_sha256": "bb61c70763d2cf2cd28d5555261ef4df5ac23e7bdf22bfc17b4cae8e70b83649",
+      "byte_identical": true
+    }
+  ],
+  "local_reference_commit": "1113388b29b15be573af4ee04ec2cd613bec7c3b",
+  "deployment_revision": "Not inferred from asset equality",
+  "public_browser_acceptance": "UI inspection timed out; no new screenshot or keyboard acceptance",
+  "new_live_model_workflows": 0,
+  "video_capture_complete": false,
+  "public_bundle_contains_pending_pr20": false,
+  "offline_factcheck": {
+    "corruptions_total": 22,
+    "corruptions_required": 21,
+    "corruptions_caught": 21,
+    "catch_rate": 100.0,
+    "clean_total": 4,
+    "clean_passed": 4,
+    "false_alarm_rate": 0.0,
+    "gaps": [],
+    "false_alarms": []
+  },
+  "offline_recap_consistent": true
+}

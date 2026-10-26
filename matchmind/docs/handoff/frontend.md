@@ -2,6 +2,39 @@
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
 - Date: 2026-10-26 (Asia/Shanghai); earlier observations retain their recorded dates.
+- Branches: `codex/frontend-evidence-navigation` (task #19, merged by C as PR **#20**, `1360326`) and
+  `codex/frontend-demo-kit` (task #21, the A6 recording package, this PR). The purple/lime theme and
+  source-presentation work was merged by C in PR #14 (`d4488d1`).
+- Starting main SHA: `1113388b29b15be573af4ee04ec2cd613bec7c3b`; C's offline calibration/comparison,
+  tuned synthetic proposal and source-copy correction are included. Shared baseline recorded by C:
+  `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. A changes only frontend source/build/docs/QA and this handoff.
+
+## Integrator note (Role C), on merging #20 before #21
+
+Both branches rewrote this header, so they conflicted; this is the merged version and it keeps both
+records in the order they landed. Because #20 merged first, the tracked bundle is now
+`/assets/index-DnW473jk.js` + `index-Bkk-p2ET.css` and the next deployment serves those. A's dated
+observation below -- that `index-DiFIbE5M.js` was byte-identical to main `1113388` -- was true when it
+was recorded and is superseded by that merge, not falsified by it. The recording kit ships no build
+assets, so it needed no rebuild.
+
+- Branch: `codex/frontend-demo-kit`; task #21, A6 recording package. Previous theme/source/focus work was merged in PR #14 (`d4488d1`); evidence navigation landed as PR #20 (`1360326`) immediately before this one, merged by C.
+- Starting main SHA: `1113388b29b15be573af4ee04ec2cd613bec7c3b`; C's offline comparison/tuned proposal and source-copy correction are included. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
+- Contract: `2.0.0`. This slice changes frontend recording docs/assets/evidence and this handoff only. No runtime source, build asset, dependency, B/C implementation, fixture, contract or deployment change.
+
+## Latest follow-up: recording package and public-build preflight
+
+`frontend/demo/recording-kit/` contains the 110-second edited shot list, English narration, 18-cue importable SRT, timing source/validation and fresh inspectable offline/public-HTTP evidence. The captions have no gaps/overlaps, end at 01:50, use at most two lines/44 characters per line and peak at 15.6 characters per second. The 190-word script plans approximately 104 words per minute; this is not a recorded voice duration. The kit keeps actual generation/verification labels, a persistent offline-fallback segment label, controlled-test sample sizes and the single historical-window limit.
+
+The shot schedule explicitly fixes a timing ambiguity: from 25:00 to the 27:30 trigger takes 30 wall seconds at 5x before model latency. Source footage must include the actual wait; an edit shortening it must say WAIT SHORTENED. The kit is an edited timeline, not an uncut response-time claim. It does not assume PR #20-only controls have deployed or claim that a fresh take had a natural model rejection. C's canonical demo and submission/evidence descriptions need editorial reconciliation where they still say A2/A3 are unbuilt or describe only the earlier local evidence; A left those C-owned files untouched.
+
+On 2026-10-26, direct HTTPS root/health/matches returned 200. The public catalogue is synthetic MM-DEMO-01, Harbor FC / Mountain United. Deployed assets `index-DiFIbE5M.js` and `index-Bfv8OZrL.css` are byte-identical to main `1113388`; production health reports contract 2.0.0 / model_ready true. This establishes the published main theme/source build, not the exact deployment commit or a new live-model result. The earlier proxy-route failures did not establish service failure. Browser UI reads timed out, so no new public screenshot/keyboard/evidence acceptance is claimed; the temporary tab is left to automatic turn-end cleanup. No replay Play/control or new model workflow was requested.
+
+A reran `evaluation.factcheck_bench` offline: 21 targeted corruptions caught, four valid controls accepted, zero false alarms. `ai.recap --series 1550 1650 1800` returned consistent true for exactly those three prefixes. The kit retains the fresh outputs, not an invented terminal screenshot. Neither controlled-test score is a live reliability rate. No model calls or deployment/configuration changes were made.
+
+Validation: TypeScript/Vite build and 29 frontend tests passed; 19 common contract/mock tests and frozen-file/A-scope/whitespace checks passed. The build regenerated the existing hashes without tracked dist changes. SRT/timing, offline-result and public/local-hash validation passed. A6 **video capture/export, synchronized voice track, final duration/frame review and representative review remain unfinished**; the package is prepared material, not a completed film. Public advanced interaction/native retry acceptance remains separate. C reviews/merges this package and PR #20 independently.
+
 - Branch: `codex/frontend-evidence-navigation`; task #19. Previous #13/#16/#18 and source-presentation work was merged by C in PR #14 (`d4488d1`, 2026-10-25).
 - Current starting main SHA: `1113388b29b15be573af4ee04ec2cd613bec7c3b`. C's offline calibration/comparison and source-copy correction (`6f5d14d`) are retained. Shared baseline recorded by C: `03910f8889e846bc70215c3c0faf4bb63cd84977`.
 - Contract: `2.0.0`. A changes only frontend source/build/docs/QA and this handoff. This slice adds local selected-event reading navigation; no shared contract, fixture, B/C implementation, dependency or deployment change.
@@ -17,6 +50,7 @@ The real local B/C app served the built UI with explicit mock provider and the s
 Final assets: `index-DnW473jk.js` / `index-Bkk-p2ET.css`. TypeScript/Vite build, 29 frontend tests, real B/C consumer probe (five normal SSE kinds, zero model calls), 457 Python tests / 69 subtests, frozen-file/scope/whitespace checks passed. Screenshots, structured observations and reproduction are in `frontend/qa/evidence-navigation-2026-10-26.md` and `frontend/qa/2026-10-26/evidence-navigation/`. No new implementation-mirroring unit tests were needed for this reversible reading interaction.
 
 A read-only public root/health attempt on 2026-10-26 failed with a local URL/network error through the previously configured proxy. This did not establish public service failure or deployment state. The last verified public build observations below retain their dates. This new A slice awaits C review/merge and an explicit chosen-build deployment; public advanced acceptance and the final English video remain pending.
+
 
 ## Earlier follow-up: apply the project concept to the working UI
 
