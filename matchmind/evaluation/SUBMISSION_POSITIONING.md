@@ -82,14 +82,18 @@ we are not paying for.
 | We can claim | Evidence |
 | --- | --- |
 | A real page, served from the same origin as the API | `GET /` returns the built bundle; `frontend/dist` is committed so the image can ship it |
-| Honest labels on screen: live / cached / fallback | `generation.mode` in every payload, surfaced in the overlay and the MCP note |
-| An explanation you can check, not just read | every claim cites event ids; the overlay pins them to the timeline |
+| The full workflow is usable in the browser, not just the API | play/pause/reset, 1×/2×/5×/10×, all six stream kinds; the insight card with the Casual/Analyst switch, expandable claims, and the cited events highlighted on the pitch and on the timeline (`frontend/src/MatchIntelligence.tsx`, `frontend/demo/recording-kit/`) |
+| Keyboard users can follow the evidence and come back | selecting a cited event focuses the pitch panel; the panel's return action restores focus to the exact originating button and reopens its disclosure; 44px targets, visible focus ring (`PR #20`, `frontend/qa/evidence-navigation-2026-10-26.md`) |
+| Honest labels on screen: live / cached / fallback | `generation.mode` in every payload, rendered as **Live model / Rule fallback / Precomputed**, with the evidence method distinguished as agent-and-code or code-only |
+| An explanation you can check, not just read | every claim cites event ids; the overlay pins them to the timeline; the removed claims are shown on the card |
 | Two audiences from one verified fact set | `narratives.casual` and `narratives.analyst`, same claims |
 | The correction is real, and the public run shows it | the cloud card's trace is `narrator rejected → code-check retry → completed`, and its `rejected_claims` lists C5 |
+| Provenance is disclosed, including what we did not use | the About-the-data panel separates the synthetic replay from the historical reference and says the reference is not played back |
 
-**We still cannot claim the full intended UI.** A1's match centre is served; A2's playback controls
-and A3's insight-and-evidence cards are unbuilt, so **the video must not pretend those views exist.**
-The verified card is reachable through the API, the overlay payload and the MCP/A2A surfaces.
+**We still cannot claim a finished film.** The interface is real and deployed; what remains is capture —
+the 110-second shot list, timed narration and an importable 18-cue SRT are prepared in
+`frontend/demo/recording-kit/`, and recording, export and duration review are open. A trimmed wait must
+be labelled `WAIT SHORTENED`, and an induced failure must be labelled as a test.
 See `evaluation/DEMO_SCRIPT.md`.
 
 ### Adherence to Category (20%)

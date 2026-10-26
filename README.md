@@ -109,11 +109,19 @@ pipeline (analyst → narrator → auditor) on Microsoft Agent Framework; the de
 rule-based fallback that stays useful when the model dies; a broadcast overlay payload with a spoken
 script; a match recap that can report the goal no single moment card can see; expected-threat ranking
 that refuses when the sample is too thin; an MCP server with eight tools; an A2A agent card and a
-declared `message/send` subset; a match-centre frontend.
+declared `message/send` subset.
 
-**Not built, and not claimed:** the playback controls and the insight/evidence cards in the UI (the
-API, the overlay payload and the MCP/A2A surfaces expose all of it); Azure or Foundry integration;
-full A2A compatibility; a paid always-on deployment; validation against real Premier League data.
+**The frontend is a working product, not a mock-up:** playback with play/pause/reset and 1×/2×/5×/10×,
+all six stream kinds handled, an insight card with the Casual/Analyst switch, expandable claims, the
+cited events highlighted on the pitch and on the timeline, the generation-mode and evidence-checked
+labels on screen, keyboard focus that returns to the button you came from, and a data-sources panel
+that separates the synthetic replay from the historical reference.
+
+**Not built, and not claimed:** Azure or Foundry integration; full A2A compatibility; a paid always-on
+deployment (the free instance sleeps); validation against real Premier League data — what exists is one
+five-minute real sample used to calibrate the synthetic clip, described in
+[`matchmind/evaluation/README.md`](matchmind/evaluation/README.md) §1c; and the 110-second video
+itself, for which the shot list and captions are prepared in `matchmind/frontend/demo/recording-kit/`.
 
 ## Repository layout
 
