@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-26",
+  "base": "1113388",
+  "provider": "explicit mock; no model calls",
+  "firstIteration": {
+    "assets": [
+      "index-BNdJeCGM.js",
+      "index-Bkk-p2ET.css"
+    ],
+    "before": {
+      "clock": "29:13",
+      "events": "108 observed",
+      "stats": "THE NUMBERSMatch statisticsSame match. A little more perspective.Harbor FCMountain United2Shots236Passes5497%Pass accuracy96%120sPossession time133sPossession time is estimated from the synthetic event sequence.",
+      "status": "Replay paused"
+    },
+    "mobileJump": {
+      "clock": "29:13",
+      "focus": "evidence-panel",
+      "line": true,
+      "panel": {
+        "bottom": 681.1875,
+        "height": 494.4765625,
+        "left": 20,
+        "right": 370,
+        "top": 186.7109375,
+        "width": 350,
+        "x": 20,
+        "y": 186.7109375
+      },
+      "point": true,
+      "scrollWidth": 390,
+      "selected": "MM-SHOW-PRESS-E011 · 25:23 · pass · H02Harbor FC · successful · (74, 52.9)↖ Back to evidence",
+      "width": 390
+    },
+    "mobileReturn": {
+      "bounds": {
+        "bottom": 457.9921875,
+        "height": 47.5,
+        "left": 41,
+        "right": 209.234375,
+        "top": 410.4921875,
+        "width": 168.234375,
+        "x": 41,
+        "y": 410.4921875
+      },
+      "clock": "29:13",
+      "events": "108 observed",
+      "focus": "MM-SHOW-PRESS-E01125:23 · pass",
+      "pressed": "true",
+      "stats": "THE NUMBERSMatch statisticsSame match. A little more perspective.Harbor FCMountain United2Shots236Passes5497%Pass accuracy96%120sPossession time133sPossession time is estimated from the synthetic event sequence."
+    },
+    "closedReturn": {
+      "clock": "29:13",
+      "focus": "MM-SHOW-PRESS-E01125:23 · pass",
+      "open": true
+    },
+    "timelineReturn": {
+      "clock": "29:13",
+      "focus": "25:23passHarbor FC · H02MM-SHOW-PRESS-E011↗",
+      "scrollWidth": 390,
+      "withinTimeline": true
+    },
+    "desktopJump": {
+      "clock": "29:13",
+      "focus": "evidence-panel",
+      "panel": {
+        "bottom": 620.5078125,
+        "height": 597.3125,
+        "left": 716.4375,
+        "right": 1232,
+        "top": 23.1953125,
+        "width": 515.5625,
+        "x": 716.4375,
+        "y": 23.1953125
+      },
+      "scrollWidth": 1280,
+      "viewport": [
+        1280,
+        720
+      ]
+    }
+  },
+  "finalBuild": {
+    "assets": [
+      "index-DnW473jk.js",
+      "index-Bkk-p2ET.css"
+    ],
+    "mobileJump": {
+      "clock": "30:00",
+      "focus": "evidence-panel",
+      "panel": {
+        "bottom": 681.1875,
+        "height": 494.4765625,
+        "left": 20,
+        "right": 370,
+        "top": 186.7109375,
+        "width": 350,
+        "x": 20,
+        "y": 186.7109375
+      },
+      "scrollWidth": 390,
+      "selected": "MM-SHOW-PRESS-E011 · 25:23 · pass · H02Harbor FC · successful · (74, 52.9)↖ Back to evidence",
+      "status": "Clip complete",
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    "mobileReturn": {
+      "clock": "30:00",
+      "focus": "MM-SHOW-PRESS-E01125:23 · pass",
+      "pressed": "true"
+    },
+    "desktopJump": {
+      "clock": "30:00",
+      "focus": "evidence-panel",
+      "panel": {
+        "bottom": 620.5078125,
+        "height": 597.3125,
+        "left": 716.4375,
+        "right": 1232,
+        "top": 23.1953125,
+        "width": 515.5625,
+        "x": 716.4375,
+        "y": 23.1953125
+      },
+      "scrollWidth": 1280,
+      "viewport": [
+        1280,
+        720
+      ]
+    },
+    "desktopReturn": {
+      "clock": "30:00",
+      "focus": "MM-SHOW-PRESS-E01125:23 · pass"
+    },
+    "timelineReturn": {
+      "clock": "30:00",
+      "focus": "25:23passHarbor FC · H02MM-SHOW-PRESS-E011↗",
+      "withinTimeline": true
+    },
+    "source": {
+      "status": "Historical reference · Not played back",
+      "text": "Historical reference · Not played backArsenal vs Leicester City2017-08-11 · Source full-time result: 4–3Research excerpt: first half, 25:00–30:00, 96 recorded events. It is not connected to the replay or the model. It is used offline only, to check how closely our synthetic clip matches real football — and it did not change this replay.Data by Luca Pappalardo and Emanuele Massucco (Wyscout). Source collection · CC BY 4.0.Selected one match and time window; reserialized the original fields and IDs. No tracking, possession or recovery events were added."
+    },
+    "reset": {
+      "clock": "25:00",
+      "events": "0 observed",
+      "feed": "Snapshot feed connectedSession 464213c5 · Run 2",
+      "insights": 0,
+      "jumpButtons": 0,
+      "status": "Ready to replay"
+    }
+  },
+  "capturedWarningsOrErrors": []
+}

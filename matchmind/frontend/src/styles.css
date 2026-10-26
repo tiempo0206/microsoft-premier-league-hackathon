@@ -1372,6 +1372,32 @@ summary:focus-visible,
   font-size: 12px;
   margin: 22px 0 10px;
 }
+.evidence-jump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-raised);
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.evidence-jump:hover {
+  border-color: var(--lime);
+}
+.evidence-panel:focus-visible {
+  outline: 3px solid var(--lime);
+  outline-offset: 4px;
+}
+.selected-event .evidence-jump {
+  margin-top: 12px;
+}
 .claim-list {
   padding-left: 19px;
   color: var(--muted);
