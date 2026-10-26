@@ -142,6 +142,10 @@ establish.
 - [`matchmind/evaluation/README.md`](matchmind/evaluation/README.md) — every measurement with its sample size
 - [`matchmind/evaluation/evidence/`](matchmind/evaluation/evidence/README.md) — a committed, credential-free record of one real model run
 - [`matchmind/docs/handoff/ai.md`](matchmind/docs/handoff/ai.md) — the AI pipeline's handoff, including every defect found and how it was found
+- [`matchmind/docs/handoff/backend.md`](matchmind/docs/handoff/backend.md) · [`frontend.md`](matchmind/docs/handoff/frontend.md) — the same record for the data/backend and frontend sides
+- [`matchmind/frontend/demo/recording-kit/`](matchmind/frontend/demo/recording-kit/README.md) — the 110-second shot list, timed narration and importable captions, ready for capture
+- [`docs/development-plan.md`](docs/development-plan.md) · [`docs/contracts.md`](docs/contracts.md) — the original written plan and interface proposal from 2026-10-21, kept as history and marked as such at the top of each file
+- [`docs/hackathon.md`](docs/hackathon.md) — official rules links and submission reminders
 
 ## Rules compliance
 

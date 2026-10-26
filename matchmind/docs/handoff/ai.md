@@ -1202,3 +1202,53 @@ python -m data.generator.real_history --verify
 第一版校准工具把"百分比容差"和"分数增量"混着比：`1.5 <= 50.0` 永远成立，于是 **+150% 的超标被打印成 `ok`**——工具在说"一切都好"，而它右边的表格说的正相反。已改成两边同单位，并加了一条回归测试（`test_an_overshoot_is_not_reported_as_ok`）。
 
 这个 bug 值得记，因为它是最危险的一类：**一个会自我安慰的检查，比没有检查更糟**。
+
+---
+
+## 二十五、第十五轮：收掉 A 剩下的两个 PR，以及我自己文档里的两处假话
+
+### 25.1 合了什么
+
+| PR | 内容 | 处理 |
+| --- | --- | --- |
+| **#20** | 证据面板的键盘焦点往返（选中事件→跳到位置面板→返回原按钮并重新展开）+ 44px 触控目标 + 前端文档与我的校准结论对齐 | squash 合并，`1360326` |
+| **#22** | **110 秒英文录制套件**：剪辑分镜、计时旁白、18 条可导入 SRT、preflight 证据 | 与 #20 冲突，我解完再合，`2636e09` |
+
+**#22 的冲突是真的**：两个分支都重写了 `docs/handoff/frontend.md` 的同一个标题区。我保留了双方内容（按落地顺序），并在最前面加了一段"C 的整合说明"，把 #20 先合、bundle 名字已变这件事写清楚。合并后 457 测试通过、dist 与重新构建逐字节一致。
+
+### 25.2 A 在套件里点了我一句，是对的
+
+A 在自己的录制套件末尾留了一条给 C 的 review 项：
+
+> `evaluation/SUBMISSION_POSITIONING.md` 里还留着一句"A2/A3 未建"，尽管 PR #14 已经合了。
+
+**这是真的，而且 README 里也有同款。** 我上一轮把演示脚本改对了，但漏了这两处：README 的"未建不声称"清单里还写着"播放控制和证据卡未建"，`SUBMISSION_POSITIONING` 还写着"不能声称完整 UI"。
+
+现在两处都改成实际存在的能力（播放/倍速、Casual/Analyst、证据展开、pitch/timeline 高亮、键盘焦点往返、来源面板），并把"未完成"收缩到它真正的位置：**片子还没拍**。
+
+**方向是往"少说"那边错的，但少说也是错。** 评委点开公网就能看到这些界面，文档说没有，只会显得我们不了解自己的产品。
+
+### 25.3 重新部署并逐字节核对
+
+#20 换了前端 bundle，所以必须重新部署。部署后核对：
+
+```
+js:  /assets/index-DnW473jk.js     local == public  (sha256 20ff045be18cfdc3...)
+css: /assets/index-Bkk-p2ET.css    local == public  (sha256 8ab4470be0931fca...)
+GET /api/v1/health -> ok / 2.0.0 / production / model_ready true
+```
+
+A 的套件里 `preflight.json` 记的是旧的 `index-DiFIbE5M.js`@`1113388`。**我没有改写它**——那是一份带时间戳的证据，改了就失真。
+
+我本来想直接给 A 的套件 README 加一段"C 的整合说明"，让录制的人照新 bundle 走。`tools/check_scope.py --role C` 立刻报了 `OUTSIDE ROLE SCOPE: frontend/demo/recording-kit/README.md`，我**撤回了那处修改**——`frontend/` 是 A 的目录，守卫拦得对。信息留在这里，同时列进给 A 的待办：
+
+- 录制请照**现在**这版 bundle（`index-DnW473jk.js` / `index-Bkk-p2ET.css`），不要照 `preflight.json` 里的旧哈希；
+- `frontend/demo/recording-kit/preflight.json` 需要一个新时间戳的重跑（A 自己做，或授权我做一次）。
+
+### 25.4 门禁状态（第十五轮）
+
+- `python -m pytest tests -q` → **457 passed, 69 subtests**
+- 前端 29 测试通过；`dist` 与重新构建逐字节一致
+- `tools/check_frozen.py` → unchanged；`tools/check_scope.py --role C` → OK
+- 公网已更新到 `2636e09` 的 bundle，健康检查正常
+- 这次 push 又碰到 `github.com:443` 不通，改用 Git Data API 单提交发布（`53c5189`），随后 fetch 成功并把本地对齐
