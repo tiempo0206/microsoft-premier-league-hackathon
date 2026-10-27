@@ -1,0 +1,61 @@
+{
+  "started_at_utc": "2026-10-26T14:49:43.497313+00:00",
+  "completed_at_utc": "2026-10-26T14:49:45.675640+00:00",
+  "client_date": "2026-10-26",
+  "client_timezone": "Asia/Shanghai",
+  "origin": "https://matchmind-backend-preview.onrender.com",
+  "root_http_status": 200,
+  "health_http_status": 200,
+  "matches_http_status": 200,
+  "health_response": {
+    "status": "ok",
+    "contract_version": "2.0.0",
+    "mode": "production",
+    "model_ready": true
+  },
+  "catalogue": [
+    {
+      "match_id": "MM-DEMO-01",
+      "home": "Harbor FC",
+      "away": "Mountain United",
+      "synthetic": true
+    }
+  ],
+  "assets": [
+    {
+      "name": "index-Bkk-p2ET.css",
+      "http_status": 200,
+      "local_sha256": "8ab4470be0931fca3125deb5aa85a958a15c1b865a6d8e15216d3a25bd6c33b7",
+      "public_sha256": "8ab4470be0931fca3125deb5aa85a958a15c1b865a6d8e15216d3a25bd6c33b7",
+      "byte_identical": true
+    },
+    {
+      "name": "index-DnW473jk.js",
+      "http_status": 200,
+      "local_sha256": "20ff045be18cfdc3d2f58d7aa3c6b6f20188ab5ce7234507f07c059627e00fdb",
+      "public_sha256": "20ff045be18cfdc3d2f58d7aa3c6b6f20188ab5ce7234507f07c059627e00fdb",
+      "byte_identical": true
+    }
+  ],
+  "local_asset_paths": [
+    "/assets/index-Bkk-p2ET.css",
+    "/assets/index-DnW473jk.js"
+  ],
+  "public_asset_paths": [
+    "/assets/index-Bkk-p2ET.css",
+    "/assets/index-DnW473jk.js"
+  ],
+  "local_reference_commit": "cd050e4137ee02c6fd0bf95754a36df011198bfb",
+  "local_dist_dirty": false,
+  "deployment_revision": "Not inferred from asset equality",
+  "public_browser_acceptance": "No new browser walkthrough in this HTTP snapshot",
+  "new_live_model_workflows": 0,
+  "video_capture_complete": false,
+  "checks": {
+    "health_ok": true,
+    "synthetic_catalogue": true,
+    "asset_paths_match": true,
+    "asset_bytes_match": true
+  },
+  "passed": true
+}

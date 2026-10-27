@@ -1,6 +1,21 @@
 # MatchMind recording package — 110 seconds
 
-Role A, issue #21, 2026-10-26. Based on main `1113388` and C's canonical [demo script](../../../evaluation/DEMO_SCRIPT.md). This package is narration, captions, an edited shot list and inspectable preflight evidence. **No finished video or voice recording is included.** A6 capture, export and representative review remain unfinished.
+Role A, issues #21 / #23, 2026-10-26. Originally prepared on main `1113388`; refreshed after PRs #20 and #22 merged, against main `cd050e4`. The narration follows C's canonical [demo script](../../../evaluation/DEMO_SCRIPT.md), with the edited-wait clarification below. This package is narration, captions, an edited shot list and inspectable preflight evidence. **No finished video or voice recording is included.** A6 capture, export and representative review remain unfinished.
+
+## Current recording baseline
+
+Use [preflight-2026-10-26-post-integration.json](preflight-2026-10-26-post-integration.json), captured at **2026-10-26 14:49 UTC / 22:49 Asia/Shanghai**. The public HTML references `index-DnW473jk.js` and `index-Bkk-p2ET.css`; both match the committed local assets byte for byte. Root, health and match-catalogue requests returned HTTP 200. PR #20's evidence-navigation changes are now merged and deployed. These HTTP checks establish build availability, not a newly recorded public interaction or live-model result.
+
+[preflight.json](preflight.json) remains the **unchanged historical snapshot** from `1113388` at 02:23 UTC, before integration. Its old hashes and pending-PR status describe that earlier time; do not use them as the current recording baseline.
+
+To append another preflight from `matchmind` with the existing environment, choose a **new** filename:
+
+```sh
+.venv/bin/python frontend/demo/recording-kit/capture_preflight.py \
+  --output frontend/demo/recording-kit/preflight-YYYYMMDD-HHMMSS.json
+```
+
+The helper refuses to overwrite evidence. It makes GET requests only and starts no replay or model workflow. Run `pnpm run build` in `frontend` first and inspect any dist changes before recording. Asset equality does not identify the complete Render deployment revision. On Windows, use `.venv\Scripts\python.exe`.
 
 Use [narration.md](narration.md) for the English voice track and import [captions.en.srt](captions.en.srt) into the editor. [cues.json](cues.json) is the text/timing source. Captions end at 01:50, leaving ten seconds below the two-minute limit for export variation; include any credits inside that timeline. Do not add a ten-second outro afterward. Reading speed is measured in `validation.json`, not a recorded voice duration.
 
@@ -34,12 +49,12 @@ Open `http://127.0.0.1:18430/`. Use the mock provider explicitly: a missing shel
 
 Build assets locally before recording (`pnpm run build` in `frontend`). For the public segment, warm the actual service and inspect its visible mode. Playing through the analysis window on the configured public service can invoke its live model; this package does not automate or repeat that workflow. A health response alone is not proof of a new live result. Previous live evidence remains in its original dated record under `evaluation/evidence/`; do not claim that local framework evidence is a cloud test.
 
-Keep model/admin credentials out of terminal footage and captions. Show only the prepared result text and ordinary local commands, with a single browser window. Record at 1280×720 or higher and keep subtitles clear of generation/verification labels and selected-event details. The concept image and PR #20-only navigation are not substitutes for deployed footage; PR #20 remains pending at this package's preflight.
+Keep model/admin credentials out of terminal footage and captions. Show only the prepared result text and ordinary local commands, with a single browser window. Record at 1280×720 or higher and keep subtitles clear of generation/verification labels and selected-event details. Record the actual deployed navigation; the concept image is not application footage.
 
 ## Prepared evidence and readiness
 
-[evidence/](evidence/) contains fresh offline verifier/recap output (terminal trailing spaces trimmed) and [preflight.json](preflight.json) records public HTTP checks and byte-identical deployed/main asset hashes. No deployment revision is inferred solely from those hashes, and no new paid model workflow was run. Browser UI inspection timed out, so this package establishes HTTP/build availability, not a new public keyboard/evidence walkthrough or a completed screen recording.
+[evidence/](evidence/) preserves the original offline verifier/recap output (terminal trailing spaces trimmed). The current and historical HTTP snapshots are distinguished above. No deployment revision is inferred solely from asset hashes, and no new paid model workflow was run for this refresh. This refresh does not establish a new public keyboard/evidence walkthrough or a completed screen recording.
 
 Read the actual `Rule fallback`, `Precomputed` or `Live model` label in each take. The `Evidence checked` line states code-only versus agent-and-code checks; neither establishes tactical causality. The historical Wyscout sample is used offline for comparison, not played back as the synthetic match. One five-minute reference does not validate a league distribution or the unsupported recovery trigger.
 
-For C's editorial review: `evaluation/SUBMISSION_POSITIONING.md` still contains an old sentence saying A2/A3 are unbuilt, despite merged PR #14 and C's later role audit. `evaluation/evidence/README.md` describes its saved development-machine evidence, not every later cloud run. A has left those C-owned files untouched; reconcile them before the final recording/submission. C's canonical demo schedule also needs the edited-wait clarification above.
+C resolved the stale UI-status sentence in `evaluation/SUBMISSION_POSITIONING.md` and the root README in `53c5189`. `evaluation/evidence/README.md` describes its saved development-machine evidence, not every later cloud run. Keep that distinction and the edited-wait clarification when recording. [The submission kit](../../submission/submission-guide.en.md) contains the current project fields and remaining representative actions.
