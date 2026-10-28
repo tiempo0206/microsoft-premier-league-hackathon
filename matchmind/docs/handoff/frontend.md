@@ -1,15 +1,38 @@
 # Frontend handoff — purple/lime theme, provenance and playback
 
 - Owner: Role A / Tianbo Cao (`tiempo0206`), assisted by Codex.
-- Date: 2026-10-26 (Asia/Shanghai); earlier observations retain their recorded dates.
-- Current branch: `codex/project-description`, task #23. PR **#20** (`1360326`) and the A6 recording
-  kit PR **#22** (`2636e09`) are merged. The theme/source work is in PR #14 (`d4488d1`).
-- Current starting main SHA: `cd050e4137ee02c6fd0bf95754a36df011198bfb`; C's calibration, integration
-  and corrected submission copy are included. Shared baseline recorded by C:
+- Date: 2026-10-28 (Asia/Shanghai); earlier observations retain their recorded dates.
+- Current branch: `codex/readme-platform-screenshots`, task #25. The submission/preflight update
+  PR **#24** (`050ee8a`), navigation PR **#20** (`1360326`) and recording kit PR **#22** (`2636e09`)
+  are merged. The theme/source work is in PR #14 (`d4488d1`).
+- Current starting main SHA: `050ee8a`; C's integration and the refreshed submission material are
+  included. Shared baseline recorded by C:
   `03910f8889e846bc70215c3c0faf4bb63cd84977`.
-- Contract: `2.0.0`. A changes only frontend source/build/docs/QA and this handoff.
+- Contract: `2.0.0`. This documentation slice also edits the repository-root README, explicitly
+  requested by the representative; no other role's module or handoff is changed.
 
-## Current follow-up: refreshed recording baseline and submission copy
+## Current follow-up: real platform screenshots in the repository README
+
+The representative requested platform screenshots and an introduction in the root README. Its new
+walkthrough presents the desktop match centre, selected-evidence inspection and two mobile views,
+reusing four already committed actual application captures. English text explains playback, the
+shared Casual/Analyst fact set, recorded event locations and keyboard return navigation. Image alt
+text describes the visible UI; the mobile views appear together at 300px width.
+
+The capture context identifies the 2026-10-25–26 local integrated rehearsals, dense synthetic QA
+sample, mock provider and Rule fallback / Code only labels. These screenshots are neither concept
+art nor a new public/live-model acceptance. Existing capture records remain linked. The README's
+data wording now distinguishes synthetic runtime data from the bundled, separately attributed
+CC BY 4.0 Wyscout offline reference; the earlier blanket "no licensed dataset" claim was incorrect.
+
+Validation for this documentation-only slice checks repository-relative links, all four tracked image
+targets and their alt text, the rendered Markdown/mobile table, frozen files and whitespace. Original
+README CRLF line endings and screenshot bytes are preserved. No application source, dist, dependency,
+model request, fixture, contract or deployment configuration changes. C still reviews/merges the PR
+under the existing main protection. The Role A module guard covers paths inside matchmind; the
+representative's explicit README request authorizes the additional root documentation edit.
+
+## Earlier follow-up: refreshed recording baseline and submission copy
 
 At the representative's request, A refreshed the recording entry point after C's merges. The old `frontend/demo/recording-kit/preflight.json` remains byte-for-byte unchanged. New `preflight-2026-10-26-post-integration.json` records **14:49 UTC / 22:49 Asia/Shanghai**, against main `cd050e4`: root/health/catalogue HTTP 200, production contract 2.0.0, model_ready true, synthetic Harbor FC / Mountain United. Public HTML and local dist list the same two assets, both byte-identical:
 
