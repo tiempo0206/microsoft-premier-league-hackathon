@@ -1,7 +1,7 @@
 # MatchMind — verified explanations for live football
 
 **Microsoft × Premier League "Inside the Game" hackathon.**
-Category entered: **Best Multi-Agent System**. Contract 2.0.0. All match data is synthetic.
+Category entered: **Best Multi-Agent System**. Contract 2.0.0. All runtime match data is synthetic.
 
 **[Live demo →](https://matchmind-backend-preview.onrender.com)** — one process serving the app, the
 API and the AI pipeline. It runs on a free instance, so the first request after an idle spell takes
@@ -12,6 +12,56 @@ screen: *"HOME won the ball high up the pitch three times, and two of those beca
 seconds."* The interesting part is not that a language model can write that sentence. It is that
 **every number in it is computed by code, every claim cites the events behind it, and a separate
 adversarial agent may delete claims but never write them.**
+
+## See the platform
+
+MatchMind brings the replay, match statistics and explanations into one purple-and-lime match centre.
+Start the supplied five-minute synthetic clip, inspect a moment, and follow its evidence back to the
+recorded events. The [live application](https://matchmind-backend-preview.onrender.com) is available
+without an application login.
+
+### Match centre: replay the events
+
+![MatchMind desktop match centre showing the synthetic Harbor FC versus Mountain United replay at 25:00, playback controls and server statistics](matchmind/frontend/qa/2026-10-25/theme/desktop-initial.jpg)
+
+Play, pause, reset, or select 1×/2×/5×/10× playback. The server clock drives the score, shots, passes
+and estimated possession time. The synthetic badge and 25:00–30:00 range keep this focused segment
+clearly identified; the score is the clip's state, not an official match result.
+
+### Explain a moment, then inspect the evidence
+
+![MatchMind insight with three high recoveries, two recoveries linked to shots, expandable event references and the selected event's recorded pitch location](matchmind/frontend/qa/2026-10-26/evidence-navigation/desktop-selected-pitch.jpg)
+
+- **Two audiences, one fact set.** Casual and Analyst offer different explanations of the same claims
+  and evidence; changing the audience makes no additional model request.
+- **Follow a cited event.** Expand the evidence, select an event and inspect its recorded point or
+  pass endpoint. The timeline highlights the same event; inspecting it does not seek the replay.
+- **Read how the answer was produced.** Generation and verification labels distinguish Live model,
+  Rule fallback and Precomputed output, with agent-and-code or code-only checks as applicable.
+
+### Continue on mobile
+
+<table>
+  <tr>
+    <th>Read the insight</th>
+    <th>Inspect the selected event</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src="matchmind/frontend/qa/2026-10-25/theme/mobile-insight.jpg" width="300" alt="Mobile Casual insight showing Rule fallback, three high recoveries, two linked recoveries and code-only verification"></td>
+    <td valign="top"><img src="matchmind/frontend/qa/2026-10-26/evidence-navigation/mobile-selected-pitch.jpg" width="300" alt="Mobile recorded-event panel with a selected pass, pitch location and Back to evidence action"></td>
+  </tr>
+</table>
+
+The responsive layout keeps the audience switch, insight metrics and evidence controls readable on a
+narrow screen. Keyboard users can move from selected evidence to the pitch details and return to the
+same evidence button.
+
+*Screenshot context:* these are actual application captures from local rehearsals on 2026-10-25–26,
+using a dense synthetic QA sample and an explicitly mock model provider. The pictured insights are
+**Rule fallback / Code only**; they are not live-model results or real Premier League match data.
+Desktop captures use a 1280×720 viewport; mobile captures emulate 390×844. See the
+[theme capture record](matchmind/frontend/qa/theme-2026-10-25.md) and
+[evidence-navigation record](matchmind/frontend/qa/evidence-navigation-2026-10-26.md) for provenance.
 
 ## Why this is not another LLM commentary wrapper
 
@@ -149,8 +199,10 @@ establish.
 
 ## Rules compliance
 
-- **All match data is original and synthetic** (CC0). No real Premier League footage, tracking data or
-  licensed dataset is used or redistributed.
+- **Playable match data is original and synthetic** (CC0), with fictional teams. A separately
+  attributed **CC BY 4.0 Wyscout historical excerpt** is included for offline comparison only; it is
+  not played back or used as model runtime input. See its
+  [source and attribution](matchmind/data/extra/real-history-wyscout/ATTRIBUTION.md).
 - Model keys live only in server-side environment variables — not in the repository, the image, the
   build arguments or the logs. `tests/ai/test_invariants.py` enforces this.
 - Contract 2.0.0 is frozen. `tools/check_frozen.py` fails any change to the schema or the fixtures,
